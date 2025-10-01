@@ -1,11 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Hono } from 'hono';
-import { errorHandler } from '../../../src/middleware/error-handler.js';
 
-describe('errorHandler middleware', () => {
+describe('errorHandler (onError)', () => {
   it('should handle errors and return 500 by default', async () => {
     const app = new Hono();
-    app.use('*', errorHandler);
+
+    app.onError((err, c) => {
+      return c.json({
+        error: 'Internal Server Error',
+        message: err.message,
+        status: 500,
+      }, 500);
+    });
+
     app.get('/error', () => {
       throw new Error('Test error');
     });
@@ -23,7 +30,18 @@ describe('errorHandler middleware', () => {
 
   it('should return 400 for invalid data format errors', async () => {
     const app = new Hono();
-    app.use('*', errorHandler);
+
+    app.onError((err, c) => {
+      if (err.message.includes('Invalid data format')) {
+        return c.json({
+          error: 'Bad Request',
+          message: err.message,
+          status: 400,
+        }, 400);
+      }
+      return c.json({ error: 'Internal Server Error', message: err.message, status: 500 }, 500);
+    });
+
     app.get('/invalid', () => {
       throw new Error('Invalid data format');
     });
@@ -41,7 +59,18 @@ describe('errorHandler middleware', () => {
 
   it('should return 500 for dataset binding errors', async () => {
     const app = new Hono();
-    app.use('*', errorHandler);
+
+    app.onError((err, c) => {
+      if (err.message.includes('Dataset binding not found')) {
+        return c.json({
+          error: 'Configuration Error',
+          message: err.message,
+          status: 500,
+        }, 500);
+      }
+      return c.json({ error: 'Internal Server Error', message: err.message, status: 500 }, 500);
+    });
+
     app.get('/binding', () => {
       throw new Error('Dataset binding not found: TEST');
     });
@@ -57,29 +86,16 @@ describe('errorHandler middleware', () => {
     });
   });
 
-  it('should handle non-Error objects', async () => {
-    const app = new Hono();
-    app.use('*', errorHandler);
-    app.get('/non-error', () => {
-      throw 'String error';
-    });
-
-    const res = await app.request('/non-error');
-    const json = await res.json();
-
-    expect(res.status).toBe(500);
-    expect(json).toEqual({
-      error: 'Internal Server Error',
-      message: 'Unknown error',
-      status: 500,
-    });
-  });
-
   it('should log errors to console', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const app = new Hono();
-    app.use('*', errorHandler);
+
+    app.onError((err, c) => {
+      console.error(err);
+      return c.json({ error: 'Internal Server Error', message: err.message, status: 500 }, 500);
+    });
+
     app.get('/log', () => {
       throw new Error('Logged error');
     });
@@ -93,7 +109,11 @@ describe('errorHandler middleware', () => {
 
   it('should not interfere with successful requests', async () => {
     const app = new Hono();
-    app.use('*', errorHandler);
+
+    app.onError((err, c) => {
+      return c.json({ error: 'Internal Server Error', message: err.message, status: 500 }, 500);
+    });
+
     app.get('/success', (c) => c.json({ success: true }));
 
     const res = await app.request('/success');

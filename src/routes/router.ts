@@ -3,7 +3,6 @@ import type { Env, PingResponse, SuccessResponse } from '../types/index.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
 import { GoogleAnalyticsAdapter } from '../adapters/google-analytics.js';
 import { AnalyticsEngineService } from '../services/analytics-engine.js';
-import { errorHandler } from '../middleware/error-handler.js';
 import { logger } from '../middleware/logger.js';
 
 /**
@@ -15,8 +14,29 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   const claudeCodeAdapter = new ClaudeCodeAdapter();
   const googleAnalyticsAdapter = new GoogleAnalyticsAdapter();
 
+  // Error handler using onError
+  app.onError((err, c) => {
+    console.error(err);
+
+    const errorResponse: import('../types/index.js').ErrorResponse = {
+      error: 'Internal Server Error',
+      message: err.message || 'Unknown error',
+      status: 500,
+    };
+
+    // Handle specific error types
+    if (err.message.includes('Invalid data format')) {
+      errorResponse.status = 400;
+      errorResponse.error = 'Bad Request';
+    } else if (err.message.includes('Dataset binding not found')) {
+      errorResponse.status = 500;
+      errorResponse.error = 'Configuration Error';
+    }
+
+    return c.json(errorResponse, errorResponse.status as 400 | 500);
+  });
+
   // Middleware
-  app.use('*', errorHandler);
   app.use('*', logger);
 
   // Health check endpoint
