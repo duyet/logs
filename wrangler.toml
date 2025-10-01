@@ -1,0 +1,13 @@
+name = "duyet-logs"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "."
+
+# Analytics Engine Bindings
+[[analytics_engine_datasets]]
+binding = "CLAUDE_CODE_ANALYTICS"
+
+[[analytics_engine_datasets]]
+binding = "GA_ANALYTICS"
+
+[observability]
+enabled = true
