@@ -105,9 +105,25 @@ Visit **[logs.duyet.net](https://logs.duyet.net)** to:
 
 ### Using Project IDs
 
-Include a `project_id` in your analytics requests to classify data. Three methods supported (in order of precedence):
+Include a `project_id` in your analytics requests to classify data. Four methods supported (in order of precedence):
 
-#### 1. HTTP Header (Recommended)
+#### 1. URL Path Parameter (Recommended for Claude Code)
+
+```bash
+curl -X POST https://logs.duyet.net/cc/myproject \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "...", "metric_name": "...", "value": 123}'
+```
+
+Perfect for Claude Code configuration:
+
+```json
+{
+  "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc/myproject"
+}
+```
+
+#### 2. HTTP Header
 
 ```bash
 curl -X POST https://logs.duyet.net/cc \
@@ -116,18 +132,28 @@ curl -X POST https://logs.duyet.net/cc \
   -d '{"session_id": "...", "metric_name": "...", "value": 123}'
 ```
 
-#### 2. Query Parameter
+#### 3. Query Parameter
 
 ```bash
 curl "https://logs.duyet.net/cc?project_id=myproject&session_id=..."
 ```
 
-#### 3. Request Body
+#### 4. Request Body
 
 ```bash
 curl -X POST https://logs.duyet.net/cc \
   -H "Content-Type: application/json" \
   -d '{"project_id": "myproject", "session_id": "...", "value": 123}'
+```
+
+### Auto-Creation
+
+Projects are **automatically created** when first used. No manual setup required via API or Web UI.
+
+When you send your first analytics event with a project ID (via any method above), the project will be created automatically with a description like:
+
+```
+Auto-created from POST /cc/myproject
 ```
 
 ### Project Management API
@@ -218,6 +244,83 @@ Generates:
 - 20% Google Analytics events
 
 All with realistic random data.
+
+## Claude Code Configuration
+
+Configure Claude Code to send telemetry data to this analytics router.
+
+### VS Code Settings
+
+Add to your VS Code `settings.json`:
+
+```json
+{
+  "claude-code.env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json"
+  }
+}
+```
+
+### With Project ID
+
+Include a project ID to organize your Claude Code analytics:
+
+#### Method 1: URL Path Parameter (Recommended)
+
+```json
+{
+  "claude-code.env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc/myproject",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json"
+  }
+}
+```
+
+#### Method 2: Query Parameter
+
+```json
+{
+  "claude-code.env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc?project_id=myproject",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json"
+  }
+}
+```
+
+### Auto-Creation
+
+Projects are **automatically created** when first used. No need to manually create them via the API or Web UI.
+
+When Claude Code sends its first telemetry event with a project ID, the project will be created automatically with a description like:
+
+```
+Auto-created from POST /cc/myproject
+```
+
+### Collected Metrics
+
+Claude Code sends the following telemetry data:
+
+**Metrics**:
+- `claude_code.token.usage` - Token usage (input, output, cache reads)
+- `claude_code.cost` - API cost tracking
+- `claude_code.session.duration` - Session duration
+
+**Events**:
+- `user_prompt` - User prompts submitted
+- `tool_result` - Tool execution results
+- `api_request` - API requests made
+
+All metrics include:
+- Session ID
+- App version
+- Model used (e.g., `claude-sonnet-4-5`)
+- Organization ID (if configured)
+- User account UUID (if configured)
 
 ## Development
 
