@@ -899,11 +899,26 @@ GET /ping 200 1ms
 ### Code Quality
 
 - **Language**: TypeScript (strict mode enabled)
-- **Test Coverage**: 100% required
+- **Test Coverage**:
+  - **100% coverage required** for all new code
+  - Write tests BEFORE or ALONGSIDE implementation
+  - Cover all code paths, edge cases, and error scenarios
+  - Unit tests for functions, integration tests for workflows
 - **Testing Framework**: Vitest
 - **Code Style**: ESLint + Prettier
-- **Type Safety**: No `any` types without justification
+- **Type Safety**:
+  - **100% TypeScript typing required** - No implicit `any`
+  - **NEVER use `any` or `unknown` types** - Always use specific types
+  - **NEVER import `.js` files** - Use `.ts` imports only (TypeScript will resolve)
+  - Use proper type guards and assertions
+  - Prefer `interface` over `type` for object shapes
+  - All function parameters and return types must be explicitly typed
 - **Documentation**: JSDoc for all public APIs
+- **Development Workflow**:
+  - When adding new functions/code: Write tests first or simultaneously
+  - Verify 100% test coverage before committing
+  - Ensure all TypeScript strict mode checks pass
+  - Run `npm test` and `npm run lint` before every commit
 
 ### Performance Targets
 
