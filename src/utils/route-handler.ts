@@ -49,6 +49,15 @@ export function createAnalyticsHandler<T>(
       const rawData = await c.req.json<Record<string, unknown>>();
       const projectId = c.get('project_id');
 
+      // Debug logging to see what OTLP sends
+      console.log('[DEBUG OTLP] Route:', c.req.method, c.req.path);
+      console.log('[DEBUG OTLP] Project ID:', projectId);
+      console.log('[DEBUG OTLP] Data keys:', Object.keys(rawData));
+      console.log(
+        '[DEBUG OTLP] Full data (first 1000 chars):',
+        JSON.stringify(rawData).substring(0, 1000)
+      );
+
       // Set project ID on adapter for OTLP format
       if (
         'setProjectId' in adapter &&

@@ -76,17 +76,17 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   app.use('/ga', projectIdMiddleware);
   app.use('/ga/:project_id', projectIdMiddleware);
 
-  // Claude Code analytics endpoints
-  app.get('/cc', claudeCodeHandler.handleGet);
-  app.post('/cc', claudeCodeHandler.handlePost);
-  app.get('/cc/:project_id', claudeCodeHandler.handleGet);
-  app.post('/cc/:project_id', claudeCodeHandler.handlePost);
-
-  // OTLP standard endpoints for Claude Code
+  // OTLP standard endpoints for Claude Code (MUST be before generic :project_id routes)
   app.use('/cc/:project_id/v1/logs', projectIdMiddleware);
   app.post('/cc/:project_id/v1/logs', claudeCodeHandler.handlePost);
   app.use('/cc/:project_id/v1/metrics', projectIdMiddleware);
   app.post('/cc/:project_id/v1/metrics', claudeCodeHandler.handlePost);
+
+  // Claude Code analytics endpoints (generic routes AFTER specific routes)
+  app.get('/cc', claudeCodeHandler.handleGet);
+  app.post('/cc', claudeCodeHandler.handlePost);
+  app.get('/cc/:project_id', claudeCodeHandler.handleGet);
+  app.post('/cc/:project_id', claudeCodeHandler.handlePost);
 
   // Google Analytics endpoints
   app.get('/ga', googleAnalyticsHandler.handleGet);
