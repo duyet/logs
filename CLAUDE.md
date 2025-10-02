@@ -423,9 +423,11 @@ Six default projects are created via seed script:
 Create default projects:
 
 ```bash
-npm run db:seed          # Local
-npm run db:seed:remote   # Production
+npm run db:seed          # Seed via local API (http://localhost:8788)
+npm run db:seed:remote   # Seed via production API (https://logs.duyet.net)
 ```
+
+The seed script uses the Projects API to create projects, ensuring proper validation and error handling.
 
 ### Database Management Scripts
 

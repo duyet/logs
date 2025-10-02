@@ -170,9 +170,9 @@ Six default projects are pre-configured:
 npm run db:migrate         # Local
 npm run db:migrate:remote  # Production
 
-# Seed default projects
-npm run db:seed           # Local
-npm run db:seed:remote    # Production
+# Seed default projects (via API)
+npm run db:seed           # Seed via local API (http://localhost:8788)
+npm run db:seed:remote    # Seed via production API (https://logs.duyet.net)
 
 # Backup database
 npm run db:backup         # Production → ./backups/

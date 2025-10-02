@@ -26,19 +26,23 @@ npm run db:migrate:remote
 
 ### Seed Default Projects
 
-Create default projects (debug, duyet.net, blog, prod, staging, test) in the database.
+Create default projects (debug, duyet.net, blog, prod, staging, test) via the Projects API.
+
+The seed script uses the API endpoints to create projects, ensuring proper validation and error handling. It will skip projects that already exist.
 
 #### Seed local database
 
 ```bash
-npm run db:seed
+npm run db:seed  # Uses http://localhost:8788/api/projects
 ```
 
 #### Seed production database
 
 ```bash
-npm run db:seed:remote
+npm run db:seed:remote  # Uses https://logs.duyet.net/api/projects
 ```
+
+**Note**: The local dev server must be running (`npm run dev`) before seeding locally.
 
 ### Backup Database
 
