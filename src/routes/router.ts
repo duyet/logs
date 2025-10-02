@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { serveStatic } from 'hono/cloudflare-pages';
 import type { Env, PingResponse } from '../types/index.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
 import { GoogleAnalyticsAdapter } from '../adapters/google-analytics.js';
@@ -59,6 +60,22 @@ export function createRouter(): Hono<{ Bindings: Env }> {
 
   // Projects API routes
   app.route('/api/projects', createProjectsRouter());
+
+  // Serve static files from public directory (root of dist/)
+  // This will handle HTML files and assets
+  app.get('*', async (c, next) => {
+    // Try to serve static files if ASSETS is available (production)
+    if (c.env.ASSETS) {
+      return serveStatic()(c, next);
+    }
+    // In development/testing, return 404 for unknown routes
+    await next();
+  });
+
+  // Final 404 handler for routes not matched above
+  app.notFound((c) => {
+    return c.json({ error: 'Not Found', message: 'Endpoint not found' }, 404);
+  });
 
   return app;
 }

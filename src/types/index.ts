@@ -17,6 +17,7 @@ export interface Env {
   CLAUDE_CODE_ANALYTICS: AnalyticsEngineDataset;
   GA_ANALYTICS: AnalyticsEngineDataset;
   DB: D1Database;
+  ASSETS?: Fetcher; // Optional ASSETS binding for static files
 }
 
 /**
