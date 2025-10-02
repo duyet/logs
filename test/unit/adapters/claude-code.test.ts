@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { describe, it, expect } from 'vitest';
 import { ClaudeCodeAdapter } from '../../../src/adapters/claude-code.js';
 import type {
@@ -48,9 +50,16 @@ describe('ClaudeCodeAdapter', () => {
 
       const result = adapter.transform(metric);
 
-      expect(result.indexes).toContain('session-123');
-      expect(result.indexes).toContain('claude_code.token.usage');
+      // No project_id means indexes should be empty
+      expect(result.indexes).toEqual([]);
       expect(result.doubles).toEqual([100]);
+
+      // All metadata is in blobs[0] as JSON
+      expect(result.blobs).toBeDefined();
+      expect(result.blobs?.length).toBe(1);
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.session_id).toBe('session-123');
+      expect(metadata.metric_name).toBe('claude_code.token.usage');
     });
 
     it('should include optional metric fields', () => {
@@ -73,15 +82,22 @@ describe('ClaudeCodeAdapter', () => {
 
       const result = adapter.transform(metric);
 
-      expect(result.indexes).toContain('1.0.0');
-      expect(result.indexes).toContain('org-123');
-      expect(result.indexes).toContain('user-123');
-      expect(result.indexes).toContain('input');
-      expect(result.indexes).toContain('claude-3');
-      expect(result.indexes).toContain('Edit');
-      expect(result.indexes).toContain('accept');
-      expect(result.indexes).toContain('TypeScript');
-      expect(result.blobs).toContain('2024-01-01T00:00:00Z');
+      // No project_id means indexes should be empty
+      expect(result.indexes).toEqual([]);
+
+      // All metadata is in blobs[0] as JSON
+      expect(result.blobs).toBeDefined();
+      expect(result.blobs?.length).toBe(1);
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.app_version).toBe('1.0.0');
+      expect(metadata.organization_id).toBe('org-123');
+      expect(metadata.user_account_uuid).toBe('user-123');
+      expect(metadata.timestamp).toBe('2024-01-01T00:00:00Z');
+      expect(metadata.attributes.type).toBe('input');
+      expect(metadata.attributes.model).toBe('claude-3');
+      expect(metadata.attributes.tool).toBe('Edit');
+      expect(metadata.attributes.decision).toBe('accept');
+      expect(metadata.attributes.language).toBe('TypeScript');
     });
 
     it('should handle metrics with partial attributes', () => {
@@ -96,8 +112,13 @@ describe('ClaudeCodeAdapter', () => {
 
       const result = adapter.transform(metric);
 
-      expect(result.indexes).toContain('claude-3');
+      // No project_id means indexes should be empty
+      expect(result.indexes).toEqual([]);
       expect(result.doubles).toEqual([0.05]);
+
+      // Check metadata in blobs[0]
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.attributes.model).toBe('claude-3');
     });
   });
 
@@ -112,13 +133,18 @@ describe('ClaudeCodeAdapter', () => {
 
       const result = adapter.transform(event);
 
-      expect(result.indexes).toContain('session-123');
-      expect(result.indexes).toContain('user_prompt');
-      expect(result.blobs).toContain('2024-01-01T00:00:00Z');
-      expect(result.blobs?.some((blob) => blob.includes('prompt_length'))).toBe(
-        true
-      );
+      // No project_id means indexes should be empty
+      expect(result.indexes).toEqual([]);
       expect(result.doubles).toEqual([]);
+
+      // All metadata is in blobs[0] as JSON
+      expect(result.blobs).toBeDefined();
+      expect(result.blobs?.length).toBe(1);
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.session_id).toBe('session-123');
+      expect(metadata.event_name).toBe('user_prompt');
+      expect(metadata.timestamp).toBe('2024-01-01T00:00:00Z');
+      expect(metadata.attributes.prompt_length).toBe(100);
     });
 
     it('should serialize event attributes as JSON', () => {
@@ -135,20 +161,13 @@ describe('ClaudeCodeAdapter', () => {
 
       const result = adapter.transform(event);
 
-      const attributesBlob = result.blobs?.find((blob) =>
-        blob.includes('tool_name')
-      );
-      expect(attributesBlob).toBeDefined();
-      if (attributesBlob) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const parsed = JSON.parse(attributesBlob);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(parsed.tool_name).toBe('Read');
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(parsed.success).toBe(true);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect(parsed.duration_ms).toBe(50);
-      }
+      // All metadata is in blobs[0] as JSON
+      expect(result.blobs).toBeDefined();
+      expect(result.blobs?.length).toBe(1);
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.attributes.tool_name).toBe('Read');
+      expect(metadata.attributes.success).toBe(true);
+      expect(metadata.attributes.duration_ms).toBe(50);
     });
   });
 
@@ -174,11 +193,13 @@ describe('ClaudeCodeAdapter', () => {
       };
 
       const result = adapter.transform(metric);
-      const firstIndex = result.indexes?.[0];
-      expect(firstIndex).toBeDefined();
-      if (firstIndex) {
-        expect(firstIndex.length).toBeLessThanOrEqual(96);
-      }
+
+      // No project_id means indexes should be empty
+      expect(result.indexes).toEqual([]);
+
+      // Session ID is in metadata, not truncated
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.session_id).toBe(longId);
     });
   });
 
@@ -193,9 +214,13 @@ describe('ClaudeCodeAdapter', () => {
 
       const result = adapter.transform(metric);
 
-      expect(result.indexes?.[0]).toBe('proj123');
-      expect(result.indexes).toContain('session-123');
-      expect(result.indexes).toContain('claude_code.token.usage');
+      // Only project_id in indexes
+      expect(result.indexes).toEqual(['proj123']);
+
+      // Other fields are in metadata
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.session_id).toBe('session-123');
+      expect(metadata.metric_name).toBe('claude_code.token.usage');
     });
 
     it('should include project_id in event indexes as first element', () => {
@@ -209,9 +234,13 @@ describe('ClaudeCodeAdapter', () => {
 
       const result = adapter.transform(event);
 
-      expect(result.indexes?.[0]).toBe('proj456');
-      expect(result.indexes).toContain('session-123');
-      expect(result.indexes).toContain('user_prompt');
+      // Only project_id in indexes
+      expect(result.indexes).toEqual(['proj456']);
+
+      // Other fields are in metadata
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.session_id).toBe('session-123');
+      expect(metadata.event_name).toBe('user_prompt');
     });
 
     it('should work without project_id', () => {
@@ -223,8 +252,12 @@ describe('ClaudeCodeAdapter', () => {
 
       const result = adapter.transform(metric);
 
-      expect(result.indexes?.[0]).toBe('session-123');
-      expect(result.indexes).not.toContain(undefined);
+      // No project_id means empty indexes
+      expect(result.indexes).toEqual([]);
+
+      // Data is in metadata
+      const metadata = JSON.parse(result.blobs![0]);
+      expect(metadata.session_id).toBe('session-123');
     });
   });
 });

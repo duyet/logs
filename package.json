@@ -4,7 +4,7 @@
   "description": "Analytics data router for Cloudflare Pages with Hono",
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev --compatibility-date=2024-01-01 -- npm run build:watch",
+    "dev": "wrangler pages dev",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "test": "vitest run",

@@ -49,73 +49,44 @@ export class ClaudeCodeAdapter extends BaseAdapter<ClaudeCodeData> {
   }
 
   private transformMetric(metric: ClaudeCodeMetric): AnalyticsEngineDataPoint {
-    const indexes: string[] = [
-      this.toIndex(metric.session_id),
-      this.toIndex(metric.metric_name),
-    ];
+    // Analytics Engine supports max 1 index - use project_id for filtering
+    const indexes: string[] = metric.project_id
+      ? [this.toIndex(metric.project_id)]
+      : [];
 
-    const blobs: string[] = [];
+    // Store all metadata in blobs as JSON
+    const metadata = {
+      session_id: metric.session_id,
+      metric_name: metric.metric_name,
+      app_version: metric.app_version,
+      organization_id: metric.organization_id,
+      user_account_uuid: metric.user_account_uuid,
+      timestamp: metric.timestamp,
+      attributes: metric.attributes,
+    };
+
+    const blobs: string[] = [this.toBlob(JSON.stringify(metadata))];
     const doubles: number[] = [metric.value];
-
-    // Add project_id as first indexed field for filtering
-    if (metric.project_id) {
-      indexes.unshift(this.toIndex(metric.project_id));
-    }
-
-    if (metric.app_version) {
-      indexes.push(this.toIndex(metric.app_version));
-    }
-
-    if (metric.organization_id) {
-      indexes.push(this.toIndex(metric.organization_id));
-    }
-
-    if (metric.user_account_uuid) {
-      indexes.push(this.toIndex(metric.user_account_uuid));
-    }
-
-    if (metric.timestamp) {
-      blobs.push(this.toBlob(metric.timestamp));
-    }
-
-    if (metric.attributes) {
-      if (metric.attributes.type) {
-        indexes.push(this.toIndex(metric.attributes.type));
-      }
-      if (metric.attributes.model) {
-        indexes.push(this.toIndex(metric.attributes.model));
-      }
-      if (metric.attributes.tool) {
-        indexes.push(this.toIndex(metric.attributes.tool));
-      }
-      if (metric.attributes.decision) {
-        indexes.push(this.toIndex(metric.attributes.decision));
-      }
-      if (metric.attributes.language) {
-        indexes.push(this.toIndex(metric.attributes.language));
-      }
-    }
 
     return { indexes, blobs, doubles };
   }
 
   private transformEvent(event: ClaudeCodeEvent): AnalyticsEngineDataPoint {
-    const indexes: string[] = [
-      this.toIndex(event.session_id),
-      this.toIndex(event.event_name),
-    ];
+    // Analytics Engine supports max 1 index - use project_id for filtering
+    const indexes: string[] = event.project_id
+      ? [this.toIndex(event.project_id)]
+      : [];
 
-    const blobs: string[] = [
-      this.toBlob(event.timestamp),
-      this.toBlob(JSON.stringify(event.attributes)),
-    ];
+    // Store all metadata in blobs as JSON
+    const metadata = {
+      session_id: event.session_id,
+      event_name: event.event_name,
+      timestamp: event.timestamp,
+      attributes: event.attributes,
+    };
 
+    const blobs: string[] = [this.toBlob(JSON.stringify(metadata))];
     const doubles: number[] = [];
-
-    // Add project_id as first indexed field for filtering
-    if (event.project_id) {
-      indexes.unshift(this.toIndex(event.project_id));
-    }
 
     return { indexes, blobs, doubles };
   }

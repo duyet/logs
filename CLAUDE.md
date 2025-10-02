@@ -135,9 +135,11 @@ Cloudflare Analytics Engine expects:
 {
   blobs?: string[];   // String values (max 5120 bytes each)
   doubles?: number[]; // Numeric values
-  indexes?: string[]; // Indexed strings for filtering (max 96 bytes each)
+  indexes?: string[]; // Indexed strings for filtering (max 1 index, max 96 bytes)
 }
 ```
+
+**Important Limitation**: Analytics Engine supports a **maximum of 1 indexed field** per data point. The adapters use `project_id` as the single index for filtering. All other metadata is stored in blobs as JSON.
 
 ## Technical Requirements
 
@@ -512,10 +514,11 @@ The project ID middleware:
 
 ### Analytics Engine Storage
 
-Project IDs are stored as indexed strings in Analytics Engine:
+Project IDs are stored as the **only indexed field** in Analytics Engine:
 
-- **Position**: First element in `indexes` array
+- **Index**: Single index field (Analytics Engine limit: max 1 index)
 - **Max Length**: 96 bytes (enforced by adapter)
 - **Filtering**: Efficient queries by project_id
+- **Metadata**: All other data (session_id, metric_name, etc.) stored in blobs as JSON
 
-This allows Cloudflare Analytics Engine to efficiently filter and aggregate data by project.
+This allows Cloudflare Analytics Engine to efficiently filter and aggregate data by project while working within the 1-index limitation.
