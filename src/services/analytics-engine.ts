@@ -34,5 +34,12 @@ export class AnalyticsEngineService {
 
     // Write data point
     dataset.writeDataPoint(dataPoint);
+
+    // Log successful write
+    console.log(`[Analytics Engine] Data written to ${String(datasetName)}:`, {
+      indexes: dataPoint.indexes?.length || 0,
+      blobs: dataPoint.blobs?.length || 0,
+      doubles: dataPoint.doubles?.length || 0,
+    });
   }
 }
