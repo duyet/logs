@@ -159,7 +159,18 @@ export class AnalyticsQueryService {
       throw new Error(`SQL API query failed: ${response.status} ${errorText}`);
     }
 
-    return (await response.json()) as SQLAPIResponse;
+    // JSONEachRow format returns newline-delimited JSON (one JSON object per line)
+    const text = await response.text();
+    const lines = text
+      .trim()
+      .split('\n')
+      .filter((line) => line.trim());
+    const data: SQLResultRow[] = lines.map((line) => JSON.parse(line));
+
+    return {
+      data,
+      rows: data.length,
+    };
   }
 
   /**
