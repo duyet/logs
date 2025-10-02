@@ -42,7 +42,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data).toBeDefined();
       expect(data.summary).toBeDefined();
       expect(data.summary.dataset).toBe('CLAUDE_CODE_METRICS');
@@ -59,7 +59,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('dataset');
     });
@@ -72,7 +72,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('Invalid dataset');
     });
@@ -93,7 +93,7 @@ describe('Analytics API E2E', () => {
 
         expect(res.status).toBe(200);
 
-        const data = await res.json();
+        const data = (await res.json()) as any;
         expect(data.summary.dataset).toBe(dataset);
       }
     });
@@ -108,7 +108,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       // Both formats are valid ISO 8601
       expect(new Date(data.summary.timeRange.start).toISOString()).toBe(
         new Date(start).toISOString()
@@ -126,7 +126,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('time format');
     });
@@ -139,7 +139,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
 
       // Summary fields
       expect(data.summary.totalEvents).toBeDefined();
@@ -167,7 +167,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data).toBeDefined();
     });
 
@@ -179,7 +179,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data).toBeDefined();
     });
   });
@@ -191,7 +191,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data.datasets).toBeInstanceOf(Array);
       expect(data.datasets.length).toBe(4);
 
@@ -208,7 +208,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
 
       data.datasets.forEach((dataset: any) => {
         expect(dataset.name).toBeDefined();
@@ -226,7 +226,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data.endpoints.api.analytics).toBe('/api/analytics/insights');
     });
   });

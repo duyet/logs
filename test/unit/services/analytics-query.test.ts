@@ -184,9 +184,10 @@ describe('AnalyticsQueryService', () => {
 
         // Should be sorted by count descending
         if (index > 0) {
-          expect(project.count).toBeLessThanOrEqual(
-            result.summary.topProjects[index - 1].count
-          );
+          const prevProject = result.summary.topProjects[index - 1];
+          if (prevProject) {
+            expect(project.count).toBeLessThanOrEqual(prevProject.count);
+          }
         }
       });
     });

@@ -113,7 +113,6 @@ export class AnalyticsQueryService {
    * Query Analytics Engine via GraphQL API
    */
   private async queryGraphQL(
-    accountId: string,
     apiToken: string,
     query: string,
     variables: Record<string, unknown>
@@ -231,7 +230,7 @@ export class AnalyticsQueryService {
     `;
 
     try {
-      const result = await this.queryGraphQL(accountId, apiToken, query, {
+      const result = await this.queryGraphQL(apiToken, query, {
         accountId,
         dataset: datasetName,
         start: timeRange.start,
@@ -366,7 +365,7 @@ export class AnalyticsQueryService {
     });
 
     // Generate recommendations
-    if (trends.length > 0 && trends[0].direction === 'up') {
+    if (trends.length > 0 && trends[0]?.direction === 'up') {
       recommendations.push(
         'Consider increasing rate limits or capacity planning'
       );
