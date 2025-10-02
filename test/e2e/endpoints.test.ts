@@ -393,4 +393,161 @@ describe('E2E Endpoints', () => {
       });
     });
   });
+
+  describe('OTLP v1 endpoints', () => {
+    describe('POST /cc/v1/logs', () => {
+      it('should accept OTLP logs with default project', async () => {
+        const otlpLogs = {
+          resourceLogs: [
+            {
+              resource: {
+                attributes: [
+                  {
+                    key: 'service.name',
+                    value: { stringValue: 'claude-code' },
+                  },
+                ],
+              },
+              scopeLogs: [
+                {
+                  scope: { name: 'test' },
+                  logRecords: [
+                    {
+                      timeUnixNano: '1234567890000000000',
+                      body: { stringValue: 'test log' },
+                      severityText: 'INFO',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const res = await app.request(
+          '/cc/v1/logs',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(otlpLogs),
+          },
+          mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as { success: boolean };
+        expect(json.success).toBe(true);
+      });
+    });
+
+    describe('POST /cc/v1/metrics', () => {
+      it('should accept OTLP metrics with default project', async () => {
+        const otlpMetrics = {
+          resourceMetrics: [
+            {
+              resource: {
+                attributes: [
+                  {
+                    key: 'service.name',
+                    value: { stringValue: 'claude-code' },
+                  },
+                ],
+              },
+              scopeMetrics: [
+                {
+                  scope: { name: 'test' },
+                  metrics: [
+                    {
+                      name: 'test.metric',
+                      sum: {
+                        dataPoints: [
+                          {
+                            timeUnixNano: '1234567890000000000',
+                            asDouble: 100,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const res = await app.request(
+          '/cc/v1/metrics',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(otlpMetrics),
+          },
+          mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as { success: boolean };
+        expect(json.success).toBe(true);
+      });
+    });
+  });
+
+  describe('Static asset routes', () => {
+    describe('GET /ui/project', () => {
+      it('should return 503 when ASSETS not available', async () => {
+        const res = await app.request('/ui/project', {}, mockEnv);
+
+        expect(res.status).toBe(503);
+        const text = await res.text();
+        expect(text).toBe('Static assets not available');
+      });
+
+      it('should fetch from ASSETS when available', async () => {
+        const mockAssetsResponse = new Response('<html>Create Project</html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        });
+
+        const mockAssets = {
+          fetch: vi.fn().mockResolvedValue(mockAssetsResponse),
+        };
+
+        const envWithAssets = {
+          ...mockEnv,
+          ASSETS: mockAssets as never,
+        };
+
+        const res = await app.request('/ui/project', {}, envWithAssets);
+
+        expect(res.status).toBe(200);
+        expect(mockAssets.fetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: expect.stringContaining('/create.html'),
+          })
+        );
+      });
+    });
+
+    describe('GET * (static files)', () => {
+      it('should serve static files when ASSETS available', async () => {
+        const mockStaticResponse = new Response('static content', {
+          status: 200,
+        });
+
+        const mockAssets = {
+          fetch: vi.fn().mockResolvedValue(mockStaticResponse),
+        };
+
+        const envWithAssets = {
+          ...mockEnv,
+          ASSETS: mockAssets as never,
+        };
+
+        // Request a static file path
+        const res = await app.request('/styles.css', {}, envWithAssets);
+
+        expect(res.status).toBe(200);
+      });
+    });
+  });
 });

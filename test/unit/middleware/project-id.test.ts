@@ -470,4 +470,82 @@ describe('projectIdMiddleware', () => {
 
     consoleErrorSpy.mockRestore();
   });
+
+  it('should handle executionCtx.waitUntil when available', async () => {
+    const mockDB = createMockD1Database();
+    const app = new Hono<{ Bindings: Env }>();
+
+    // Mock projectExists to return true
+    vi.spyOn(projectService, 'projectExists').mockResolvedValueOnce(true);
+
+    // Mock updateLastUsed
+    const updateLastUsedSpy = vi
+      .spyOn(projectService, 'updateLastUsed')
+      .mockResolvedValueOnce();
+
+    app.use('/test', projectIdMiddleware);
+    app.get('/test', (c) => c.json({ status: 'ok' }));
+
+    const req = new Request('http://localhost/test', {
+      headers: { 'X-Project-ID': 'testproject' },
+    });
+
+    // Mock executionCtx with waitUntil
+    const mockWaitUntil = vi.fn();
+    const mockExecutionCtx = {
+      waitUntil: mockWaitUntil,
+      passThroughOnException: vi.fn(),
+      props: {},
+    } as unknown as ExecutionContext;
+
+    const env = {
+      DB: mockDB,
+      CLAUDE_CODE_ANALYTICS: {} as never,
+      GA_ANALYTICS: {} as never,
+    };
+
+    const res = await app.request(req, {}, env, mockExecutionCtx);
+    const data = await res.json();
+
+    expect(data).toEqual({ status: 'ok' });
+    expect(mockWaitUntil).toHaveBeenCalled();
+    expect(updateLastUsedSpy).toHaveBeenCalledWith(mockDB, 'testproject');
+
+    updateLastUsedSpy.mockRestore();
+  });
+
+  it('should handle missing executionCtx gracefully', async () => {
+    const mockDB = createMockD1Database();
+    const app = new Hono<{ Bindings: Env }>();
+
+    // Mock projectExists to return true
+    vi.spyOn(projectService, 'projectExists').mockResolvedValueOnce(true);
+
+    // Mock updateLastUsed
+    const updateLastUsedSpy = vi
+      .spyOn(projectService, 'updateLastUsed')
+      .mockResolvedValueOnce();
+
+    app.use('/test', projectIdMiddleware);
+    app.get('/test', (c) => c.json({ status: 'ok' }));
+
+    const req = new Request('http://localhost/test', {
+      headers: { 'X-Project-ID': 'testproject' },
+    });
+
+    const env = {
+      DB: mockDB,
+      CLAUDE_CODE_ANALYTICS: {} as never,
+      GA_ANALYTICS: {} as never,
+    };
+
+    // No executionCtx provided
+    const res = await app.request(req, {}, env);
+    const data = await res.json();
+
+    expect(data).toEqual({ status: 'ok' });
+    expect(updateLastUsedSpy).toHaveBeenCalledWith(mockDB, 'testproject');
+
+    updateLastUsedSpy.mockRestore();
+  });
 });
