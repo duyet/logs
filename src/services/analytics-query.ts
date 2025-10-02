@@ -165,7 +165,9 @@ export class AnalyticsQueryService {
       .trim()
       .split('\n')
       .filter((line) => line.trim());
-    const data: SQLResultRow[] = lines.map((line) => JSON.parse(line));
+    const data: SQLResultRow[] = lines.map(
+      (line) => JSON.parse(line) as SQLResultRow
+    );
 
     return {
       data,

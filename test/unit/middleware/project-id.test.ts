@@ -31,7 +31,7 @@ describe('extractProjectId', () => {
     const req = new Request('http://localhost/test/path123');
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
     expect(data.projectId).toBe('path123');
   });
 
@@ -48,7 +48,7 @@ describe('extractProjectId', () => {
     });
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
     expect(data.projectId).toBe('header123');
   });
 
@@ -63,7 +63,7 @@ describe('extractProjectId', () => {
     const req = new Request('http://localhost/test?project_id=query123');
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
     expect(data.projectId).toBe('query123');
   });
 
@@ -80,7 +80,7 @@ describe('extractProjectId', () => {
     });
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
     expect(data.projectId).toBe('path123');
   });
 
@@ -97,7 +97,7 @@ describe('extractProjectId', () => {
     );
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
     expect(data.projectId).toBe('path123');
   });
 
@@ -114,7 +114,7 @@ describe('extractProjectId', () => {
     });
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
     expect(data.projectId).toBe('header123');
   });
 
@@ -129,7 +129,7 @@ describe('extractProjectId', () => {
     const req = new Request('http://localhost/test');
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string | null };
+    const data = (await res.json());
     expect(data.projectId).toBeNull();
   });
 });
@@ -186,7 +186,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
 
     expect(data.projectId).toBe('existing123');
     expect(projectService.projectExists).toHaveBeenCalledWith(
@@ -234,7 +234,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
 
     expect(data.projectId).toBe('nonexistent');
     expect(createProjectSpy).toHaveBeenCalledWith(mockDB, {
@@ -308,7 +308,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
 
     expect(data.projectId).toBe('query456');
   });
@@ -385,7 +385,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
 
     expect(data.projectId).toBe('newproject');
     expect(createProjectSpy).toHaveBeenCalledWith(mockDB, {
@@ -423,7 +423,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json());
 
     expect(data.projectId).toBe('INVALID_ID!');
     expect(consoleWarnSpy).toHaveBeenCalledWith(

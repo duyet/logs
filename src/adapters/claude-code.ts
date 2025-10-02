@@ -58,10 +58,10 @@ export class ClaudeCodeAdapter extends BaseAdapter<
   ): AnalyticsEngineDataPoint {
     // Detect format and route to appropriate transformer
     if ('resourceLogs' in data) {
-      return this.transformOTLPLogs(data as OTLPLogs);
+      return this.transformOTLPLogs(data);
     }
     if ('resourceMetrics' in data) {
-      return this.transformOTLPMetrics(data as OTLPMetrics);
+      return this.transformOTLPMetrics(data);
     }
     if (this.isMetric(data as ClaudeCodeData)) {
       return this.transformMetric(data as ClaudeCodeMetric);
@@ -155,10 +155,10 @@ export class ClaudeCodeAdapter extends BaseAdapter<
             timestamp:
               (typeof log.timeUnixNano === 'string'
                 ? log.timeUnixNano
-                : log.timeUnixNano?.toString()) ||
+                : String(log.timeUnixNano ?? '')) ||
               (typeof log.observedTimeUnixNano === 'string'
                 ? log.observedTimeUnixNano
-                : log.observedTimeUnixNano?.toString()) ||
+                : String(log.observedTimeUnixNano ?? '')) ||
               Date.now().toString(),
             severity: log.severityText || log.severityNumber,
             body:
@@ -236,7 +236,7 @@ export class ClaudeCodeAdapter extends BaseAdapter<
               timestamp:
                 (typeof dp.timeUnixNano === 'string'
                   ? dp.timeUnixNano
-                  : dp.timeUnixNano?.toString()) || Date.now().toString(),
+                  : String(dp.timeUnixNano ?? '')) || Date.now().toString(),
               attributes: attrs,
               unit: metric.unit,
               scope: scopeName,

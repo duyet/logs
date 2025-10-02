@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
-import type { Env, Project } from '../../src/types/index.js';
+import type { Env } from '../../src/types/index.js';
 
 interface MockD1Result {
   mockDB: D1Database;
@@ -10,22 +13,6 @@ interface MockD1Result {
     run: ReturnType<typeof vi.fn>;
     all: ReturnType<typeof vi.fn>;
   };
-}
-
-// Response type helpers - using interfaces to avoid unused type warnings
-interface ProjectResponse {
-  success: boolean;
-  project: Project;
-}
-interface ProjectListResponse {
-  success: boolean;
-  projects: Project[];
-  total: number;
-}
-interface ErrorResponse {
-  error: string;
-  message: string;
-  status: number;
 }
 
 // Mock D1 Database
@@ -81,7 +68,7 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ProjectResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(201);
       expect(data.success).toBe(true);
@@ -105,7 +92,7 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ProjectResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(201);
       expect(data.success).toBe(true);
@@ -122,7 +109,7 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ErrorResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Bad Request');
@@ -138,7 +125,7 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ErrorResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Bad Request');
@@ -160,7 +147,7 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ErrorResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Bad Request');
@@ -179,7 +166,7 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ErrorResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Bad Request');
@@ -203,7 +190,7 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ErrorResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Bad Request');
@@ -235,7 +222,7 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ProjectListResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -251,7 +238,7 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ProjectListResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -277,7 +264,7 @@ describe('Projects API E2E', () => {
       );
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ProjectListResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.projects).toHaveLength(1);
@@ -293,7 +280,7 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ErrorResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data.error).toBe('Internal Server Error');
@@ -314,7 +301,7 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project/testproj');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ProjectResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -329,7 +316,7 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project/nonexistent');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ErrorResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.error).toBe('Not Found');
@@ -343,7 +330,7 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project/testproj');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as ErrorResponse;
+      const data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data.error).toBe('Internal Server Error');

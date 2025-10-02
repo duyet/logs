@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
 import type { Env } from '../../src/types/index.js';
@@ -112,7 +116,7 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(400);
-      const json = (await res.json()) as { error: string };
+      const json = await res.json();
       expect(json.error).toBe('Bad Request');
     });
   });
@@ -153,7 +157,7 @@ describe('E2E Endpoints', () => {
         mockEnv
       );
 
-      const json = (await res.json()) as { success: boolean };
+      const json = await res.json();
 
       expect(res.status).toBe(200);
       expect(json.success).toBe(true);
@@ -204,7 +208,7 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(400);
-      const json = (await res.json()) as { error: string };
+      const json = await res.json();
       expect(json.error).toBeDefined();
     });
   });
@@ -250,7 +254,7 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(500);
-      const json = (await res.json()) as { error: string };
+      const json = await res.json();
       expect(json.error).toBe('Configuration Error');
     });
 
@@ -377,7 +381,7 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = (await res.json()) as { success: boolean };
+        const json = await res.json();
         expect(json.success).toBe(true);
       });
 
@@ -435,7 +439,7 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = (await res.json()) as { success: boolean };
+        const json = await res.json();
         expect(json.success).toBe(true);
       });
     });
@@ -486,7 +490,7 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = (await res.json()) as { success: boolean };
+        const json = await res.json();
         expect(json.success).toBe(true);
       });
     });

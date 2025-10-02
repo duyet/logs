@@ -42,7 +42,7 @@ function runCommand(command: string, description: string): boolean {
   }
 }
 
-async function main() {
+function main() {
   try {
     log('🚀', 'Starting deployment process...');
     console.log();
@@ -88,4 +88,4 @@ async function main() {
   }
 }
 
-main();
+void main();
