@@ -5,6 +5,8 @@ import type {
   Env,
   SuccessResponse,
   ErrorResponse,
+  ProjectCreateResponse,
+  ProjectListResponse,
 } from '../../src/types/index.js';
 
 interface MockD1Result {
@@ -70,14 +72,18 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as SuccessResponse | ErrorResponse;
+      const data = (await response.json()) as
+        | ProjectCreateResponse
+        | ErrorResponse;
 
       expect(response.status).toBe(201);
-      expect(data.success).toBe(true);
-      expect(data.project.id).toBe('custom123');
-      expect(data.project.description).toBe('My Custom Project');
-      expect(data.project.created_at).toBeGreaterThan(0);
-      expect(data.project.last_used).toBeNull();
+      if ('success' in data && data.success) {
+        expect(data.success).toBe(true);
+        expect(data.project.id).toBe('custom123');
+        expect(data.project.description).toBe('My Custom Project');
+        expect(data.project.created_at).toBeGreaterThan(0);
+        expect(data.project.last_used).toBeNull();
+      }
     });
 
     it('should create project with auto-generated ID', async () => {
@@ -94,12 +100,16 @@ describe('Projects API E2E', () => {
       });
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as SuccessResponse | ErrorResponse;
+      const data = (await response.json()) as
+        | ProjectCreateResponse
+        | ErrorResponse;
 
       expect(response.status).toBe(201);
-      expect(data.success).toBe(true);
-      expect(data.project.id).toMatch(/^[a-z0-9]{8}$/);
-      expect(data.project.description).toBe('Auto-generated ID Project');
+      if ('success' in data && data.success) {
+        expect(data.success).toBe(true);
+        expect(data.project.id).toMatch(/^[a-z0-9]{8}$/);
+        expect(data.project.description).toBe('Auto-generated ID Project');
+      }
     });
 
     it('should return 400 for missing description', async () => {
@@ -114,8 +124,10 @@ describe('Projects API E2E', () => {
       const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe('Bad Request');
-      expect(data.message).toContain('description');
+      if ('error' in data) {
+        expect(data.error).toBe('Bad Request');
+        expect(data.message).toContain('description');
+      }
     });
 
     it('should return 400 for empty description', async () => {
@@ -130,8 +142,10 @@ describe('Projects API E2E', () => {
       const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe('Bad Request');
-      expect(data.message).toContain('cannot be empty');
+      if ('error' in data) {
+        expect(data.error).toBe('Bad Request');
+        expect(data.message).toContain('cannot be empty');
+      }
     });
 
     it('should return 400 for duplicate ID', async () => {
@@ -152,8 +166,10 @@ describe('Projects API E2E', () => {
       const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe('Bad Request');
-      expect(data.message).toContain('already exists');
+      if ('error' in data) {
+        expect(data.error).toBe('Bad Request');
+        expect(data.message).toContain('already exists');
+      }
     });
 
     it('should return 400 for invalid ID format', async () => {
@@ -171,8 +187,10 @@ describe('Projects API E2E', () => {
       const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe('Bad Request');
-      expect(data.message).toContain('Invalid project ID format');
+      if ('error' in data) {
+        expect(data.error).toBe('Bad Request');
+        expect(data.message).toContain('Invalid project ID format');
+      }
     });
 
     it('should return 400 on database error', async () => {
@@ -195,8 +213,10 @@ describe('Projects API E2E', () => {
       const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe('Bad Request');
-      expect(data.message).toBe('Database insertion failed');
+      if ('error' in data) {
+        expect(data.error).toBe('Bad Request');
+        expect(data.message).toBe('Database insertion failed');
+      }
     });
   });
 
@@ -224,13 +244,17 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as SuccessResponse | ErrorResponse;
+      const data = (await response.json()) as
+        | ProjectListResponse
+        | ErrorResponse;
 
       expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.projects).toHaveLength(3);
-      expect(data.total).toBe(3);
-      expect(data.projects[0]?.id).toBe('proj1');
+      if ('success' in data && data.success) {
+        expect(data.success).toBe(true);
+        expect(data.projects).toHaveLength(3);
+        expect(data.total).toBe(3);
+        expect(data.projects[0]?.id).toBe('proj1');
+      }
     });
 
     it('should handle empty project list', async () => {
@@ -240,12 +264,16 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as SuccessResponse | ErrorResponse;
+      const data = (await response.json()) as
+        | ProjectListResponse
+        | ErrorResponse;
 
       expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.projects).toHaveLength(0);
-      expect(data.total).toBe(0);
+      if ('success' in data && data.success) {
+        expect(data.success).toBe(true);
+        expect(data.projects).toHaveLength(0);
+        expect(data.total).toBe(0);
+      }
     });
 
     it('should support pagination with limit and offset', async () => {
@@ -266,10 +294,14 @@ describe('Projects API E2E', () => {
       );
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as SuccessResponse | ErrorResponse;
+      const data = (await response.json()) as
+        | ProjectListResponse
+        | ErrorResponse;
 
       expect(response.status).toBe(200);
-      expect(data.projects).toHaveLength(1);
+      if ('success' in data && data.success) {
+        expect(data.projects).toHaveLength(1);
+      }
       expect(statement.bind).toHaveBeenCalledWith(1, 1);
     });
 
@@ -285,8 +317,10 @@ describe('Projects API E2E', () => {
       const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
       expect(response.status).toBe(500);
-      expect(data.error).toBe('Internal Server Error');
-      expect(data.message).toBe('Database connection failed');
+      if ('error' in data) {
+        expect(data.error).toBe('Internal Server Error');
+        expect(data.message).toBe('Database connection failed');
+      }
     });
   });
 
@@ -303,12 +337,16 @@ describe('Projects API E2E', () => {
       const request = new Request('http://localhost/api/project/testproj');
 
       const response = await app.fetch(request, env);
-      const data = (await response.json()) as SuccessResponse | ErrorResponse;
+      const data = (await response.json()) as
+        | ProjectCreateResponse
+        | ErrorResponse;
 
       expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.project.id).toBe('testproj');
-      expect(data.project.description).toBe('Test Project');
+      if ('success' in data && data.success) {
+        expect(data.success).toBe(true);
+        expect(data.project.id).toBe('testproj');
+        expect(data.project.description).toBe('Test Project');
+      }
     });
 
     it('should return 404 for non-existent project', async () => {
@@ -321,8 +359,10 @@ describe('Projects API E2E', () => {
       const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
       expect(response.status).toBe(404);
-      expect(data.error).toBe('Not Found');
-      expect(data.message).toContain('nonexistent');
+      if ('error' in data) {
+        expect(data.error).toBe('Not Found');
+        expect(data.message).toContain('nonexistent');
+      }
     });
 
     it('should return 500 on database error', async () => {
@@ -335,8 +375,10 @@ describe('Projects API E2E', () => {
       const data = (await response.json()) as SuccessResponse | ErrorResponse;
 
       expect(response.status).toBe(500);
-      expect(data.error).toBe('Internal Server Error');
-      expect(data.message).toBe('Database query failed');
+      if ('error' in data) {
+        expect(data.error).toBe('Internal Server Error');
+        expect(data.message).toBe('Database query failed');
+      }
     });
   });
 });

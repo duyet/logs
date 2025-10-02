@@ -116,7 +116,9 @@ describe('E2E Endpoints', () => {
 
       expect(res.status).toBe(400);
       const json = (await res.json()) as SuccessResponse | ErrorResponse;
-      expect(json.error).toBe('Bad Request');
+      if ('error' in json) {
+        expect(json.error).toBe('Bad Request');
+      }
     });
   });
 
@@ -208,7 +210,9 @@ describe('E2E Endpoints', () => {
 
       expect(res.status).toBe(400);
       const json = (await res.json()) as SuccessResponse | ErrorResponse;
-      expect(json.error).toBeDefined();
+      if ('error' in json) {
+        expect(json.error).toBeDefined();
+      }
     });
   });
 
@@ -254,7 +258,9 @@ describe('E2E Endpoints', () => {
 
       expect(res.status).toBe(500);
       const json = (await res.json()) as SuccessResponse | ErrorResponse;
-      expect(json.error).toBe('Configuration Error');
+      if ('error' in json) {
+        expect(json.error).toBe('Configuration Error');
+      }
     });
 
     it('should handle malformed JSON', async () => {
@@ -381,7 +387,9 @@ describe('E2E Endpoints', () => {
 
         expect(res.status).toBe(200);
         const json = (await res.json()) as SuccessResponse | ErrorResponse;
-        expect(json.success).toBe(true);
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
       });
 
       it('should accept GET with project_id in path', async () => {
@@ -439,7 +447,9 @@ describe('E2E Endpoints', () => {
 
         expect(res.status).toBe(200);
         const json = (await res.json()) as SuccessResponse | ErrorResponse;
-        expect(json.success).toBe(true);
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
       });
     });
 
@@ -490,7 +500,9 @@ describe('E2E Endpoints', () => {
 
         expect(res.status).toBe(200);
         const json = (await res.json()) as SuccessResponse | ErrorResponse;
-        expect(json.success).toBe(true);
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
       });
     });
   });

@@ -1,12 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
 import type { Env } from '../../src/types/index.js';
+
+interface DatasetResponse {
+  datasets: Array<{
+    name: string;
+    description: string;
+  }>;
+}
+
+interface EndpointsResponse {
+  endpoints: {
+    api: {
+      analytics: string;
+    };
+  };
+}
+
+interface ErrorResponse {
+  error: string;
+  message: string;
+}
 
 describe('Analytics API E2E', () => {
   let app: ReturnType<typeof createRouter>;
@@ -75,7 +89,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -86,7 +100,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('dataset');
     });
@@ -99,7 +113,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('Invalid dataset');
     });
@@ -120,7 +134,7 @@ describe('Analytics API E2E', () => {
 
         expect(res.status).toBe(503);
 
-        const data = await res.json();
+        const data = (await res.json()) as ErrorResponse;
         expect(data.error).toBe('Service Unavailable');
       }
     });
@@ -135,7 +149,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -148,7 +162,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('time format');
     });
@@ -161,7 +175,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -174,7 +188,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe('Service Unavailable');
     });
 
@@ -186,7 +200,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe('Service Unavailable');
     });
   });
@@ -198,11 +212,11 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as DatasetResponse;
       expect(data.datasets).toBeInstanceOf(Array);
       expect(data.datasets.length).toBe(4);
 
-      const datasetNames = data.datasets.map((d: any) => d.name);
+      const datasetNames = data.datasets.map((d) => d.name);
       expect(datasetNames).toContain('CLAUDE_CODE_ANALYTICS');
       expect(datasetNames).toContain('CLAUDE_CODE_LOGS');
       expect(datasetNames).toContain('CLAUDE_CODE_METRICS');
@@ -215,9 +229,9 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as DatasetResponse;
 
-      data.datasets.forEach((dataset: any) => {
+      data.datasets.forEach((dataset) => {
         expect(dataset.name).toBeDefined();
         expect(dataset.description).toBeDefined();
         expect(typeof dataset.description).toBe('string');
@@ -233,7 +247,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = await res.json();
+      const data = (await res.json()) as EndpointsResponse;
       expect(data.endpoints.api.analytics).toBe('/api/analytics/insights');
     });
   });
