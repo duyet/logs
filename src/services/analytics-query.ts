@@ -206,45 +206,19 @@ export class AnalyticsQueryService {
       );
     }
 
-    const timeRange = params.timeRange || this.getDefaultTimeRange();
-    const datasetName = this.getDatasetName(env, params.dataset);
-
-    // GraphQL query for Analytics Engine
-    const query = `
-      query GetAnalytics($accountId: String!, $dataset: String!, $start: Time!, $end: Time!) {
-        viewer {
-          accounts(filter: { accountTag: $accountId }) {
-            analyticsEngineDatasets(filter: { dataset: $dataset }) {
-              nodes(
-                filter: { timestamp_geq: $start, timestamp_lt: $end }
-                limit: 10000
-                orderBy: [timestamp_ASC]
-              ) {
-                dimensions
-                count
-                timestamp
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    const result = await this.queryGraphQL(apiToken, query, {
-      accountId,
-      dataset: datasetName,
-      start: timeRange.start,
-      end: timeRange.end,
-    });
-
-    if (result.errors) {
-      throw new Error(
-        `GraphQL query failed: ${result.errors.map((e) => e.message).join(', ')}`
-      );
-    }
-
-    // Process results
-    return this.processQueryResults(result, params, timeRange);
+    // Note: Analytics Engine currently doesn't support GraphQL queries via the public API
+    // Analytics Engine data can only be queried using:
+    // 1. Workers Analytics Engine binding (writeDataPoint) - for writing only
+    // 2. SQL API - for querying (requires different implementation)
+    // 3. Direct dataset access via Cloudflare dashboard
+    //
+    // This endpoint is designed for writing analytics data, not querying it.
+    // Query functionality will be implemented using the SQL API in a future update.
+    throw new Error(
+      'Analytics Insights API not yet implemented. Analytics Engine supports writing data via this API, ' +
+        'but querying requires the SQL API which is not yet integrated. ' +
+        'Please use the Cloudflare dashboard to view analytics data, or wait for SQL API integration.'
+    );
   }
 
   /**
