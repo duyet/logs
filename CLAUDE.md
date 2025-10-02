@@ -170,6 +170,38 @@ cloudflare-analytics-router/
 - **Use Case**: Claude Code metrics telemetry (tokens, cost, etc.)
 - **Data Type**: `otlp_metrics`
 
+### `/cc/v1/logs` - OTLP Logs (Default Project)
+
+- **Methods**: POST
+- **Input Format**: OTLP/HTTP JSON (resourceLogs)
+- **Dataset**: `CLAUDE_CODE_LOGS`
+- **Project ID**: Automatically uses "default"
+- **Use Case**: Quick setup without project configuration
+- **Configuration**:
+  ```json
+  {
+    "env": {
+      "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc"
+    }
+  }
+  ```
+
+### `/cc/v1/metrics` - OTLP Metrics (Default Project)
+
+- **Methods**: POST
+- **Input Format**: OTLP/HTTP JSON (resourceMetrics)
+- **Dataset**: `CLAUDE_CODE_METRICS`
+- **Project ID**: Automatically uses "default"
+- **Use Case**: Quick setup without project configuration
+- **Configuration**:
+  ```json
+  {
+    "env": {
+      "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc"
+    }
+  }
+  ```
+
 ### `/ga` and `/ga/:project_id` - Google Analytics
 
 - **Methods**: GET, POST

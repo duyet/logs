@@ -80,14 +80,31 @@ export function createRouter(): Hono<{ Bindings: Env }> {
     return c.json(response);
   });
 
+  // Middleware to set default project_id when not provided
+  const defaultProjectMiddleware = async (
+    c: Context<{ Bindings: Env }>,
+    next: Next
+  ) => {
+    // If no project_id is in the path, set it to "default"
+    if (!c.req.param('project_id')) {
+      c.set('project_id', 'default');
+    }
+    await next();
+  };
+
   // Apply project-id middleware to analytics endpoints
   app.use('/cc', projectIdMiddleware);
   app.use('/cc/:project_id', projectIdMiddleware);
   app.use('/ga', projectIdMiddleware);
   app.use('/ga/:project_id', projectIdMiddleware);
 
-  // OTLP standard endpoints for Claude Code (MUST be before generic :project_id routes)
-  // These endpoints write to separate datasets for better organization
+  // OTLP standard endpoints WITHOUT project_id (use "default" project)
+  app.use('/cc/v1/logs', defaultProjectMiddleware, projectIdMiddleware);
+  app.post('/cc/v1/logs', claudeCodeLogsHandler.handlePost);
+  app.use('/cc/v1/metrics', defaultProjectMiddleware, projectIdMiddleware);
+  app.post('/cc/v1/metrics', claudeCodeMetricsHandler.handlePost);
+
+  // OTLP standard endpoints WITH project_id (MUST be after default routes)
   app.use('/cc/:project_id/v1/logs', projectIdMiddleware);
   app.post('/cc/:project_id/v1/logs', claudeCodeLogsHandler.handlePost);
   app.use('/cc/:project_id/v1/metrics', projectIdMiddleware);
