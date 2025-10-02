@@ -82,6 +82,12 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   app.get('/cc/:project_id', claudeCodeHandler.handleGet);
   app.post('/cc/:project_id', claudeCodeHandler.handlePost);
 
+  // OTLP standard endpoints for Claude Code
+  app.use('/cc/:project_id/v1/logs', projectIdMiddleware);
+  app.post('/cc/:project_id/v1/logs', claudeCodeHandler.handlePost);
+  app.use('/cc/:project_id/v1/metrics', projectIdMiddleware);
+  app.post('/cc/:project_id/v1/metrics', claudeCodeHandler.handlePost);
+
   // Google Analytics endpoints
   app.get('/ga', googleAnalyticsHandler.handleGet);
   app.post('/ga', googleAnalyticsHandler.handlePost);

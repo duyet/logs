@@ -22,6 +22,14 @@ export function createAnalyticsHandler<T>(
       const rawData = c.req.query() as Record<string, string | string[]>;
       const projectId = c.get('project_id');
 
+      // Set project ID on adapter for OTLP format
+      if (
+        'setProjectId' in adapter &&
+        typeof adapter.setProjectId === 'function'
+      ) {
+        adapter.setProjectId(projectId);
+      }
+
       const dataWithProject = projectId
         ? { ...rawData, project_id: projectId }
         : rawData;
@@ -40,6 +48,14 @@ export function createAnalyticsHandler<T>(
     handlePost: async (c: Context<{ Bindings: Env }>): Promise<Response> => {
       const rawData = await c.req.json<Record<string, unknown>>();
       const projectId = c.get('project_id');
+
+      // Set project ID on adapter for OTLP format
+      if (
+        'setProjectId' in adapter &&
+        typeof adapter.setProjectId === 'function'
+      ) {
+        adapter.setProjectId(projectId);
+      }
 
       const dataWithProject = projectId
         ? { ...rawData, project_id: projectId }

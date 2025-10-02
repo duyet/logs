@@ -60,4 +60,30 @@ export abstract class BaseAdapter<T> implements DataAdapter<T> {
   protected isNumber(value: unknown): value is number {
     return isValidNumber(value);
   }
+
+  /**
+   * Check if value is an array
+   */
+  protected isArray(value: unknown): value is unknown[] {
+    return Array.isArray(value);
+  }
+
+  /**
+   * Project ID accessor for adapters that need it
+   */
+  private projectId?: string;
+
+  /**
+   * Set project ID for this adapter instance
+   */
+  public setProjectId(projectId: string | undefined): void {
+    this.projectId = projectId;
+  }
+
+  /**
+   * Get project ID for this adapter instance
+   */
+  protected getProjectId(): string | undefined {
+    return this.projectId;
+  }
 }
