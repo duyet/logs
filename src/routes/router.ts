@@ -37,6 +37,29 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   // Global middleware
   app.use('*', logger);
 
+  // Root endpoint - App version and info
+  app.get('/', (c) => {
+    return c.json({
+      name: 'duyet-logs',
+      version: '1.0.0',
+      description: 'Analytics data router for Cloudflare Pages with Hono',
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      endpoints: {
+        ping: '/ping',
+        projects: '/projects',
+        'create-project': '/create',
+        analytics: {
+          'claude-code': '/cc',
+          'google-analytics': '/ga',
+        },
+        api: {
+          projects: '/api/projects',
+        },
+      },
+    });
+  });
+
   // Health check endpoint
   app.get('/ping', (c) => {
     const response: PingResponse = {
@@ -61,8 +84,30 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   // Projects API routes
   app.route('/api/projects', createProjectsRouter());
 
-  // Serve static files from public directory (root of dist/)
-  // This will handle HTML files and assets
+  // Serve static HTML pages via ASSETS binding
+  app.get('/projects', async (c) => {
+    if (c.env.ASSETS) {
+      // Fetch index.html from ASSETS
+      const response = await c.env.ASSETS.fetch(
+        new Request(new URL('/index.html', c.req.url))
+      );
+      return response;
+    }
+    return c.text('Static assets not available', 503);
+  });
+
+  app.get('/create', async (c) => {
+    if (c.env.ASSETS) {
+      // Fetch create.html from ASSETS
+      const response = await c.env.ASSETS.fetch(
+        new Request(new URL('/create.html', c.req.url))
+      );
+      return response;
+    }
+    return c.text('Static assets not available', 503);
+  });
+
+  // Serve other static files from public directory
   app.get('*', async (c, next) => {
     // Try to serve static files if ASSETS is available (production)
     if (c.env.ASSETS) {
