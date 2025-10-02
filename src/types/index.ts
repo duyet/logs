@@ -22,6 +22,11 @@ export interface Env {
   ASSETS?: Fetcher; // Optional ASSETS binding for static files
   CLOUDFLARE_ACCOUNT_ID?: string; // For GraphQL Analytics API
   CLOUDFLARE_API_TOKEN?: string; // For GraphQL Analytics API
+  // Dataset names for GraphQL queries
+  DATASET_CLAUDE_CODE_ANALYTICS?: string;
+  DATASET_CLAUDE_CODE_LOGS?: string;
+  DATASET_CLAUDE_CODE_METRICS?: string;
+  DATASET_GA_ANALYTICS?: string;
 }
 
 /**

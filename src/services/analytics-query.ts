@@ -135,16 +135,24 @@ export class AnalyticsQueryService {
   }
 
   /**
-   * Get dataset name for GraphQL query
+   * Get dataset name for GraphQL query from environment
    */
-  private getDatasetName(binding: string): string {
-    const mapping: Record<string, string> = {
-      CLAUDE_CODE_ANALYTICS: 'duyet_logs_claude_code_analytics',
-      CLAUDE_CODE_LOGS: 'duyet_logs_claude_code_logs',
-      CLAUDE_CODE_METRICS: 'duyet_logs_claude_code_metrics',
-      GA_ANALYTICS: 'duyet_logs_ga_analytics',
-    };
-    return mapping[binding] || binding;
+  private getDatasetName(env: Env, binding: string): string {
+    const envKey = `DATASET_${binding}` as keyof Env;
+    const datasetName = env[envKey] as string | undefined;
+
+    // Fallback to default naming convention if env var not set
+    if (!datasetName) {
+      const defaultMapping: Record<string, string> = {
+        CLAUDE_CODE_ANALYTICS: 'duyet_logs_claude_code_analytics',
+        CLAUDE_CODE_LOGS: 'duyet_logs_claude_code_logs',
+        CLAUDE_CODE_METRICS: 'duyet_logs_claude_code_metrics',
+        GA_ANALYTICS: 'duyet_logs_ga_analytics',
+      };
+      return defaultMapping[binding] || binding.toLowerCase();
+    }
+
+    return datasetName;
   }
 
   /**
@@ -176,7 +184,7 @@ export class AnalyticsQueryService {
     }
 
     const timeRange = params.timeRange || this.getDefaultTimeRange();
-    const datasetName = this.getDatasetName(params.dataset);
+    const datasetName = this.getDatasetName(env, params.dataset);
 
     // GraphQL query for Analytics Engine
     const query = `

@@ -730,15 +730,26 @@ database_id = "<your-database-id>"
 # Analytics Engine datasets
 [[analytics_engine_datasets]]
 binding = "CLAUDE_CODE_ANALYTICS"  # Legacy + auto-detect
+dataset = "duyet_logs_claude_code_analytics"
 
 [[analytics_engine_datasets]]
 binding = "CLAUDE_CODE_LOGS"  # OTLP Logs
+dataset = "duyet_logs_claude_code_logs"
 
 [[analytics_engine_datasets]]
 binding = "CLAUDE_CODE_METRICS"  # OTLP Metrics
+dataset = "duyet_logs_claude_code_metrics"
 
 [[analytics_engine_datasets]]
 binding = "GA_ANALYTICS"
+dataset = "duyet_logs_ga_analytics"
+
+# Environment Variables (for Analytics Insights API)
+[vars]
+DATASET_CLAUDE_CODE_ANALYTICS = "duyet_logs_claude_code_analytics"
+DATASET_CLAUDE_CODE_LOGS = "duyet_logs_claude_code_logs"
+DATASET_CLAUDE_CODE_METRICS = "duyet_logs_claude_code_metrics"
+DATASET_GA_ANALYTICS = "duyet_logs_ga_analytics"
 ```
 
 ### Environment Setup
