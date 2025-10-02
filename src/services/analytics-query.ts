@@ -168,15 +168,38 @@ export class AnalyticsQueryService {
   }
 
   /**
+   * Get secret value (supports both Secrets Store bindings and env vars)
+   */
+  private async getSecretValue(
+    secret: { get(): Promise<string> } | string | undefined
+  ): Promise<string | undefined> {
+    if (!secret) {
+      return undefined;
+    }
+
+    // Check if it's a Secrets Store binding (has a get method)
+    if (
+      typeof secret === 'object' &&
+      'get' in secret &&
+      typeof secret.get === 'function'
+    ) {
+      return await secret.get();
+    }
+
+    // Otherwise it's a plain string (env var)
+    return secret as string;
+  }
+
+  /**
    * Query analytics data with insights
    */
   async getInsights(
     env: Env,
     params: AnalyticsQueryParams
   ): Promise<AnalyticsInsightsResponse> {
-    // Get credentials from environment
-    const accountId = env.CLOUDFLARE_ACCOUNT_ID as string | undefined;
-    const apiToken = env.CLOUDFLARE_API_TOKEN as string | undefined;
+    // Get credentials from Secrets Store or environment variables
+    const accountId = await this.getSecretValue(env.CLOUDFLARE_ACCOUNT_ID);
+    const apiToken = await this.getSecretValue(env.CLOUDFLARE_API_TOKEN);
 
     if (!accountId || !apiToken) {
       // Return mock data for development/testing

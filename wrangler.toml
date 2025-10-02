@@ -33,6 +33,20 @@ DATASET_CLAUDE_CODE_LOGS = "duyet_logs_claude_code_logs"
 DATASET_CLAUDE_CODE_METRICS = "duyet_logs_claude_code_metrics"
 DATASET_GA_ANALYTICS = "duyet_logs_ga_analytics"
 
+# Secrets Store Bindings (for Analytics Insights API)
+# Uncomment and configure with your store_id after creating secrets:
+# npx wrangler secrets-store secret create <STORE_ID> --name CLOUDFLARE_ACCOUNT_ID --scopes workers --remote
+# npx wrangler secrets-store secret create <STORE_ID> --name CLOUDFLARE_API_TOKEN --scopes workers --remote
+[[secrets_store_secrets]]
+binding = "CLOUDFLARE_ACCOUNT_ID"
+store_id = "abbd89527456437dbeac93f3d45bf307"
+secret_name = "CLOUDFLARE_ACCOUNT_ID"
+
+[[secrets_store_secrets]]
+binding = "CLOUDFLARE_API_TOKEN"
+store_id = "abbd89527456437dbeac93f3d45bf307"
+secret_name = "CLOUDFLARE_API_TOKEN"
+
 [observability]
 enabled = true
 

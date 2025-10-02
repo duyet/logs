@@ -773,7 +773,36 @@ npm run db:migrate:remote
 npm run db:seed:remote
 ```
 
-4. **Deploy**:
+4. **Set Up Secrets Store** (for Analytics Insights API):
+
+The Analytics Insights API requires Cloudflare credentials to query Analytics Engine via GraphQL. Use Secrets Store for secure credential management.
+
+**Create secrets**:
+```bash
+# Get your store ID
+npx wrangler secrets-store store list
+
+# Create secrets (you'll be prompted for values)
+npx wrangler secrets-store secret create <STORE_ID> --name CLOUDFLARE_ACCOUNT_ID --scopes workers --remote
+npx wrangler secrets-store secret create <STORE_ID> --name CLOUDFLARE_API_TOKEN --scopes workers --remote
+```
+
+**Configure bindings in `wrangler.toml`**:
+```toml
+[[secrets_store_secrets]]
+binding = "CLOUDFLARE_ACCOUNT_ID"
+store_id = "<YOUR_STORE_ID>"
+secret_name = "CLOUDFLARE_ACCOUNT_ID"
+
+[[secrets_store_secrets]]
+binding = "CLOUDFLARE_API_TOKEN"
+store_id = "<YOUR_STORE_ID>"
+secret_name = "CLOUDFLARE_API_TOKEN"
+```
+
+**Note**: Without these secrets, the Analytics Insights API will return mock data. The bindings support both Secrets Store (recommended) and environment variables (fallback).
+
+5. **Deploy**:
 
 ```bash
 npm run deploy

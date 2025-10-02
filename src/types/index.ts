@@ -11,6 +11,13 @@ export interface AnalyticsEngineDataPoint {
 }
 
 /**
+ * Secrets Store Secret binding interface
+ */
+export interface SecretsStoreSecret {
+  get(): Promise<string>;
+}
+
+/**
  * Cloudflare Pages environment with Analytics Engine bindings
  */
 export interface Env {
@@ -20,8 +27,9 @@ export interface Env {
   GA_ANALYTICS: AnalyticsEngineDataset;
   DB: D1Database;
   ASSETS?: Fetcher; // Optional ASSETS binding for static files
-  CLOUDFLARE_ACCOUNT_ID?: string; // For GraphQL Analytics API
-  CLOUDFLARE_API_TOKEN?: string; // For GraphQL Analytics API
+  // GraphQL Analytics API credentials (Secrets Store bindings preferred, fallback to env vars)
+  CLOUDFLARE_ACCOUNT_ID?: SecretsStoreSecret | string;
+  CLOUDFLARE_API_TOKEN?: SecretsStoreSecret | string;
   // Dataset names for GraphQL queries
   DATASET_CLAUDE_CODE_ANALYTICS?: string;
   DATASET_CLAUDE_CODE_LOGS?: string;
