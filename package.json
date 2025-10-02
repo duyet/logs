@@ -28,6 +28,8 @@
     "test:events:remote": "tsx scripts/generate-test-events.ts --remote"
   },
   "dependencies": {
+    "@opentelemetry/api-logs": "^0.205.0",
+    "@opentelemetry/otlp-transformer": "^0.205.0",
     "hono": "^4.0.0"
   },
   "devDependencies": {

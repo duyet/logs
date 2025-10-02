@@ -85,6 +85,30 @@ export interface ClaudeCodeEvent {
 export type ClaudeCodeData = ClaudeCodeMetric | ClaudeCodeEvent;
 
 /**
+ * Re-export OTLP types from official OpenTelemetry packages
+ */
+export type {
+  IExportLogsServiceRequest as OTLPLogs,
+  IResourceLogs,
+  IScopeLogs,
+  ILogRecord,
+} from '@opentelemetry/otlp-transformer/build/esm/logs/internal-types';
+
+export type {
+  IExportMetricsServiceRequest as OTLPMetrics,
+  IResourceMetrics,
+  IScopeMetrics,
+  IMetric,
+  INumberDataPoint,
+} from '@opentelemetry/otlp-transformer/build/esm/metrics/internal-types';
+
+export type {
+  IKeyValue,
+  IAnyValue,
+  Resource as OTLPResource,
+} from '@opentelemetry/otlp-transformer/build/esm/common/internal-types';
+
+/**
  * Google Analytics event format
  */
 export interface GoogleAnalyticsEvent {

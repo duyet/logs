@@ -41,14 +41,6 @@ export function createAnalyticsHandler<T>(
       const rawData = await c.req.json<Record<string, unknown>>();
       const projectId = c.get('project_id');
 
-      // Debug logging to see what Claude Code is sending
-      console.log(
-        '[DEBUG] Received data:',
-        JSON.stringify(rawData).substring(0, 500)
-      );
-      console.log('[DEBUG] Project ID:', projectId);
-      console.log('[DEBUG] Dataset:', dataset);
-
       const dataWithProject = projectId
         ? { ...rawData, project_id: projectId }
         : rawData;
