@@ -51,8 +51,8 @@ export function createRouter(): Hono<{ Bindings: Env }> {
           'new project': '/ui/project',
         },
         analytics: {
-          'claude-code': '/cc',
-          'google-analytics': '/ga',
+          'claude-code': ['/cc', '/cc/:project_id'],
+          'google-analytics': ['/ga', '/ga/:project_id'],
         },
         api: {
           projects: '/api/project',
@@ -72,15 +72,21 @@ export function createRouter(): Hono<{ Bindings: Env }> {
 
   // Apply project-id middleware to analytics endpoints
   app.use('/cc', projectIdMiddleware);
+  app.use('/cc/:project_id', projectIdMiddleware);
   app.use('/ga', projectIdMiddleware);
+  app.use('/ga/:project_id', projectIdMiddleware);
 
   // Claude Code analytics endpoints
   app.get('/cc', claudeCodeHandler.handleGet);
   app.post('/cc', claudeCodeHandler.handlePost);
+  app.get('/cc/:project_id', claudeCodeHandler.handleGet);
+  app.post('/cc/:project_id', claudeCodeHandler.handlePost);
 
   // Google Analytics endpoints
   app.get('/ga', googleAnalyticsHandler.handleGet);
   app.post('/ga', googleAnalyticsHandler.handlePost);
+  app.get('/ga/:project_id', googleAnalyticsHandler.handleGet);
+  app.post('/ga/:project_id', googleAnalyticsHandler.handlePost);
 
   // Projects API routes
   app.route('/api/project', createProjectsRouter());

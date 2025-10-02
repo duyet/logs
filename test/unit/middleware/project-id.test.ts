@@ -20,6 +20,21 @@ function createMockD1Database(): D1Database {
 }
 
 describe('extractProjectId', () => {
+  it('should extract project_id from URL path parameter', async () => {
+    const app = new Hono<{ Bindings: Env }>();
+
+    app.get('/test/:project_id', (c) => {
+      const projectId = extractProjectId(c);
+      return c.json({ projectId });
+    });
+
+    const req = new Request('http://localhost/test/path123');
+
+    const res = await app.request(req);
+    const data = (await res.json()) as { projectId: string };
+    expect(data.projectId).toBe('path123');
+  });
+
   it('should extract project_id from X-Project-ID header', async () => {
     const app = new Hono<{ Bindings: Env }>();
 
@@ -50,6 +65,40 @@ describe('extractProjectId', () => {
     const res = await app.request(req);
     const data = (await res.json()) as { projectId: string };
     expect(data.projectId).toBe('query123');
+  });
+
+  it('should prioritize path param over header', async () => {
+    const app = new Hono<{ Bindings: Env }>();
+
+    app.get('/test/:project_id', (c) => {
+      const projectId = extractProjectId(c);
+      return c.json({ projectId });
+    });
+
+    const req = new Request('http://localhost/test/path123', {
+      headers: { 'X-Project-ID': 'header123' },
+    });
+
+    const res = await app.request(req);
+    const data = (await res.json()) as { projectId: string };
+    expect(data.projectId).toBe('path123');
+  });
+
+  it('should prioritize path param over query parameter', async () => {
+    const app = new Hono<{ Bindings: Env }>();
+
+    app.get('/test/:project_id', (c) => {
+      const projectId = extractProjectId(c);
+      return c.json({ projectId });
+    });
+
+    const req = new Request(
+      'http://localhost/test/path123?project_id=query123'
+    );
+
+    const res = await app.request(req);
+    const data = (await res.json()) as { projectId: string };
+    expect(data.projectId).toBe('path123');
   });
 
   it('should prioritize header over query parameter', async () => {
@@ -150,15 +199,23 @@ describe('projectIdMiddleware', () => {
     expect(updateLastUsedSpy).toHaveBeenCalledWith(mockDB, 'existing123');
   });
 
-  it('should warn when project_id not found but continue', async () => {
+  it('should auto-create when project_id not found', async () => {
     const app = new Hono<{ Bindings: Env }>();
     const mockDB = createMockD1Database();
-    const consoleWarnSpy = vi
-      .spyOn(console, 'warn')
+    const consoleInfoSpy = vi
+      .spyOn(console, 'info')
       .mockImplementation(() => {});
 
-    // Mock projectExists to return false
+    // Mock projectExists to return false (project doesn't exist)
     vi.spyOn(projectService, 'projectExists').mockResolvedValue(false);
+    const createProjectSpy = vi
+      .spyOn(projectService, 'createProject')
+      .mockResolvedValue({
+        id: 'nonexistent',
+        description: 'Auto-created from GET /test',
+        created_at: Date.now(),
+        last_used: null,
+      });
 
     app.use('*', projectIdMiddleware);
     app.get('/test', (c) => {
@@ -180,11 +237,15 @@ describe('projectIdMiddleware', () => {
     const data = (await res.json()) as { projectId: string };
 
     expect(data.projectId).toBe('nonexistent');
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      "Project ID 'nonexistent' not found in database"
+    expect(createProjectSpy).toHaveBeenCalledWith(mockDB, {
+      id: 'nonexistent',
+      description: 'Auto-created from GET /test',
+    });
+    expect(consoleInfoSpy).toHaveBeenCalledWith(
+      "Auto-creating project 'nonexistent' (from GET /test)"
     );
 
-    consoleWarnSpy.mockRestore();
+    consoleInfoSpy.mockRestore();
   });
 
   it('should handle validation errors gracefully', async () => {
@@ -218,7 +279,7 @@ describe('projectIdMiddleware', () => {
     // Should continue despite error
     expect(data).toEqual({ status: 'ok' });
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error validating project_id:',
+      'Error in project_id middleware:',
       expect.any(Error)
     );
 
@@ -286,6 +347,126 @@ describe('projectIdMiddleware', () => {
     // Wait for async error
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(consoleErrorSpy).toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should auto-create project if it does not exist', async () => {
+    const app = new Hono<{ Bindings: Env }>();
+    const mockDB = createMockD1Database();
+    const consoleInfoSpy = vi
+      .spyOn(console, 'info')
+      .mockImplementation(() => {});
+
+    vi.spyOn(projectService, 'projectExists').mockResolvedValue(false);
+    const createProjectSpy = vi
+      .spyOn(projectService, 'createProject')
+      .mockResolvedValue({
+        id: 'newproject',
+        description: 'Auto-created from GET /test',
+        created_at: Date.now(),
+        last_used: null,
+      });
+
+    app.use('*', projectIdMiddleware);
+    app.get('/test', (c) => {
+      const projectId = c.get('project_id');
+      return c.json({ projectId });
+    });
+
+    const req = new Request('http://localhost/test', {
+      headers: { 'X-Project-ID': 'newproject' },
+    });
+
+    const env = {
+      DB: mockDB,
+      CLAUDE_CODE_ANALYTICS: {} as never,
+      GA_ANALYTICS: {} as never,
+    };
+
+    const res = await app.request(req, {}, env);
+    const data = (await res.json()) as { projectId: string };
+
+    expect(data.projectId).toBe('newproject');
+    expect(createProjectSpy).toHaveBeenCalledWith(mockDB, {
+      id: 'newproject',
+      description: 'Auto-created from GET /test',
+    });
+    expect(consoleInfoSpy).toHaveBeenCalledWith(
+      "Auto-creating project 'newproject' (from GET /test)"
+    );
+
+    consoleInfoSpy.mockRestore();
+  });
+
+  it('should not auto-create project with invalid ID format', async () => {
+    const app = new Hono<{ Bindings: Env }>();
+    const mockDB = createMockD1Database();
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {});
+
+    app.use('*', projectIdMiddleware);
+    app.get('/test', (c) => {
+      const projectId = c.get('project_id');
+      return c.json({ projectId });
+    });
+
+    const req = new Request('http://localhost/test', {
+      headers: { 'X-Project-ID': 'INVALID_ID!' },
+    });
+
+    const env = {
+      DB: mockDB,
+      CLAUDE_CODE_ANALYTICS: {} as never,
+      GA_ANALYTICS: {} as never,
+    };
+
+    const res = await app.request(req, {}, env);
+    const data = (await res.json()) as { projectId: string };
+
+    expect(data.projectId).toBe('INVALID_ID!');
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      "Invalid project ID format 'INVALID_ID!', skipping auto-creation"
+    );
+
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('should handle auto-creation errors gracefully', async () => {
+    const app = new Hono<{ Bindings: Env }>();
+    const mockDB = createMockD1Database();
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    vi.spyOn(projectService, 'projectExists').mockResolvedValue(false);
+    vi.spyOn(projectService, 'createProject').mockRejectedValue(
+      new Error('DB error')
+    );
+
+    app.use('*', projectIdMiddleware);
+    app.get('/test', (c) => c.json({ status: 'ok' }));
+
+    const req = new Request('http://localhost/test', {
+      headers: { 'X-Project-ID': 'failproject' },
+    });
+
+    const env = {
+      DB: mockDB,
+      CLAUDE_CODE_ANALYTICS: {} as never,
+      GA_ANALYTICS: {} as never,
+    };
+
+    const res = await app.request(req, {}, env);
+    const data = await res.json();
+
+    // Should continue despite error
+    expect(data).toEqual({ status: 'ok' });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Failed to auto-create project 'failproject':",
+      expect.any(Error)
+    );
 
     consoleErrorSpy.mockRestore();
   });

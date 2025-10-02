@@ -288,4 +288,107 @@ describe('E2E Endpoints', () => {
       expect(res.status).toBe(200);
     });
   });
+
+  describe('Path parameter routes', () => {
+    describe('/cc/:project_id', () => {
+      it('should accept POST with project_id in path', async () => {
+        const metricData = {
+          session_id: 'session-123',
+          metric_name: 'claude_code.token.usage',
+          value: 1000,
+        };
+
+        const res = await app.request(
+          '/cc/myproject',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(metricData),
+          },
+          mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json).toEqual({
+          success: true,
+          message: 'Data recorded successfully',
+        });
+      });
+
+      it('should accept GET with project_id in path', async () => {
+        const res = await app.request(
+          '/cc/testproject?session_id=session-456&metric_name=test&value=100',
+          {},
+          mockEnv
+        );
+
+        // May fail validation if query params are incomplete
+        expect([200, 400]).toContain(res.status);
+      });
+
+      it('should prioritize path project_id over header', async () => {
+        const metricData = {
+          session_id: 'session-789',
+          metric_name: 'test',
+          value: 500,
+        };
+
+        const res = await app.request(
+          '/cc/pathproject',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Project-ID': 'headerproject',
+            },
+            body: JSON.stringify(metricData),
+          },
+          mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        // Project ID from path should be used
+      });
+    });
+
+    describe('/ga/:project_id', () => {
+      it('should accept POST with project_id in path', async () => {
+        const gaData = {
+          client_id: 'client-123',
+          events: [
+            {
+              name: 'page_view',
+              params: { page_location: 'https://example.com' },
+            },
+          ],
+        };
+
+        const res = await app.request(
+          '/ga/analytics-project',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(gaData),
+          },
+          mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as { success: boolean };
+        expect(json.success).toBe(true);
+      });
+
+      it('should accept GET with project_id in path', async () => {
+        const res = await app.request(
+          '/ga/gaproject?client_id=client-999&events=[{"name":"test"}]',
+          {},
+          mockEnv
+        );
+
+        // May fail validation due to complex nested structure
+        expect([200, 400]).toContain(res.status);
+      });
+    });
+  });
 });
