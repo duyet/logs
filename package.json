@@ -25,7 +25,9 @@
     "db:query": "wrangler d1 execute duyet-logs --local --command",
     "db:query:remote": "wrangler d1 execute duyet-logs --command",
     "test:events": "tsx scripts/generate-test-events.ts",
-    "test:events:remote": "tsx scripts/generate-test-events.ts --remote"
+    "test:events:remote": "tsx scripts/generate-test-events.ts --remote",
+    "test:otlp": "tsx scripts/test-otlp.ts",
+    "test:otlp:remote": "tsx scripts/test-otlp.ts https://logs.duyet.net/cc/duyet"
   },
   "dependencies": {
     "@opentelemetry/api-logs": "^0.205.0",
