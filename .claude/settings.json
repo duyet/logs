@@ -1,11 +1,11 @@
 {
-  "env": {
-    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-    "OTEL_METRICS_EXPORTER": "otlp",
-    "OTEL_LOGS_EXPORTER": "otlp",
-    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:8788/cc/duyet",
-    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
-    "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "http://localhost:8788/cc/duyet",
-    "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": "http/json"
-  }
+	"env": {
+		"CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+		"OTEL_METRICS_EXPORTER": "otlp",
+		"OTEL_LOGS_EXPORTER": "otlp",
+		"OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:8788/cc",
+		"OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
+		"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "http://localhost:8788/cc",
+		"OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": "http/json"
+	}
 }
