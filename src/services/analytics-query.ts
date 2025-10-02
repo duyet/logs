@@ -208,6 +208,13 @@ export class AnalyticsQueryService {
       : '';
     const limit = params.limit || 10000;
 
+    // Calculate time range in hours for INTERVAL
+    const startTime = new Date(timeRange.start);
+    const endTime = new Date(timeRange.end);
+    const hoursDiff = Math.ceil(
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
+    );
+
     const query = `
       SELECT
         timestamp,
@@ -216,8 +223,7 @@ export class AnalyticsQueryService {
         double1,
         _sample_interval
       FROM ${datasetName}
-      WHERE timestamp >= toDateTime('${timeRange.start}')
-        AND timestamp < toDateTime('${timeRange.end}')
+      WHERE timestamp > NOW() - INTERVAL '${hoursDiff}' HOUR
         ${projectFilter}
       ORDER BY timestamp ASC
       LIMIT ${limit}
