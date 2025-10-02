@@ -80,8 +80,10 @@ export class ClaudeCodeAdapter extends BaseAdapter<
       ? [this.toIndex(metric.project_id)]
       : [];
 
-    // Store all metadata in blobs as JSON
+    // Store all metadata in blobs as JSON with type classification
     const metadata = {
+      data_type: 'legacy_metric', // Classification field
+      format: 'simple',
       session_id: metric.session_id,
       metric_name: metric.metric_name,
       app_version: metric.app_version,
@@ -103,8 +105,10 @@ export class ClaudeCodeAdapter extends BaseAdapter<
       ? [this.toIndex(event.project_id)]
       : [];
 
-    // Store all metadata in blobs as JSON
+    // Store all metadata in blobs as JSON with type classification
     const metadata = {
+      data_type: 'legacy_event', // Classification field
+      format: 'simple',
       session_id: event.session_id,
       event_name: event.event_name,
       timestamp: event.timestamp,
@@ -165,9 +169,10 @@ export class ClaudeCodeAdapter extends BaseAdapter<
       });
     });
 
-    // Store everything in blobs
+    // Store everything in blobs with type classification
     const metadata = {
-      type: 'otlp_logs',
+      data_type: 'otlp_logs', // Classification field
+      format: 'otlp',
       resource: resourceAttrs,
       logs: logs,
       timestamp: new Date().toISOString(),
@@ -235,9 +240,10 @@ export class ClaudeCodeAdapter extends BaseAdapter<
       });
     });
 
-    // Store everything in blobs
+    // Store everything in blobs with type classification
     const metadata = {
-      type: 'otlp_metrics',
+      data_type: 'otlp_metrics', // Classification field
+      format: 'otlp',
       resource: resourceAttrs,
       metrics: metrics,
       timestamp: new Date().toISOString(),

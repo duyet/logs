@@ -136,15 +136,39 @@ cloudflare-analytics-router/
 - **Response**: `{ status: "ok", timestamp: ISO8601 }`
 - **Use Case**: Monitoring, uptime checks
 
-### `/cc` and `/cc/:project_id` - Claude Code Analytics
+### `/cc` and `/cc/:project_id` - Claude Code Analytics (Legacy + Auto-detect)
 
 - **Methods**: GET, POST
-- **Input Format**: OpenTelemetry metrics/logs format
+- **Input Format**: Simple format OR OTLP (auto-detected)
 - **Dataset**: `CLAUDE_CODE_ANALYTICS`
 - **Key Fields**:
   - Metrics: session_id, app_version, tokens, cost
   - Events: user_prompt, tool_result, api_request
-- **Use Case**: Claude Code telemetry monitoring
+- **Use Case**: Backward compatibility, auto-detection
+
+### `/cc/:project_id/v1/logs` - OTLP Logs (Recommended)
+
+- **Methods**: POST
+- **Input Format**: OTLP/HTTP JSON (resourceLogs)
+- **Dataset**: `CLAUDE_CODE_LOGS`
+- **Key Fields**:
+  - Resource: service.name, service.version, host.arch, os.type
+  - Logs: timestamp, severity, body, attributes
+  - User Context: user.id, session.id, organization.id
+- **Use Case**: Claude Code event/log telemetry
+- **Data Type**: `otlp_logs`
+
+### `/cc/:project_id/v1/metrics` - OTLP Metrics (Recommended)
+
+- **Methods**: POST
+- **Input Format**: OTLP/HTTP JSON (resourceMetrics)
+- **Dataset**: `CLAUDE_CODE_METRICS`
+- **Key Fields**:
+  - Resource: service.name, service.version, host.arch, os.type
+  - Metrics: name, value, unit, timestamp, attributes
+  - User Context: user.id, session.id, organization.id
+- **Use Case**: Claude Code metrics telemetry (tokens, cost, etc.)
+- **Data Type**: `otlp_metrics`
 
 ### `/ga` and `/ga/:project_id` - Google Analytics
 
@@ -505,6 +529,9 @@ binding = "CUSTOM_ANALYTICS"
 ```typescript
 export interface Env {
   // ... existing bindings
+  CLAUDE_CODE_ANALYTICS: AnalyticsEngineDataset;  // Legacy + auto-detect
+  CLAUDE_CODE_LOGS: AnalyticsEngineDataset;       // OTLP Logs
+  CLAUDE_CODE_METRICS: AnalyticsEngineDataset;    // OTLP Metrics
   CUSTOM_ANALYTICS: AnalyticsEngineDataset;
 }
 ```
@@ -584,7 +611,13 @@ database_id = "<your-database-id>"
 
 # Analytics Engine datasets
 [[analytics_engine_datasets]]
-binding = "CLAUDE_CODE_ANALYTICS"
+binding = "CLAUDE_CODE_ANALYTICS"  # Legacy + auto-detect
+
+[[analytics_engine_datasets]]
+binding = "CLAUDE_CODE_LOGS"  # OTLP Logs
+
+[[analytics_engine_datasets]]
+binding = "CLAUDE_CODE_METRICS"  # OTLP Metrics
 
 [[analytics_engine_datasets]]
 binding = "GA_ANALYTICS"

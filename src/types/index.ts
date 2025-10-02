@@ -14,7 +14,9 @@ export interface AnalyticsEngineDataPoint {
  * Cloudflare Pages environment with Analytics Engine bindings
  */
 export interface Env {
-  CLAUDE_CODE_ANALYTICS: AnalyticsEngineDataset;
+  CLAUDE_CODE_ANALYTICS: AnalyticsEngineDataset; // Legacy format + auto-detect
+  CLAUDE_CODE_LOGS: AnalyticsEngineDataset; // OTLP Logs
+  CLAUDE_CODE_METRICS: AnalyticsEngineDataset; // OTLP Metrics
   GA_ANALYTICS: AnalyticsEngineDataset;
   DB: D1Database;
   ASSETS?: Fetcher; // Optional ASSETS binding for static files

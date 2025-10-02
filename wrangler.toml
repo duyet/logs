@@ -9,6 +9,14 @@ binding = "CLAUDE_CODE_ANALYTICS"
 dataset = "duyet_logs_claude_code_analytics"
 
 [[analytics_engine_datasets]]
+binding = "CLAUDE_CODE_LOGS"
+dataset = "duyet_logs_claude_code_logs"
+
+[[analytics_engine_datasets]]
+binding = "CLAUDE_CODE_METRICS"
+dataset = "duyet_logs_claude_code_metrics"
+
+[[analytics_engine_datasets]]
 binding = "GA_ANALYTICS"
 dataset = "duyet_logs_ga_analytics"
 
