@@ -57,7 +57,7 @@ describe('ClaudeCodeAdapter', () => {
       // All metadata is in blobs[0] as JSON
       expect(result.blobs).toBeDefined();
       expect(result.blobs?.length).toBe(1);
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.session_id).toBe('session-123');
       expect(metadata.metric_name).toBe('claude_code.token.usage');
     });
@@ -88,7 +88,7 @@ describe('ClaudeCodeAdapter', () => {
       // All metadata is in blobs[0] as JSON
       expect(result.blobs).toBeDefined();
       expect(result.blobs?.length).toBe(1);
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.app_version).toBe('1.0.0');
       expect(metadata.organization_id).toBe('org-123');
       expect(metadata.user_account_uuid).toBe('user-123');
@@ -117,7 +117,7 @@ describe('ClaudeCodeAdapter', () => {
       expect(result.doubles).toEqual([0.05]);
 
       // Check metadata in blobs[0]
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.attributes.model).toBe('claude-3');
     });
   });
@@ -140,7 +140,7 @@ describe('ClaudeCodeAdapter', () => {
       // All metadata is in blobs[0] as JSON
       expect(result.blobs).toBeDefined();
       expect(result.blobs?.length).toBe(1);
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.session_id).toBe('session-123');
       expect(metadata.event_name).toBe('user_prompt');
       expect(metadata.timestamp).toBe('2024-01-01T00:00:00Z');
@@ -164,7 +164,7 @@ describe('ClaudeCodeAdapter', () => {
       // All metadata is in blobs[0] as JSON
       expect(result.blobs).toBeDefined();
       expect(result.blobs?.length).toBe(1);
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.attributes.tool_name).toBe('Read');
       expect(metadata.attributes.success).toBe(true);
       expect(metadata.attributes.duration_ms).toBe(50);
@@ -198,7 +198,7 @@ describe('ClaudeCodeAdapter', () => {
       expect(result.indexes).toEqual([]);
 
       // Session ID is in metadata, not truncated
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.session_id).toBe(longId);
     });
   });
@@ -218,7 +218,7 @@ describe('ClaudeCodeAdapter', () => {
       expect(result.indexes).toEqual(['proj123']);
 
       // Other fields are in metadata
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.session_id).toBe('session-123');
       expect(metadata.metric_name).toBe('claude_code.token.usage');
     });
@@ -238,7 +238,7 @@ describe('ClaudeCodeAdapter', () => {
       expect(result.indexes).toEqual(['proj456']);
 
       // Other fields are in metadata
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.session_id).toBe('session-123');
       expect(metadata.event_name).toBe('user_prompt');
     });
@@ -256,7 +256,7 @@ describe('ClaudeCodeAdapter', () => {
       expect(result.indexes).toEqual([]);
 
       // Data is in metadata
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.session_id).toBe('session-123');
     });
   });

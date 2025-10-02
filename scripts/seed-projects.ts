@@ -66,20 +66,19 @@ async function seedProjects(): Promise<void> {
       });
 
       if (response.ok) {
-        await response.json();
         console.log(`✅ Created project: ${project.id}`);
         succeeded++;
       } else if (response.status === 400) {
-        const error = (await response.json()) as { message?: string };
+        const errorData = (await response.json()) as { message?: string };
         // Check if it's a duplicate project error
         if (
-          error.message?.includes('UNIQUE constraint failed') ||
-          error.message?.includes('already exists')
+          errorData.message?.includes('UNIQUE constraint failed') ||
+          errorData.message?.includes('already exists')
         ) {
           console.log(`⏭️  Skipped (already exists): ${project.id}`);
           skipped++;
         } else {
-          console.error(`❌ Failed to create ${project.id}: ${error.message}`);
+          console.error(`❌ Failed to create ${project.id}: ${errorData.message ?? 'Unknown error'}`);
           failed++;
         }
       } else {
@@ -88,10 +87,10 @@ async function seedProjects(): Promise<void> {
         );
         failed++;
       }
-    } catch (error) {
+    } catch (err) {
       console.error(
         `❌ Failed to create ${project.id}:`,
-        error instanceof Error ? error.message : error
+        err instanceof Error ? err.message : String(err)
       );
       failed++;
     }
