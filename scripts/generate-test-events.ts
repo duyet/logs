@@ -179,6 +179,10 @@ function parseArgs(): EventOptions {
       case '--remote':
       case '-r':
         endpoint = endpoints.production;
+        // Set default project_id to 'testing' when --remote is used
+        if (!projectId) {
+          projectId = 'testing';
+        }
         break;
       case '--endpoint':
       case '-e':
@@ -199,8 +203,9 @@ Usage: npx tsx scripts/generate-test-events.ts [options]
 
 Options:
   --remote, -r              Send to production (${endpoints.production})
+                           (default project_id: testing)
   --endpoint, -e <url>      Custom endpoint URL
-  --project, -p <id>        Project ID to use
+  --project, -p <id>        Project ID to use (default: debug)
   --count, -c <number>      Number of events to generate (default: 10)
   --help, -h                Show this help message
 
@@ -211,12 +216,20 @@ Examples:
   npx tsx scripts/generate-test-events.ts --project debug --remote
   npx tsx scripts/generate-test-events.ts --endpoint http://localhost:3000
 
+Note: Events without explicit --project flag will use 'debug' for local
+      and 'testing' for --remote
+
 Endpoints configured in package.json:
   Local: ${endpoints.local}
   Production: ${endpoints.production}
         `);
         process.exit(0);
     }
+  }
+
+  // If no project_id specified, use 'debug' as default
+  if (!projectId) {
+    projectId = 'debug';
   }
 
   return { endpoint, projectId, count };
