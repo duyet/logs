@@ -84,16 +84,26 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   // Projects API routes
   app.route('/api/projects', createProjectsRouter());
 
-  // Serve static HTML pages via ASSETS binding
+  // Simple projects listing (JSON)
   app.get('/projects', async (c) => {
-    if (c.env.ASSETS) {
-      // Fetch index.html from ASSETS
-      const response = await c.env.ASSETS.fetch(
-        new Request(new URL('/index.html', c.req.url))
+    try {
+      const { listProjects } = await import('../services/project.js');
+      const projects = await listProjects(c.env.DB, 100, 0);
+
+      return c.json({
+        success: true,
+        total: projects.length,
+        projects: projects,
+      });
+    } catch (err) {
+      return c.json(
+        {
+          error: 'Failed to fetch projects',
+          message: err instanceof Error ? err.message : 'Unknown error',
+        },
+        500
       );
-      return response;
     }
-    return c.text('Static assets not available', 503);
   });
 
   app.get('/create', async (c) => {
