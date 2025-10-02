@@ -29,8 +29,12 @@ curl -X POST https://logs.duyet.net/ga/myproject \
 {
   "claude-code.env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc/myproject",
-    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json"
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
+    "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "https://logs.duyet.net/cc/myproject",
+    "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": "http/json"
   }
 }
 ```
@@ -40,7 +44,12 @@ curl -X POST https://logs.duyet.net/ga/myproject \
 {
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc/myproject"
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc/myproject",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
+    "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "https://logs.duyet.net/cc/myproject",
+    "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": "http/json"
   }
 }
 ```
