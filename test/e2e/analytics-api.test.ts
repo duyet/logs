@@ -17,25 +17,25 @@ describe('Analytics API E2E', () => {
     env = {
       CLAUDE_CODE_ANALYTICS: {
         writeDataPoint: () => {},
-      } as any,
+      },
       CLAUDE_CODE_LOGS: {
         writeDataPoint: () => {},
-      } as any,
+      },
       CLAUDE_CODE_METRICS: {
         writeDataPoint: () => {},
-      } as any,
+      },
       GA_ANALYTICS: {
         writeDataPoint: () => {},
-      } as any,
+      },
       DB: {
         prepare: () => ({
           bind: () => ({
             first: () => Promise.resolve(null),
-            all: () => Promise.resolve({ results: [] }),
-            run: () => Promise.resolve({ success: true }),
+            all: () => Promise.resolve({ results: [] } as D1Result),
+            run: () => Promise.resolve({ success: true } as D1Result),
           }),
         }),
-      } as any,
+      } as D1Database,
     };
   });
 
@@ -48,7 +48,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -59,7 +59,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('dataset');
     });
@@ -72,7 +72,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('Invalid dataset');
     });
@@ -93,7 +93,7 @@ describe('Analytics API E2E', () => {
 
         expect(res.status).toBe(503);
 
-        const data = (await res.json()) as any;
+        const data = await res.json();
         expect(data.error).toBe('Service Unavailable');
       }
     });
@@ -108,7 +108,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -121,7 +121,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('time format');
     });
@@ -134,7 +134,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -147,7 +147,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.error).toBe('Service Unavailable');
     });
 
@@ -159,7 +159,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.error).toBe('Service Unavailable');
     });
   });
@@ -171,7 +171,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.datasets).toBeInstanceOf(Array);
       expect(data.datasets.length).toBe(4);
 
@@ -188,7 +188,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
 
       data.datasets.forEach((dataset: any) => {
         expect(dataset.name).toBeDefined();
@@ -206,7 +206,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data = (await res.json()) as any;
+      const data = await res.json();
       expect(data.endpoints.api.analytics).toBe('/api/analytics/insights');
     });
   });

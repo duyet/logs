@@ -1,9 +1,24 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
 import type { Env } from '../../src/types/index.js';
+
+interface Project {
+  id: string;
+  description: string;
+  created_at: number;
+  last_used: number | null;
+}
+
+interface ProjectCreateResponse {
+  success: boolean;
+  project: Project;
+}
+
+interface ProjectListResponse {
+  success: boolean;
+  projects: Project[];
+  total: number;
+}
 
 interface MockD1Result {
   mockDB: D1Database;

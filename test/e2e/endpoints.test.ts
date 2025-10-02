@@ -1,10 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
 import type { Env } from '../../src/types/index.js';
+
+interface SuccessResponse {
+  success: boolean;
+  message: string;
+}
 
 describe('E2E Endpoints', () => {
   let app: ReturnType<typeof createRouter>;
@@ -29,14 +30,11 @@ describe('E2E Endpoints', () => {
   describe('GET /ping', () => {
     it('should return health check status', async () => {
       const res = await app.request('/ping', {}, mockEnv);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const json = await res.json();
 
       expect(res.status).toBe(200);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/unbound-method
       expect(json).toMatchObject({
         status: 'ok',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         timestamp: expect.any(String),
       });
     });
@@ -71,7 +69,6 @@ describe('E2E Endpoints', () => {
         success: true,
         message: 'Data recorded successfully',
       });
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.CLAUDE_CODE_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -96,7 +93,6 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(200);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.CLAUDE_CODE_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -161,7 +157,6 @@ describe('E2E Endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(json.success).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.GA_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -187,7 +182,6 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(200);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.GA_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 

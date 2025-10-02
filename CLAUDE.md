@@ -231,7 +231,10 @@ cloudflare-analytics-router/
   {
     "summary": {
       "totalEvents": 1150,
-      "timeRange": { "start": "2024-01-01T00:00:00Z", "end": "2024-01-02T00:00:00Z" },
+      "timeRange": {
+        "start": "2024-01-01T00:00:00Z",
+        "end": "2024-01-02T00:00:00Z"
+      },
       "topProjects": [
         { "id": "default", "count": 450 },
         { "id": "duyet", "count": 320 }
@@ -778,6 +781,7 @@ npm run db:seed:remote
 The Analytics Insights API requires Cloudflare credentials to query Analytics Engine via GraphQL. Use Secrets Store for secure credential management.
 
 **Create secrets**:
+
 ```bash
 # Get your store ID
 npx wrangler secrets-store store list
@@ -788,6 +792,7 @@ npx wrangler secrets-store secret create <STORE_ID> --name CLOUDFLARE_API_TOKEN 
 ```
 
 **Configure bindings in `wrangler.toml`**:
+
 ```toml
 [[secrets_store_secrets]]
 binding = "CLOUDFLARE_ACCOUNT_ID"
@@ -918,7 +923,16 @@ GET /ping 200 1ms
   - When adding new functions/code: Write tests first or simultaneously
   - Verify 100% test coverage before committing
   - Ensure all TypeScript strict mode checks pass
-  - Run `npm test` and `npm run lint` before every commit
+  - **MANDATORY pre-commit checks** (ALL must pass):
+    - `npx prettier --write .` - Format code
+    - `npm run lint` - Zero errors
+    - `npm test` - All tests passing
+    - `npm run type-check` - TypeScript compilation success
+  - **Post-push workflow**:
+    - Monitor build status on Cloudflare Pages
+    - If build fails, immediately investigate and fix
+    - Continue fixing until build succeeds
+    - Never leave failing builds unattended
 - **Git Workflow**:
   - **Auto-commit when changes have impact or add new features**
   - Commit after completing any of:
@@ -930,7 +944,12 @@ GET /ping 200 1ms
     - Documentation updates for technical requirements
   - Use semantic commit messages: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `perf:`
   - Do NOT auto-commit for: minor typos, formatting-only changes, work-in-progress
-  - Always run tests before committing
+  - **Pre-commit validation sequence**:
+    1. Format code with Prettier
+    2. Run linter and fix issues
+    3. Run all tests
+    4. Run type-check
+    5. Only commit if all checks pass
 
 ### Performance Targets
 
