@@ -295,7 +295,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPLogs;
+      } as OTLPLogs;
 
       expect(adapter.validate(otlpLogs)).toBe(true);
     });
@@ -333,7 +333,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPLogs;
+      } as OTLPLogs;
 
       adapter.setProjectId('test-project');
       const result = adapter.transform(otlpLogs);
@@ -394,7 +394,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPLogs;
+      } as OTLPLogs;
 
       const result = adapter.transform(otlpLogs);
 
@@ -431,7 +431,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPLogs;
+      } as OTLPLogs;
 
       const result = adapter.transform(otlpLogs);
 
@@ -456,7 +456,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPLogs;
+      } as OTLPLogs;
 
       const result = adapter.transform(otlpLogs);
 
@@ -499,7 +499,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPMetrics;
+      } as OTLPMetrics;
 
       expect(adapter.validate(otlpMetrics)).toBe(true);
     });
@@ -542,7 +542,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPMetrics;
+      } as OTLPMetrics;
 
       adapter.setProjectId('metrics-project');
       const result = adapter.transform(otlpMetrics);
@@ -601,7 +601,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPMetrics;
+      } as OTLPMetrics;
 
       const result = adapter.transform(otlpMetrics);
 
@@ -639,7 +639,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPMetrics;
+      } as OTLPMetrics;
 
       const result = adapter.transform(otlpMetrics);
 
@@ -703,7 +703,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPMetrics;
+      } as OTLPMetrics;
 
       const result = adapter.transform(otlpMetrics);
 
@@ -755,7 +755,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPMetrics;
+      } as OTLPMetrics;
 
       const result = adapter.transform(otlpMetrics);
 
@@ -788,7 +788,7 @@ describe('ClaudeCodeAdapter', () => {
             ],
           },
         ],
-      } as unknown as OTLPMetrics;
+      } as OTLPMetrics;
 
       const result = adapter.transform(otlpMetrics);
 
