@@ -7,7 +7,6 @@ import type {
   OTLPLogs,
   OTLPMetrics,
   IKeyValue,
-  IAnyValue,
 } from '../types/index.js';
 
 /**
@@ -139,7 +138,7 @@ export class ClaudeCodeAdapter extends BaseAdapter<
 
     let resourceAttrs: Record<string, string | number | boolean> = {};
 
-    otlp.resourceLogs.forEach((rl) => {
+    otlp.resourceLogs?.forEach((rl) => {
       // Extract resource attributes (service.name, service.version, etc.)
       if (rl.resource) {
         resourceAttrs = this.extractAttributes(rl.resource.attributes || []);
@@ -154,8 +153,12 @@ export class ClaudeCodeAdapter extends BaseAdapter<
 
           logs.push({
             timestamp:
-              log.timeUnixNano ||
-              log.observedTimeUnixNano ||
+              (typeof log.timeUnixNano === 'string'
+                ? log.timeUnixNano
+                : log.timeUnixNano?.toString()) ||
+              (typeof log.observedTimeUnixNano === 'string'
+                ? log.observedTimeUnixNano
+                : log.observedTimeUnixNano?.toString()) ||
               Date.now().toString(),
             severity: log.severityText || log.severityNumber,
             body:
@@ -203,7 +206,7 @@ export class ClaudeCodeAdapter extends BaseAdapter<
     let resourceAttrs: Record<string, string | number | boolean> = {};
     let totalValue = 0;
 
-    otlp.resourceMetrics.forEach((rm) => {
+    otlp.resourceMetrics?.forEach((rm) => {
       // Extract resource attributes
       if (rm.resource) {
         resourceAttrs = this.extractAttributes(rm.resource.attributes || []);
@@ -216,13 +219,13 @@ export class ClaudeCodeAdapter extends BaseAdapter<
         sm.metrics?.forEach((metric) => {
           // Extract data points from sum, gauge, or histogram
           const dataPoints =
-            metric.sum?.dataPoints ||
-            metric.gauge?.dataPoints ||
-            metric.histogram?.dataPoints ||
-            [];
+            metric.sum?.dataPoints || metric.gauge?.dataPoints || [];
 
           dataPoints.forEach((dp) => {
-            const value = dp.asDouble || dp.asInt || 0;
+            const value =
+              ('asDouble' in dp ? dp.asDouble : undefined) ||
+              ('asInt' in dp ? dp.asInt : undefined) ||
+              0;
             totalValue += value;
 
             const attrs = this.extractAttributes(dp.attributes || []);
@@ -230,7 +233,10 @@ export class ClaudeCodeAdapter extends BaseAdapter<
             metrics.push({
               name: metric.name,
               value: value,
-              timestamp: dp.timeUnixNano || Date.now().toString(),
+              timestamp:
+                (typeof dp.timeUnixNano === 'string'
+                  ? dp.timeUnixNano
+                  : dp.timeUnixNano?.toString()) || Date.now().toString(),
               attributes: attrs,
               unit: metric.unit,
               scope: scopeName,
@@ -270,7 +276,7 @@ export class ClaudeCodeAdapter extends BaseAdapter<
         attr.value.doubleValue ??
         attr.value.boolValue;
 
-      if (value !== undefined) {
+      if (value !== undefined && value !== null) {
         result[attr.key] = value;
       }
     });

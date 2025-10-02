@@ -57,6 +57,8 @@ describe('Projects API E2E', () => {
     env = {
       DB: mockDB,
       CLAUDE_CODE_ANALYTICS: {} as never,
+      CLAUDE_CODE_LOGS: {} as never,
+      CLAUDE_CODE_METRICS: {} as never,
       GA_ANALYTICS: {} as never,
     };
   });
@@ -246,7 +248,9 @@ describe('Projects API E2E', () => {
       });
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/project?limit=1&offset=1');
+      const request = new Request(
+        'http://localhost/api/project?limit=1&offset=1'
+      );
 
       const response = await app.fetch(request, env);
       const data = (await response.json()) as ProjectListResponse;

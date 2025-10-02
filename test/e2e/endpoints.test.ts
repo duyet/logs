@@ -13,6 +13,8 @@ describe('E2E Endpoints', () => {
 
     mockEnv = {
       CLAUDE_CODE_ANALYTICS: mockDataset,
+      CLAUDE_CODE_LOGS: mockDataset,
+      CLAUDE_CODE_METRICS: mockDataset,
       GA_ANALYTICS: mockDataset,
       DB: {} as D1Database,
     };

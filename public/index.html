@@ -1,371 +1,395 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Analytics Projects - logs.duyet.net</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
 
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 40px;
-        }
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+      }
 
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
 
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
 
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        }
+      .card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      }
 
-        .card h2 {
-            margin-bottom: 20px;
-            color: #667eea;
-            font-size: 1.5rem;
-        }
+      .card h2 {
+        margin-bottom: 20px;
+        color: #667eea;
+        font-size: 1.5rem;
+      }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+      .form-group {
+        margin-bottom: 20px;
+      }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #555;
+      }
 
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+      }
 
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+      .form-group input:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+      }
 
-        .form-group small {
-            display: block;
-            margin-top: 5px;
-            color: #777;
-            font-size: 0.875rem;
-        }
+      .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: #777;
+        font-size: 0.875rem;
+      }
 
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 14px 32px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+      .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 14px 32px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      }
 
-        .btn:active {
-            transform: translateY(0);
-        }
+      .btn:active {
+        transform: translateY(0);
+      }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
 
-        .alert {
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
+      .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+      }
 
-        .alert.show {
-            display: block;
-        }
+      .alert.show {
+        display: block;
+      }
 
-        .alert-success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
+      .alert-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
 
-        .alert-error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
+      .alert-error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
 
-        .project-list {
-            display: grid;
-            gap: 15px;
-        }
+      .project-list {
+        display: grid;
+        gap: 15px;
+      }
 
-        .project-item {
-            padding: 20px;
-            border: 2px solid #f0f0f0;
-            border-radius: 8px;
-            transition: border-color 0.3s;
-        }
+      .project-item {
+        padding: 20px;
+        border: 2px solid #f0f0f0;
+        border-radius: 8px;
+        transition: border-color 0.3s;
+      }
 
-        .project-item:hover {
-            border-color: #667eea;
-        }
+      .project-item:hover {
+        border-color: #667eea;
+      }
 
-        .project-id {
-            font-weight: 700;
-            color: #667eea;
-            font-size: 1.1rem;
-            font-family: 'Courier New', monospace;
-        }
+      .project-id {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 1.1rem;
+        font-family: 'Courier New', monospace;
+      }
 
-        .project-desc {
-            color: #666;
-            margin-top: 5px;
-        }
+      .project-desc {
+        color: #666;
+        margin-top: 5px;
+      }
 
-        .project-meta {
-            font-size: 0.875rem;
-            color: #999;
-            margin-top: 10px;
-        }
+      .project-meta {
+        font-size: 0.875rem;
+        color: #999;
+        margin-top: 10px;
+      }
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+      }
 
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
 
-        .code-block {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            overflow-x: auto;
-            margin-top: 10px;
-        }
+      .code-block {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        overflow-x: auto;
+        margin-top: 10px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>📊 Analytics Projects</h1>
-            <p>Manage your analytics project IDs</p>
+      <div class="header">
+        <h1>📊 Analytics Projects</h1>
+        <p>Manage your analytics project IDs</p>
+      </div>
+
+      <!-- Create Project Card -->
+      <div class="card">
+        <h2>Create New Project</h2>
+
+        <div id="alert" class="alert"></div>
+
+        <form id="createForm">
+          <div class="form-group">
+            <label for="projectId">Project ID (optional)</label>
+            <input
+              type="text"
+              id="projectId"
+              name="projectId"
+              placeholder="my-project"
+              pattern="[a-z0-9]{3,32}"
+              title="3-32 lowercase letters and numbers only"
+            />
+            <small
+              >Leave empty to auto-generate. Must be 3-32 lowercase alphanumeric
+              characters.</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description *</label>
+            <textarea
+              id="description"
+              name="description"
+              rows="3"
+              required
+              placeholder="E.g., Production analytics for my-app.com"
+            ></textarea>
+            <small>Describe what this project is for</small>
+          </div>
+
+          <button type="submit" class="btn" id="submitBtn">
+            Create Project
+          </button>
+        </form>
+
+        <div id="successResult" style="display: none; margin-top: 20px">
+          <h3 style="color: #28a745; margin-bottom: 10px">
+            ✅ Project Created!
+          </h3>
+          <div class="code-block">
+            <strong>Project ID:</strong> <span id="createdId"></span><br />
+            <strong>Description:</strong> <span id="createdDesc"></span>
+          </div>
+          <p style="margin-top: 15px; color: #666">
+            Use this project ID in your analytics requests via header, query
+            param, or body:
+          </p>
+          <div class="code-block">
+            # Header<br />
+            X-Project-ID: <span id="exampleId1"></span><br /><br />
+            # Query param<br />
+            ?project_id=<span id="exampleId2"></span><br /><br />
+            # JSON body<br />
+            { "project_id": "<span id="exampleId3"></span>", ... }
+          </div>
         </div>
+      </div>
 
-        <!-- Create Project Card -->
-        <div class="card">
-            <h2>Create New Project</h2>
-
-            <div id="alert" class="alert"></div>
-
-            <form id="createForm">
-                <div class="form-group">
-                    <label for="projectId">Project ID (optional)</label>
-                    <input
-                        type="text"
-                        id="projectId"
-                        name="projectId"
-                        placeholder="my-project"
-                        pattern="[a-z0-9]{3,32}"
-                        title="3-32 lowercase letters and numbers only"
-                    >
-                    <small>Leave empty to auto-generate. Must be 3-32 lowercase alphanumeric characters.</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Description *</label>
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="3"
-                        required
-                        placeholder="E.g., Production analytics for my-app.com"
-                    ></textarea>
-                    <small>Describe what this project is for</small>
-                </div>
-
-                <button type="submit" class="btn" id="submitBtn">Create Project</button>
-            </form>
-
-            <div id="successResult" style="display: none; margin-top: 20px;">
-                <h3 style="color: #28a745; margin-bottom: 10px;">✅ Project Created!</h3>
-                <div class="code-block">
-                    <strong>Project ID:</strong> <span id="createdId"></span><br>
-                    <strong>Description:</strong> <span id="createdDesc"></span>
-                </div>
-                <p style="margin-top: 15px; color: #666;">
-                    Use this project ID in your analytics requests via header, query param, or body:
-                </p>
-                <div class="code-block">
-                    # Header<br>
-                    X-Project-ID: <span id="exampleId1"></span><br><br>
-                    # Query param<br>
-                    ?project_id=<span id="exampleId2"></span><br><br>
-                    # JSON body<br>
-                    { "project_id": "<span id="exampleId3"></span>", ... }
-                </div>
-            </div>
+      <!-- Existing Projects Card -->
+      <div class="card">
+        <h2>Existing Projects</h2>
+        <div id="projectsList">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px">Loading projects...</p>
+          </div>
         </div>
-
-        <!-- Existing Projects Card -->
-        <div class="card">
-            <h2>Existing Projects</h2>
-            <div id="projectsList">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p style="margin-top: 10px;">Loading projects...</p>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
     <script>
-        const API_BASE = '/api/projects';
+      const API_BASE = '/api/projects';
 
-        // Load projects on page load
-        loadProjects();
+      // Load projects on page load
+      loadProjects();
 
-        // Handle form submission
-        document.getElementById('createForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+      // Handle form submission
+      document
+        .getElementById('createForm')
+        .addEventListener('submit', async (e) => {
+          e.preventDefault();
 
-            const submitBtn = document.getElementById('submitBtn');
-            const alert = document.getElementById('alert');
-            const successResult = document.getElementById('successResult');
+          const submitBtn = document.getElementById('submitBtn');
+          const alert = document.getElementById('alert');
+          const successResult = document.getElementById('successResult');
 
-            // Get form data
-            const projectId = document.getElementById('projectId').value.trim();
-            const description = document.getElementById('description').value.trim();
+          // Get form data
+          const projectId = document.getElementById('projectId').value.trim();
+          const description = document
+            .getElementById('description')
+            .value.trim();
 
-            // Hide previous results
-            alert.classList.remove('show');
-            successResult.style.display = 'none';
+          // Hide previous results
+          alert.classList.remove('show');
+          successResult.style.display = 'none';
 
-            // Disable button
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Creating...';
+          // Disable button
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Creating...';
 
-            try {
-                const body = { description };
-                if (projectId) {
-                    body.id = projectId;
-                }
-
-                const response = await fetch(API_BASE, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(body),
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to create project');
-                }
-
-                // Show success
-                document.getElementById('createdId').textContent = data.project.id;
-                document.getElementById('createdDesc').textContent = data.project.description;
-                document.getElementById('exampleId1').textContent = data.project.id;
-                document.getElementById('exampleId2').textContent = data.project.id;
-                document.getElementById('exampleId3').textContent = data.project.id;
-                successResult.style.display = 'block';
-
-                // Reset form
-                document.getElementById('createForm').reset();
-
-                // Reload projects list
-                loadProjects();
-
-            } catch (error) {
-                alert.textContent = '❌ Error: ' + error.message;
-                alert.className = 'alert alert-error show';
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Create Project';
+          try {
+            const body = { description };
+            if (projectId) {
+              body.id = projectId;
             }
+
+            const response = await fetch(API_BASE, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(body),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.message || 'Failed to create project');
+            }
+
+            // Show success
+            document.getElementById('createdId').textContent = data.project.id;
+            document.getElementById('createdDesc').textContent =
+              data.project.description;
+            document.getElementById('exampleId1').textContent = data.project.id;
+            document.getElementById('exampleId2').textContent = data.project.id;
+            document.getElementById('exampleId3').textContent = data.project.id;
+            successResult.style.display = 'block';
+
+            // Reset form
+            document.getElementById('createForm').reset();
+
+            // Reload projects list
+            loadProjects();
+          } catch (error) {
+            alert.textContent = '❌ Error: ' + error.message;
+            alert.className = 'alert alert-error show';
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Project';
+          }
         });
 
-        async function loadProjects() {
-            const projectsList = document.getElementById('projectsList');
+      async function loadProjects() {
+        const projectsList = document.getElementById('projectsList');
 
-            try {
-                const response = await fetch(API_BASE);
-                const data = await response.json();
+        try {
+          const response = await fetch(API_BASE);
+          const data = await response.json();
 
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to load projects');
-                }
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to load projects');
+          }
 
-                if (data.projects.length === 0) {
-                    projectsList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No projects yet. Create your first one above!</p>';
-                    return;
-                }
+          if (data.projects.length === 0) {
+            projectsList.innerHTML =
+              '<p style="text-align: center; color: #999; padding: 20px;">No projects yet. Create your first one above!</p>';
+            return;
+          }
 
-                // Render projects
-                projectsList.innerHTML = '<div class="project-list">' +
-                    data.projects.map(project => `
+          // Render projects
+          projectsList.innerHTML =
+            '<div class="project-list">' +
+            data.projects
+              .map(
+                (project) => `
                         <div class="project-item">
                             <div class="project-id">${escapeHtml(project.id)}</div>
                             <div class="project-desc">${escapeHtml(project.description)}</div>
@@ -374,19 +398,20 @@
                                 ${project.last_used ? `• Last used: ${new Date(project.last_used).toLocaleString()}` : '• Never used'}
                             </div>
                         </div>
-                    `).join('') +
-                    '</div>';
-
-            } catch (error) {
-                projectsList.innerHTML = `<p style="color: #dc3545; text-align: center; padding: 20px;">❌ Error loading projects: ${escapeHtml(error.message)}</p>`;
-            }
+                    `
+              )
+              .join('') +
+            '</div>';
+        } catch (error) {
+          projectsList.innerHTML = `<p style="color: #dc3545; text-align: center; padding: 20px;">❌ Error loading projects: ${escapeHtml(error.message)}</p>`;
         }
+      }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
     </script>
-</body>
+  </body>
 </html>

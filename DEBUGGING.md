@@ -21,14 +21,15 @@ Claude Code is not sending telemetry data to the logs API even with the correct 
 ### Actual Format (OTLP/HTTP JSON)
 
 **Metrics:**
+
 ```json
 {
   "resourceMetrics": [
     {
       "resource": {
         "attributes": [
-          {"key": "service.name", "value": {"stringValue": "claude-code"}},
-          {"key": "service.version", "value": {"stringValue": "1.0.0"}}
+          { "key": "service.name", "value": { "stringValue": "claude-code" } },
+          { "key": "service.version", "value": { "stringValue": "1.0.0" } }
         ]
       },
       "scopeMetrics": [
@@ -47,8 +48,11 @@ Claude Code is not sending telemetry data to the logs API even with the correct 
                     "timeUnixNano": "1640000100000000000",
                     "asDouble": 1000,
                     "attributes": [
-                      {"key": "type", "value": {"stringValue": "input"}},
-                      {"key": "model", "value": {"stringValue": "claude-sonnet-4-5"}}
+                      { "key": "type", "value": { "stringValue": "input" } },
+                      {
+                        "key": "model",
+                        "value": { "stringValue": "claude-sonnet-4-5" }
+                      }
                     ]
                   }
                 ]
@@ -63,6 +67,7 @@ Claude Code is not sending telemetry data to the logs API even with the correct 
 ```
 
 **Logs:**
+
 ```json
 {
   "resourceLogs": [
@@ -111,6 +116,7 @@ wrangler pages deployment tail
 ```
 
 Look for these debug messages:
+
 - `[DEBUG] Received data:` - Shows what Claude Code is sending
 - `[DEBUG] Data keys:` - Shows top-level keys in the data
 - `[ERROR] Validation failed` - Confirms validation is failing
@@ -220,7 +226,9 @@ export interface OTLPLogs {
 Modify `src/adapters/claude-code.ts` to detect and transform OTLP format:
 
 ```typescript
-export class ClaudeCodeAdapter extends BaseAdapter<ClaudeCodeData | OTLPMetrics | OTLPLogs> {
+export class ClaudeCodeAdapter extends BaseAdapter<
+  ClaudeCodeData | OTLPMetrics | OTLPLogs
+> {
   validate(data: unknown): data is ClaudeCodeData | OTLPMetrics | OTLPLogs {
     if (!this.isObject(data)) {
       return false;
@@ -258,7 +266,9 @@ export class ClaudeCodeAdapter extends BaseAdapter<ClaudeCodeData | OTLPMetrics 
     return false;
   }
 
-  transform(data: ClaudeCodeData | OTLPMetrics | OTLPLogs): AnalyticsEngineDataPoint {
+  transform(
+    data: ClaudeCodeData | OTLPMetrics | OTLPLogs
+  ): AnalyticsEngineDataPoint {
     // Detect format and route to appropriate transformer
     if ('resourceMetrics' in data) {
       return this.transformOTLPMetrics(data as OTLPMetrics);
@@ -280,35 +290,45 @@ export class ClaudeCodeAdapter extends BaseAdapter<ClaudeCodeData | OTLPMetrics 
     const metrics: any[] = [];
     let totalValue = 0;
 
-    otlp.resourceMetrics.forEach(rm => {
-      rm.scopeMetrics.forEach(sm => {
-        sm.metrics.forEach(metric => {
-          const dataPoints = metric.sum?.dataPoints || metric.gauge?.dataPoints || [];
-          dataPoints.forEach(dp => {
+    otlp.resourceMetrics.forEach((rm) => {
+      rm.scopeMetrics.forEach((sm) => {
+        sm.metrics.forEach((metric) => {
+          const dataPoints =
+            metric.sum?.dataPoints || metric.gauge?.dataPoints || [];
+          dataPoints.forEach((dp) => {
             const value = dp.asDouble || dp.asInt || 0;
             totalValue += value;
 
             // Convert OTLP attributes to simple key-value
             const attributes: Record<string, any> = {};
-            dp.attributes?.forEach(attr => {
-              attributes[attr.key] = attr.value.stringValue || attr.value.intValue || attr.value.doubleValue;
+            dp.attributes?.forEach((attr) => {
+              attributes[attr.key] =
+                attr.value.stringValue ||
+                attr.value.intValue ||
+                attr.value.doubleValue;
             });
 
             metrics.push({
               name: metric.name,
               value: value,
               timestamp: dp.timeUnixNano,
-              attributes: attributes
+              attributes: attributes,
             });
           });
         });
       });
     });
 
-    const blobs: string[] = [this.toBlob(JSON.stringify({
-      metrics: metrics,
-      resource_attributes: this.extractResourceAttributes(otlp.resourceMetrics[0]?.resource)
-    }))];
+    const blobs: string[] = [
+      this.toBlob(
+        JSON.stringify({
+          metrics: metrics,
+          resource_attributes: this.extractResourceAttributes(
+            otlp.resourceMetrics[0]?.resource
+          ),
+        })
+      ),
+    ];
 
     const doubles: number[] = [totalValue];
 
@@ -322,29 +342,36 @@ export class ClaudeCodeAdapter extends BaseAdapter<ClaudeCodeData | OTLPMetrics 
     // Extract all log records
     const logs: any[] = [];
 
-    otlp.resourceLogs.forEach(rl => {
-      rl.scopeLogs.forEach(sl => {
-        sl.logRecords.forEach(log => {
+    otlp.resourceLogs.forEach((rl) => {
+      rl.scopeLogs.forEach((sl) => {
+        sl.logRecords.forEach((log) => {
           // Convert OTLP attributes to simple key-value
           const attributes: Record<string, any> = {};
-          log.attributes?.forEach(attr => {
-            attributes[attr.key] = attr.value.stringValue || attr.value.intValue;
+          log.attributes?.forEach((attr) => {
+            attributes[attr.key] =
+              attr.value.stringValue || attr.value.intValue;
           });
 
           logs.push({
             timestamp: log.timeUnixNano,
             severity: log.severityText || log.severityNumber,
             body: log.body?.stringValue,
-            attributes: attributes
+            attributes: attributes,
           });
         });
       });
     });
 
-    const blobs: string[] = [this.toBlob(JSON.stringify({
-      logs: logs,
-      resource_attributes: this.extractResourceAttributes(otlp.resourceLogs[0]?.resource)
-    }))];
+    const blobs: string[] = [
+      this.toBlob(
+        JSON.stringify({
+          logs: logs,
+          resource_attributes: this.extractResourceAttributes(
+            otlp.resourceLogs[0]?.resource
+          ),
+        })
+      ),
+    ];
 
     return { indexes, blobs, doubles: [] };
   }
@@ -352,7 +379,8 @@ export class ClaudeCodeAdapter extends BaseAdapter<ClaudeCodeData | OTLPMetrics 
   private extractResourceAttributes(resource: any): Record<string, any> {
     const attrs: Record<string, any> = {};
     resource?.attributes?.forEach((attr: any) => {
-      attrs[attr.key] = attr.value.stringValue || attr.value.intValue || attr.value.doubleValue;
+      attrs[attr.key] =
+        attr.value.stringValue || attr.value.intValue || attr.value.doubleValue;
     });
     return attrs;
   }
@@ -380,44 +408,60 @@ Create tests for OTLP format in `test/unit/adapters/claude-code.test.ts`:
 describe('OTLP Metrics Format', () => {
   it('should validate OTLP metrics format', () => {
     const otlpMetrics = {
-      resourceMetrics: [{
-        scopeMetrics: [{
-          metrics: [{
-            name: 'claude_code.token.usage',
-            sum: {
-              dataPoints: [{
-                asDouble: 1000
-              }]
-            }
-          }]
-        }]
-      }]
+      resourceMetrics: [
+        {
+          scopeMetrics: [
+            {
+              metrics: [
+                {
+                  name: 'claude_code.token.usage',
+                  sum: {
+                    dataPoints: [
+                      {
+                        asDouble: 1000,
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
     expect(adapter.validate(otlpMetrics)).toBe(true);
   });
 
   it('should transform OTLP metrics to Analytics Engine format', () => {
     const otlpMetrics = {
-      resourceMetrics: [{
-        resource: {
-          attributes: [
-            { key: 'service.name', value: { stringValue: 'claude-code' } }
-          ]
+      resourceMetrics: [
+        {
+          resource: {
+            attributes: [
+              { key: 'service.name', value: { stringValue: 'claude-code' } },
+            ],
+          },
+          scopeMetrics: [
+            {
+              metrics: [
+                {
+                  name: 'claude_code.token.usage',
+                  sum: {
+                    dataPoints: [
+                      {
+                        asDouble: 1000,
+                        attributes: [
+                          { key: 'type', value: { stringValue: 'input' } },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
         },
-        scopeMetrics: [{
-          metrics: [{
-            name: 'claude_code.token.usage',
-            sum: {
-              dataPoints: [{
-                asDouble: 1000,
-                attributes: [
-                  { key: 'type', value: { stringValue: 'input' } }
-                ]
-              }]
-            }
-          }]
-        }]
-      }]
+      ],
     };
 
     adapter.setProjectId('testproject');
@@ -432,13 +476,19 @@ describe('OTLP Metrics Format', () => {
 describe('OTLP Logs Format', () => {
   it('should validate OTLP logs format', () => {
     const otlpLogs = {
-      resourceLogs: [{
-        scopeLogs: [{
-          logRecords: [{
-            body: { stringValue: 'test' }
-          }]
-        }]
-      }]
+      resourceLogs: [
+        {
+          scopeLogs: [
+            {
+              logRecords: [
+                {
+                  body: { stringValue: 'test' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
     expect(adapter.validate(otlpLogs)).toBe(true);
   });

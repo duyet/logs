@@ -1,249 +1,255 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create Project - Analytics</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #f5f5f5;
-            padding: 20px;
-        }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: #f5f5f5;
+        padding: 20px;
+      }
 
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            max-width: 500px;
-            width: 100%;
-        }
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 100%;
+      }
 
-        h1 {
-            margin-bottom: 30px;
-            color: #333;
-            font-size: 24px;
-        }
+      h1 {
+        margin-bottom: 30px;
+        color: #333;
+        font-size: 24px;
+      }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+      .form-group {
+        margin-bottom: 20px;
+      }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-        }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 500;
+      }
 
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
+      input,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
 
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: #4CAF50;
-        }
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #4caf50;
+      }
 
-        .hint {
-            font-size: 12px;
-            color: #888;
-            margin-top: 4px;
-        }
+      .hint {
+        font-size: 12px;
+        color: #888;
+        margin-top: 4px;
+      }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: 500;
-        }
+      button {
+        width: 100%;
+        padding: 12px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: 500;
+      }
 
-        button:hover {
-            background: #45a049;
-        }
+      button:hover {
+        background: #45a049;
+      }
 
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
 
-        .message {
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            display: none;
-        }
+      .message {
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        display: none;
+      }
 
-        .message.show {
-            display: block;
-        }
+      .message.show {
+        display: block;
+      }
 
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
 
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
 
-        .result {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 20px;
-            display: none;
-        }
+      .result {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 20px;
+        display: none;
+      }
 
-        .result.show {
-            display: block;
-        }
+      .result.show {
+        display: block;
+      }
 
-        .result code {
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
+      .result code {
+        background: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: monospace;
+      }
 
-        .links {
-            margin-top: 20px;
-            text-align: center;
-        }
+      .links {
+        margin-top: 20px;
+        text-align: center;
+      }
 
-        .links a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
+      .links a {
+        color: #4caf50;
+        text-decoration: none;
+      }
 
-        .links a:hover {
-            text-decoration: underline;
-        }
+      .links a:hover {
+        text-decoration: underline;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>📊 Create Analytics Project</h1>
+      <h1>📊 Create Analytics Project</h1>
 
-        <div id="message" class="message"></div>
+      <div id="message" class="message"></div>
 
-        <form id="form">
-            <div class="form-group">
-                <label for="id">Project ID (optional)</label>
-                <input
-                    type="text"
-                    id="id"
-                    placeholder="my-project"
-                    pattern="[a-z0-9]{3,32}"
-                >
-                <div class="hint">Leave empty for auto-generated ID</div>
-            </div>
-
-            <div class="form-group">
-                <label for="description">Description *</label>
-                <textarea
-                    id="description"
-                    rows="3"
-                    required
-                    placeholder="E.g., Production analytics for my-app.com"
-                ></textarea>
-            </div>
-
-            <button type="submit" id="btn">Create Project</button>
-        </form>
-
-        <div id="result" class="result">
-            <strong>✅ Project Created!</strong>
-            <div style="margin-top: 10px;">
-                <strong>ID:</strong> <code id="projectId"></code><br>
-                <strong>Description:</strong> <span id="projectDesc"></span>
-            </div>
-            <div style="margin-top: 10px; font-size: 13px; color: #666;">
-                Use: <code>X-Project-ID: <span id="projectIdExample"></span></code>
-            </div>
+      <form id="form">
+        <div class="form-group">
+          <label for="id">Project ID (optional)</label>
+          <input
+            type="text"
+            id="id"
+            placeholder="my-project"
+            pattern="[a-z0-9]{3,32}"
+          />
+          <div class="hint">Leave empty for auto-generated ID</div>
         </div>
 
-        <div class="links">
-            <a href="/api/project">← View All Projects</a>
+        <div class="form-group">
+          <label for="description">Description *</label>
+          <textarea
+            id="description"
+            rows="3"
+            required
+            placeholder="E.g., Production analytics for my-app.com"
+          ></textarea>
         </div>
+
+        <button type="submit" id="btn">Create Project</button>
+      </form>
+
+      <div id="result" class="result">
+        <strong>✅ Project Created!</strong>
+        <div style="margin-top: 10px">
+          <strong>ID:</strong> <code id="projectId"></code><br />
+          <strong>Description:</strong> <span id="projectDesc"></span>
+        </div>
+        <div style="margin-top: 10px; font-size: 13px; color: #666">
+          Use: <code>X-Project-ID: <span id="projectIdExample"></span></code>
+        </div>
+      </div>
+
+      <div class="links">
+        <a href="/api/project">← View All Projects</a>
+      </div>
     </div>
 
     <script>
-        const form = document.getElementById('form');
-        const btn = document.getElementById('btn');
-        const message = document.getElementById('message');
-        const result = document.getElementById('result');
+      const form = document.getElementById('form');
+      const btn = document.getElementById('btn');
+      const message = document.getElementById('message');
+      const result = document.getElementById('result');
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-            const id = document.getElementById('id').value.trim();
-            const description = document.getElementById('description').value.trim();
+        const id = document.getElementById('id').value.trim();
+        const description = document.getElementById('description').value.trim();
 
-            // Hide previous messages
-            message.classList.remove('show');
-            result.classList.remove('show');
+        // Hide previous messages
+        message.classList.remove('show');
+        result.classList.remove('show');
 
-            // Disable button
-            btn.disabled = true;
-            btn.textContent = 'Creating...';
+        // Disable button
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
 
-            try {
-                const body = { description };
-                if (id) body.id = id;
+        try {
+          const body = { description };
+          if (id) body.id = id;
 
-                const response = await fetch('/api/project', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
+          const response = await fetch('/api/project', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
 
-                const data = await response.json();
+          const data = await response.json();
 
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to create project');
-                }
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to create project');
+          }
 
-                // Show success
-                document.getElementById('projectId').textContent = data.project.id;
-                document.getElementById('projectDesc').textContent = data.project.description;
-                document.getElementById('projectIdExample').textContent = data.project.id;
-                result.classList.add('show');
+          // Show success
+          document.getElementById('projectId').textContent = data.project.id;
+          document.getElementById('projectDesc').textContent =
+            data.project.description;
+          document.getElementById('projectIdExample').textContent =
+            data.project.id;
+          result.classList.add('show');
 
-                // Reset form
-                form.reset();
-
-            } catch (error) {
-                message.textContent = '❌ ' + error.message;
-                message.className = 'message error show';
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Create Project';
-            }
-        });
+          // Reset form
+          form.reset();
+        } catch (error) {
+          message.textContent = '❌ ' + error.message;
+          message.className = 'message error show';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Create Project';
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

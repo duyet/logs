@@ -238,6 +238,7 @@ cloudflare-analytics-router/
 ```
 
 **Available Metrics**:
+
 - `claude_code.token.usage` - Token consumption by type
 - `claude_code.cost` - API cost tracking
 - `claude_code.session.duration` - Session duration
@@ -254,6 +255,7 @@ cloudflare-analytics-router/
 ```
 
 **Available Events**:
+
 - `user_prompt` - User prompts submitted
 - `tool_result` - Tool execution results
 - `api_request` - API requests made
@@ -307,6 +309,7 @@ CREATE INDEX idx_projects_created_at ON projects(created_at DESC);
 ```
 
 **Fields:**
+
 - `id` - Project identifier (3-32 lowercase alphanumeric characters with hyphens)
 - `description` - Human-readable project description
 - `created_at` - Unix timestamp (milliseconds) when project was created
@@ -325,6 +328,7 @@ curl -X POST https://logs.duyet.net/cc/myproject \
 ```
 
 **Perfect for Claude Code** (`~/.claude/settings.json`):
+
 ```json
 {
   "env": {
@@ -373,6 +377,7 @@ Auto-created from POST /cc/myproject
 ```
 
 **Validation**:
+
 - Valid format: 3-32 lowercase alphanumeric characters with hyphens
 - Invalid IDs trigger a warning but don't reject the request
 - Auto-creation is non-blocking
@@ -388,6 +393,7 @@ The middleware performs the following (all non-blocking):
 5. **Attach** project_id to context for adapters
 
 **Non-blocking behavior:**
+
 - Invalid or non-existent project IDs produce warnings but don't reject requests
 - Project ID is completely optional
 - Failed database operations don't block analytics recording
@@ -405,16 +411,17 @@ Project IDs are stored as the **only indexed field** in Analytics Engine:
 
 Six default projects:
 
-| Project ID | Description |
-|------------|-------------|
-| `debug` | Development and debugging |
-| `duyet` | duyet.net personal website analytics |
-| `blog` | Blog analytics and metrics |
-| `prod` | Production environment |
-| `staging` | Staging environment |
-| `test` | Testing and QA environment |
+| Project ID | Description                          |
+| ---------- | ------------------------------------ |
+| `debug`    | Development and debugging            |
+| `duyet`    | duyet.net personal website analytics |
+| `blog`     | Blog analytics and metrics           |
+| `prod`     | Production environment               |
+| `staging`  | Staging environment                  |
+| `test`     | Testing and QA environment           |
 
 Create via seed script:
+
 ```bash
 npm run db:seed          # Local
 npm run db:seed:remote   # Production
@@ -508,17 +515,22 @@ export class CustomAdapter extends BaseAdapter<CustomData> {
       doubles: [this.toDouble(data.value)],
 
       // String data as JSON
-      blobs: [this.toBlob(JSON.stringify({
-        id: data.id,
-        metadata: data.metadata,
-        timestamp: new Date().toISOString()
-      }))]
+      blobs: [
+        this.toBlob(
+          JSON.stringify({
+            id: data.id,
+            metadata: data.metadata,
+            timestamp: new Date().toISOString(),
+          })
+        ),
+      ],
     };
   }
 }
 ```
 
 **BaseAdapter utilities:**
+
 - `toIndex(value)` - Convert & truncate to 96 bytes
 - `toBlob(value)` - Convert & truncate to 5120 bytes
 - `toDouble(value)` - Convert to number
@@ -561,9 +573,9 @@ binding = "CUSTOM_ANALYTICS"
 ```typescript
 export interface Env {
   // ... existing bindings
-  CLAUDE_CODE_ANALYTICS: AnalyticsEngineDataset;  // Legacy + auto-detect
-  CLAUDE_CODE_LOGS: AnalyticsEngineDataset;       // OTLP Logs
-  CLAUDE_CODE_METRICS: AnalyticsEngineDataset;    // OTLP Metrics
+  CLAUDE_CODE_ANALYTICS: AnalyticsEngineDataset; // Legacy + auto-detect
+  CLAUDE_CODE_LOGS: AnalyticsEngineDataset; // OTLP Logs
+  CLAUDE_CODE_METRICS: AnalyticsEngineDataset; // OTLP Metrics
   CUSTOM_ANALYTICS: AnalyticsEngineDataset;
 }
 ```
@@ -583,7 +595,7 @@ describe('CustomAdapter', () => {
       const data = {
         id: 'test-123',
         value: 100,
-        metadata: { foo: 'bar' }
+        metadata: { foo: 'bar' },
       };
       expect(adapter.validate(data)).toBe(true);
     });
@@ -599,7 +611,7 @@ describe('CustomAdapter', () => {
       const data = {
         id: 'test-123',
         value: 100,
-        metadata: { foo: 'bar' }
+        metadata: { foo: 'bar' },
       };
 
       const result = adapter.transform(data);
@@ -616,11 +628,13 @@ describe('CustomAdapter', () => {
 ### Cloudflare Pages
 
 **Automated Deployment**:
+
 ```bash
 ./scripts/deploy.sh  # Build + Test + Type-check + Deploy
 ```
 
 **Manual Deployment**:
+
 ```bash
 npm run build        # Build TypeScript
 npm test             # Run all tests
@@ -630,6 +644,7 @@ npm run deploy       # Deploy to Cloudflare Pages
 ### Configuration
 
 **wrangler.toml**:
+
 ```toml
 name = "duyet-logs"
 compatibility_date = "2024-01-01"
@@ -658,22 +673,26 @@ binding = "GA_ANALYTICS"
 ### Environment Setup
 
 1. **Create D1 Database**:
+
 ```bash
 wrangler d1 create duyet-logs
 # Copy database_id to wrangler.toml
 ```
 
 2. **Run Migrations**:
+
 ```bash
 npm run db:migrate:remote
 ```
 
 3. **Seed Default Projects**:
+
 ```bash
 npm run db:seed:remote
 ```
 
 4. **Deploy**:
+
 ```bash
 npm run deploy
 ```
@@ -708,6 +727,7 @@ npm run db:restore ./backups/file.sql.gz --local
 ```
 
 **Backup formats**:
+
 - `duyet-logs_[prod|local]_YYYYMMDD_HHMMSS.sql.gz` - Compressed SQL dump
 - `duyet-logs_[prod|local]_YYYYMMDD_HHMMSS.sql.projects.json` - JSON export
 
@@ -722,16 +742,16 @@ See `scripts/README.md` for comprehensive documentation.
 
 ## Performance & Limits
 
-| Metric | Value |
-|--------|-------|
-| **Response Time** | <100ms p95 |
+| Metric               | Value                     |
+| -------------------- | ------------------------- |
+| **Response Time**    | <100ms p95                |
 | **Analytics Engine** | 1M writes/day (free tier) |
-| **D1 Database** | 5GB storage (free tier) |
-| **Global Edge** | 300+ locations |
-| **Payload Size** | Max 5KB per event |
-| **Blob Size** | Max 5120 bytes each |
-| **Index Size** | Max 96 bytes |
-| **Index Count** | Max 1 per data point |
+| **D1 Database**      | 5GB storage (free tier)   |
+| **Global Edge**      | 300+ locations            |
+| **Payload Size**     | Max 5KB per event         |
+| **Blob Size**        | Max 5120 bytes each       |
+| **Index Size**       | Max 96 bytes              |
+| **Index Count**      | Max 1 per data point      |
 
 ### Error Handling
 
@@ -746,6 +766,7 @@ All endpoints return JSON error responses:
 ```
 
 **Status Codes**:
+
 - `200` - Success
 - `400` - Bad Request (invalid data format)
 - `404` - Not Found (unknown endpoint)
@@ -756,6 +777,7 @@ All endpoints return JSON error responses:
 Format: `{METHOD} {PATH} {STATUS} {TIME}ms`
 
 Example:
+
 ```
 POST /cc/myproject 200 15ms
 GET /ping 200 1ms
@@ -811,11 +833,13 @@ GET /ping 200 1ms
 ### Cost Comparison
 
 **Cloudflare (This Project)**:
+
 - 100K requests/day: **$0/month**
 - 1M Analytics Engine writes: **$0/month**
 - 5GB D1 storage: **$0/month**
 
 **Traditional Stack (AWS)**:
+
 - Lambda + API Gateway: **~$20/month**
 - RDS database: **~$15/month**
 - CloudWatch logs: **~$5/month**

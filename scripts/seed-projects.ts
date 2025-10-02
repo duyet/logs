@@ -47,7 +47,8 @@ const DEFAULT_PROJECTS: Project[] = [
 async function seedProjects(): Promise<void> {
   const endpoints = loadEndpoints();
   const isRemote = process.argv.includes('--remote');
-  const endpoint = process.env.ENDPOINT || (isRemote ? endpoints.production : endpoints.local);
+  const endpoint =
+    process.env.ENDPOINT || (isRemote ? endpoints.production : endpoints.local);
 
   console.log(`🌱 Seeding projects to ${endpoint}...\n`);
 
@@ -78,7 +79,9 @@ async function seedProjects(): Promise<void> {
           console.log(`⏭️  Skipped (already exists): ${project.id}`);
           skipped++;
         } else {
-          console.error(`❌ Failed to create ${project.id}: ${errorData.message ?? 'Unknown error'}`);
+          console.error(
+            `❌ Failed to create ${project.id}: ${errorData.message ?? 'Unknown error'}`
+          );
           failed++;
         }
       } else {

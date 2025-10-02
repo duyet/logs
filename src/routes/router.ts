@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context, Next } from 'hono';
 import { serveStatic } from 'hono/cloudflare-pages';
 import type { Env, PingResponse } from '../types/index.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
