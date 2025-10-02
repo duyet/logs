@@ -185,6 +185,30 @@ describe('Projects API E2E', () => {
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('Invalid project ID format');
     });
+
+    it('should return 400 on database error', async () => {
+      statement.first.mockResolvedValueOnce(null);
+      statement.run.mockRejectedValueOnce(
+        new Error('Database insertion failed')
+      );
+
+      const app = createRouter();
+      const request = new Request('http://localhost/api/project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'testproj',
+          description: 'Test Project',
+        }),
+      });
+
+      const response = await app.fetch(request, env);
+      const data = (await response.json()) as ErrorResponse;
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Bad Request');
+      expect(data.message).toBe('Database insertion failed');
+    });
   });
 
   describe('GET /api/project', () => {
@@ -259,6 +283,22 @@ describe('Projects API E2E', () => {
       expect(data.projects).toHaveLength(1);
       expect(statement.bind).toHaveBeenCalledWith(1, 1);
     });
+
+    it('should return 500 on database error', async () => {
+      statement.all.mockRejectedValueOnce(
+        new Error('Database connection failed')
+      );
+
+      const app = createRouter();
+      const request = new Request('http://localhost/api/project');
+
+      const response = await app.fetch(request, env);
+      const data = (await response.json()) as ErrorResponse;
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe('Internal Server Error');
+      expect(data.message).toBe('Database connection failed');
+    });
   });
 
   describe('GET /api/project/:id', () => {
@@ -294,6 +334,20 @@ describe('Projects API E2E', () => {
       expect(response.status).toBe(404);
       expect(data.error).toBe('Not Found');
       expect(data.message).toContain('nonexistent');
+    });
+
+    it('should return 500 on database error', async () => {
+      statement.first.mockRejectedValueOnce(new Error('Database query failed'));
+
+      const app = createRouter();
+      const request = new Request('http://localhost/api/project/testproj');
+
+      const response = await app.fetch(request, env);
+      const data = (await response.json()) as ErrorResponse;
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe('Internal Server Error');
+      expect(data.message).toBe('Database query failed');
     });
   });
 });
