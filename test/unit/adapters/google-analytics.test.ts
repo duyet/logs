@@ -69,7 +69,7 @@ describe('GoogleAnalyticsAdapter', () => {
       // All metadata is in blobs[0] as JSON
       expect(result.blobs).toBeDefined();
       expect(result.blobs?.length).toBe(1);
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.client_id).toBe('client-123');
       expect(metadata.events).toEqual([{ name: 'page_view' }]);
     });
@@ -87,7 +87,7 @@ describe('GoogleAnalyticsAdapter', () => {
       expect(result.indexes).toEqual([]);
 
       // All metadata is in blobs[0] as JSON
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.client_id).toBe('client-123');
       expect(metadata.user_id).toBe('user-456');
       expect(metadata.events).toEqual([{ name: 'login' }]);
@@ -103,7 +103,7 @@ describe('GoogleAnalyticsAdapter', () => {
       const result = adapter.transform(data);
 
       // All metadata is in blobs[0] as JSON
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.timestamp_micros).toBe('1640000000000000');
     });
 
@@ -122,7 +122,7 @@ describe('GoogleAnalyticsAdapter', () => {
       // All metadata is in blobs[0] as JSON
       expect(result.blobs).toBeDefined();
       expect(result.blobs?.length).toBe(1);
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.user_properties.plan.value).toBe('premium');
       expect(metadata.user_properties.country.value).toBe('US');
     });
@@ -140,7 +140,7 @@ describe('GoogleAnalyticsAdapter', () => {
       expect(result.doubles).toEqual([3]);
 
       // All events are in metadata
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.events).toHaveLength(3);
       expect(metadata.events[0].name).toBe('page_view');
       expect(metadata.events[1].name).toBe('click');
@@ -163,7 +163,7 @@ describe('GoogleAnalyticsAdapter', () => {
       // All metadata including event params is in blobs[0]
       expect(result.blobs).toBeDefined();
       expect(result.blobs?.length).toBe(1);
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.events[0].params.value).toBe(99.99);
       expect(metadata.events[0].params.currency).toBe('USD');
       expect(metadata.events[0].params.items).toBe(3);
@@ -181,7 +181,7 @@ describe('GoogleAnalyticsAdapter', () => {
       expect(result.indexes).toEqual([]);
 
       // Events are in metadata
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.events).toHaveLength(2);
       expect(metadata.events[0].name).toBe('event1');
       expect(metadata.events[1].name).toBe('event2');
@@ -202,7 +202,7 @@ describe('GoogleAnalyticsAdapter', () => {
       expect(result.indexes).toEqual([]);
 
       // Client ID is in metadata, not truncated
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.client_id).toBe(longId);
     });
 
@@ -240,7 +240,7 @@ describe('GoogleAnalyticsAdapter', () => {
       expect(result.indexes).toEqual(['proj789']);
 
       // Other fields are in metadata
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.client_id).toBe('client-123');
       expect(metadata.events).toEqual([{ name: 'page_view' }]);
     });
@@ -257,7 +257,7 @@ describe('GoogleAnalyticsAdapter', () => {
       expect(result.indexes).toEqual([]);
 
       // Data is in metadata
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.client_id).toBe('client-123');
     });
 
@@ -275,7 +275,7 @@ describe('GoogleAnalyticsAdapter', () => {
       expect(result.doubles).toEqual([3]);
 
       // Events are in metadata
-      const metadata = JSON.parse(result.blobs![0]);
+      const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.events).toHaveLength(3);
     });
   });
