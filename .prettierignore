@@ -1,0 +1,16 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+.wrangler
+functions
+
+# Coverage
+coverage
+
+# Backups
+backups
+
+# Logs
+*.log

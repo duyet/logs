@@ -13,11 +13,13 @@ This directory contains scripts for managing the Cloudflare D1 database.
 ### Migration Scripts
 
 #### Run migrations locally
+
 ```bash
 npm run db:migrate
 ```
 
 #### Run migrations on production
+
 ```bash
 npm run db:migrate:remote
 ```
@@ -27,11 +29,13 @@ npm run db:migrate:remote
 Create default projects (debug, duyet.net, blog, prod, staging, test) in the database.
 
 #### Seed local database
+
 ```bash
 npm run db:seed
 ```
 
 #### Seed production database
+
 ```bash
 npm run db:seed:remote
 ```
@@ -41,16 +45,19 @@ npm run db:seed:remote
 Backup the entire D1 database to `./backups/` directory.
 
 #### Backup local database
+
 ```bash
 npm run db:backup:local
 ```
 
 #### Backup production database
+
 ```bash
 npm run db:backup
 ```
 
 **Output files:**
+
 - `duyet-logs_[local|prod]_YYYYMMDD_HHMMSS.sql.gz` - Compressed SQL dump
 - `duyet-logs_[local|prod]_YYYYMMDD_HHMMSS.sql.projects.json` - JSON export of projects
 - `duyet-logs_latest.sql.gz` - Symlink to latest backup
@@ -60,11 +67,13 @@ npm run db:backup
 Restore database from a backup file.
 
 #### Restore latest backup to local
+
 ```bash
 npm run db:restore latest --local
 ```
 
 #### Restore specific backup to production
+
 ```bash
 npm run db:restore ./backups/duyet-logs_prod_20240101_120000.sql.gz
 ```
@@ -76,11 +85,13 @@ npm run db:restore ./backups/duyet-logs_prod_20240101_120000.sql.gz
 Execute SQL queries directly.
 
 #### Query local database
+
 ```bash
 npm run db:query "SELECT * FROM projects;"
 ```
 
 #### Query production database
+
 ```bash
 npm run db:query:remote "SELECT * FROM projects;"
 ```
@@ -101,6 +112,7 @@ CREATE INDEX idx_projects_created_at ON projects(created_at DESC);
 ```
 
 **Columns:**
+
 - `id` - Project identifier (3-32 alphanumeric characters)
 - `description` - Project description
 - `created_at` - Unix timestamp when project was created
@@ -110,14 +122,14 @@ CREATE INDEX idx_projects_created_at ON projects(created_at DESC);
 
 The seed script creates these default projects:
 
-| ID | Description |
-|----|-------------|
-| `debug` | Development and debugging project |
-| `duyet` | duyet.net personal website analytics |
-| `blog` | Blog analytics and metrics |
-| `prod` | Production environment |
-| `staging` | Staging environment |
-| `test` | Testing and QA environment |
+| ID        | Description                          |
+| --------- | ------------------------------------ |
+| `debug`   | Development and debugging project    |
+| `duyet`   | duyet.net personal website analytics |
+| `blog`    | Blog analytics and metrics           |
+| `prod`    | Production environment               |
+| `staging` | Staging environment                  |
+| `test`    | Testing and QA environment           |
 
 ## Backup Strategy
 
@@ -129,6 +141,7 @@ The seed script creates these default projects:
 ### Backup Retention
 
 Keep backups for:
+
 - Daily: 7 days
 - Weekly: 4 weeks
 - Monthly: 12 months
@@ -146,11 +159,13 @@ Keep backups for:
 ## Manual Database Operations
 
 ### Connect to local database
+
 ```bash
 wrangler d1 execute duyet-logs --local --command "SELECT * FROM projects;"
 ```
 
 ### Create new project manually
+
 ```bash
 wrangler d1 execute duyet-logs --local --command "
   INSERT INTO projects (id, description, created_at, last_used)
@@ -159,6 +174,7 @@ wrangler d1 execute duyet-logs --local --command "
 ```
 
 ### List all projects
+
 ```bash
 wrangler d1 execute duyet-logs --local --command "
   SELECT id, description,
@@ -170,6 +186,7 @@ wrangler d1 execute duyet-logs --local --command "
 ```
 
 ### Update project description
+
 ```bash
 wrangler d1 execute duyet-logs --local --command "
   UPDATE projects
@@ -179,6 +196,7 @@ wrangler d1 execute duyet-logs --local --command "
 ```
 
 ### Delete project
+
 ```bash
 wrangler d1 execute duyet-logs --local --command "
   DELETE FROM projects WHERE id = 'myproject';
@@ -199,6 +217,7 @@ database_id = "your-database-id"
 ```
 
 Create database if needed:
+
 ```bash
 wrangler d1 create duyet-logs
 ```
@@ -206,6 +225,7 @@ wrangler d1 create duyet-logs
 ### Error: "Table doesn't exist"
 
 Run migrations:
+
 ```bash
 npm run db:migrate
 ```
@@ -213,6 +233,7 @@ npm run db:migrate
 ### Backup fails with permission error
 
 Make scripts executable:
+
 ```bash
 chmod +x scripts/*.sh
 ```
@@ -220,11 +241,13 @@ chmod +x scripts/*.sh
 ### Restore hangs or fails
 
 1. Check backup file integrity:
+
    ```bash
    gunzip -t ./backups/backup-file.sql.gz
    ```
 
 2. Manually extract and inspect:
+
    ```bash
    gunzip -c ./backups/backup-file.sql.gz | head -n 20
    ```

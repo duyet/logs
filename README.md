@@ -20,22 +20,26 @@ A TypeScript-based analytics data router built on **Cloudflare Pages** using the
 ## Endpoints
 
 ### `GET /ping` - Health Check
+
 ```bash
 curl https://logs.duyet.net/ping
 ```
 
 **Response**:
+
 ```json
 {
-  "status": "ok",
-  "timestamp": "2024-01-01T00:00:00.000Z"
+	"status": "ok",
+	"timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
 ### `POST /cc` - Claude Code Analytics
+
 Send Claude Code OpenTelemetry metrics and events.
 
 **Metric Example**:
+
 ```bash
 curl -X POST https://logs.duyet.net/cc \
   -H "Content-Type: application/json" \
@@ -51,6 +55,7 @@ curl -X POST https://logs.duyet.net/cc \
 ```
 
 **Event Example**:
+
 ```bash
 curl -X POST https://logs.duyet.net/cc \
   -H "Content-Type: application/json" \
@@ -65,9 +70,11 @@ curl -X POST https://logs.duyet.net/cc \
 ```
 
 ### `POST /ga` - Google Analytics
+
 Send Google Analytics GA4 Measurement Protocol data.
 
 **Example**:
+
 ```bash
 curl -X POST https://logs.duyet.net/ga \
   -H "Content-Type: application/json" \
@@ -90,6 +97,7 @@ Organize and filter analytics data by project using the built-in Project ID syst
 ### Web UI
 
 Visit **[logs.duyet.net](https://logs.duyet.net)** to:
+
 - ✨ Create new projects with custom or auto-generated IDs
 - 📋 View all existing projects
 - 📊 See creation time and last usage
@@ -100,6 +108,7 @@ Visit **[logs.duyet.net](https://logs.duyet.net)** to:
 Include a `project_id` in your analytics requests to classify data. Three methods supported (in order of precedence):
 
 #### 1. HTTP Header (Recommended)
+
 ```bash
 curl -X POST https://logs.duyet.net/cc \
   -H "X-Project-ID: myproject" \
@@ -108,11 +117,13 @@ curl -X POST https://logs.duyet.net/cc \
 ```
 
 #### 2. Query Parameter
+
 ```bash
 curl "https://logs.duyet.net/cc?project_id=myproject&session_id=..."
 ```
 
 #### 3. Request Body
+
 ```bash
 curl -X POST https://logs.duyet.net/cc \
   -H "Content-Type: application/json" \
@@ -122,6 +133,7 @@ curl -X POST https://logs.duyet.net/cc \
 ### Project Management API
 
 #### Create Project
+
 ```bash
 curl -X POST https://logs.duyet.net/api/projects \
   -H "Content-Type: application/json" \
@@ -129,11 +141,13 @@ curl -X POST https://logs.duyet.net/api/projects \
 ```
 
 #### List Projects
+
 ```bash
 curl https://logs.duyet.net/api/projects
 ```
 
 #### Get Project Details
+
 ```bash
 curl https://logs.duyet.net/api/projects/myproject
 ```
@@ -141,6 +155,7 @@ curl https://logs.duyet.net/api/projects/myproject
 ### Default Projects
 
 Six default projects are pre-configured:
+
 - `debug` - Development and debugging
 - `duyet` - duyet.net personal website analytics
 - `blog` - Blog analytics and metrics
@@ -174,6 +189,7 @@ npm run db:query:remote "SELECT COUNT(*) FROM projects;"
 ```
 
 Backups are stored in `./backups/` with format:
+
 - `duyet-logs_[prod|local]_YYYYMMDD_HHMMSS.sql.gz` - Compressed SQL dump
 - `duyet-logs_[prod|local]_YYYYMMDD_HHMMSS.sql.projects.json` - JSON export
 
@@ -196,6 +212,7 @@ npx tsx scripts/generate-test-events.ts --endpoint http://localhost:3000 --count
 ```
 
 Generates:
+
 - 40% Claude Code metrics
 - 40% Claude Code events
 - 20% Google Analytics events
@@ -205,11 +222,13 @@ All with realistic random data.
 ## Development
 
 ### Prerequisites
+
 - Node.js 20+
 - npm or yarn
 - Cloudflare account (for deployment)
 
 ### Setup
+
 ```bash
 # Install dependencies
 npm install
@@ -231,6 +250,7 @@ npm run dev
 ```
 
 ### Project Structure
+
 ```
 cloudflare-analytics-router/
 ├── functions/
@@ -278,17 +298,20 @@ cloudflare-analytics-router/
 ## Deployment
 
 ### Automated Deployment
+
 ```bash
 ./scripts/deploy.sh
 ```
 
 This script will:
+
 1. Build the TypeScript project
 2. Run all tests
 3. Type check the code
 4. Deploy to Cloudflare Pages (duyet-logs project)
 
 ### Manual Deployment
+
 ```bash
 # Build
 npm run build
@@ -300,6 +323,7 @@ npm run deploy
 ### Configuration
 
 **wrangler.toml**:
+
 ```toml
 name = "duyet-logs"
 compatibility_date = "2024-01-01"
@@ -328,18 +352,18 @@ import { BaseAdapter } from './base.js';
 import type { AnalyticsEngineDataPoint } from '../types/index.js';
 
 export class CustomAdapter extends BaseAdapter<CustomData> {
-  validate(data: unknown): data is CustomData {
-    // Validation logic
-    return this.isObject(data) && 'required_field' in data;
-  }
+	validate(data: unknown): data is CustomData {
+		// Validation logic
+		return this.isObject(data) && 'required_field' in data;
+	}
 
-  transform(data: CustomData): AnalyticsEngineDataPoint {
-    return {
-      indexes: [this.toIndex(data.id)],
-      doubles: [this.toDouble(data.value)],
-      blobs: [this.toBlob(JSON.stringify(data))],
-    };
-  }
+	transform(data: CustomData): AnalyticsEngineDataPoint {
+		return {
+			indexes: [this.toIndex(data.id)],
+			doubles: [this.toDouble(data.value)],
+			blobs: [this.toBlob(JSON.stringify(data))],
+		};
+	}
 }
 ```
 
@@ -358,14 +382,14 @@ binding = "CUSTOM_ANALYTICS"
 const customAdapter = new CustomAdapter();
 
 app.post('/custom', async (c) => {
-  const rawData = await c.req.json();
-  await analyticsService.writeDataPoint(
-    c.env,
-    'CUSTOM_ANALYTICS',
-    customAdapter,
-    rawData
-  );
-  return c.json({ success: true });
+	const rawData = await c.req.json();
+	await analyticsService.writeDataPoint(
+		c.env,
+		'CUSTOM_ANALYTICS',
+		customAdapter,
+		rawData
+	);
+	return c.json({ success: true });
 });
 ```
 
@@ -385,6 +409,7 @@ npm run coverage
 ## Architecture
 
 ### Data Flow
+
 ```
 HTTP Request (POST /cc, /ga)
     ↓
@@ -403,13 +428,14 @@ Adapters transform incoming data formats to Analytics Engine format:
 
 ```typescript
 interface AnalyticsEngineDataPoint {
-  indexes?: string[];  // Max 96 bytes each
-  blobs?: string[];    // Max 5120 bytes each
-  doubles?: number[];  // Numeric values
+	indexes?: string[]; // Max 96 bytes each
+	blobs?: string[]; // Max 5120 bytes each
+	doubles?: number[]; // Numeric values
 }
 ```
 
 **Base Adapter** provides:
+
 - `toIndex()` - Convert & truncate to 96 bytes
 - `toBlob()` - Convert & truncate to 5120 bytes
 - `toDouble()` - Convert to number
@@ -421,13 +447,14 @@ All endpoints return JSON error responses:
 
 ```json
 {
-  "error": "Bad Request",
-  "message": "Invalid data format",
-  "status": 400
+	"error": "Bad Request",
+	"message": "Invalid data format",
+	"status": 400
 }
 ```
 
 **Status Codes**:
+
 - `200` - Success
 - `400` - Bad Request (invalid data format)
 - `404` - Not Found (unknown endpoint)
@@ -436,11 +463,13 @@ All endpoints return JSON error responses:
 ## Monitoring
 
 Request logs include:
+
 - HTTP method and path
 - Status code
 - Response time (ms)
 
 Example:
+
 ```
 POST /cc 200 15ms
 GET /ping 200 1ms
@@ -463,6 +492,7 @@ GET /ping 200 1ms
 ## Documentation
 
 See [CLAUDE.md](./CLAUDE.md) for comprehensive project documentation including:
+
 - Detailed architecture
 - Data formats (Claude Code OTel, GA4)
 - Analytics Engine integration
