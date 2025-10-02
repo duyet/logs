@@ -2,7 +2,7 @@
  * Seed default projects via API
  * Run with:
  *   npm run db:seed          # Local (http://localhost:8788)
- *   npm run db:seed:remote   # Production (https://logs.duyet.net)
+ *   npm run db:seed:remote   # Production (https://duyet-logs.pages.dev)
  */
 
 interface Project {
@@ -44,7 +44,7 @@ async function seedProjects(): Promise<void> {
 	// Determine endpoint from environment or command line args
 	const isRemote = process.argv.includes('--remote');
 	const endpoint = isRemote
-		? 'https://logs.duyet.net'
+		? 'https://duyet-logs.pages.dev'
 		: process.env.ENDPOINT || 'http://localhost:8788';
 
 	console.log(`🌱 Seeding projects to ${endpoint}...\n`);
@@ -77,9 +77,7 @@ async function seedProjects(): Promise<void> {
 					console.log(`⏭️  Skipped (already exists): ${project.id}`);
 					skipped++;
 				} else {
-					console.error(
-						`❌ Failed to create ${project.id}: ${error.message}`
-					);
+					console.error(`❌ Failed to create ${project.id}: ${error.message}`);
 					failed++;
 				}
 			} else {
