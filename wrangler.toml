@@ -9,5 +9,11 @@ binding = "CLAUDE_CODE_ANALYTICS"
 [[analytics_engine_datasets]]
 binding = "GA_ANALYTICS"
 
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "duyet-logs"
+database_id = "1d875c4d-9e1c-4f96-99c1-08386c53670c"
+
 [observability]
 enabled = true

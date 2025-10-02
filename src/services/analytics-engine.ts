@@ -12,12 +12,12 @@ export class AnalyticsEngineService {
   /**
    * Write data point to Analytics Engine dataset
    */
-  async writeDataPoint<T>(
+  writeDataPoint<T>(
     env: Env,
     datasetName: keyof Env,
     adapter: DataAdapter<T>,
     rawData: unknown
-  ): Promise<void> {
+  ): void {
     // Validate input data
     if (!adapter.validate(rawData)) {
       throw new Error('Invalid data format');

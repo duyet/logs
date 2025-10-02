@@ -57,6 +57,11 @@ export class ClaudeCodeAdapter extends BaseAdapter<ClaudeCodeData> {
     const blobs: string[] = [];
     const doubles: number[] = [metric.value];
 
+    // Add project_id as first indexed field for filtering
+    if (metric.project_id) {
+      indexes.unshift(this.toIndex(metric.project_id));
+    }
+
     if (metric.app_version) {
       indexes.push(this.toIndex(metric.app_version));
     }
@@ -106,6 +111,11 @@ export class ClaudeCodeAdapter extends BaseAdapter<ClaudeCodeData> {
     ];
 
     const doubles: number[] = [];
+
+    // Add project_id as first indexed field for filtering
+    if (event.project_id) {
+      indexes.unshift(this.toIndex(event.project_id));
+    }
 
     return { indexes, blobs, doubles };
   }

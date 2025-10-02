@@ -1,3 +1,6 @@
+// Import Hono context variable extensions
+import './hono.js';
+
 /**
  * Cloudflare Analytics Engine data format
  */
@@ -13,6 +16,7 @@ export interface AnalyticsEngineDataPoint {
 export interface Env {
   CLAUDE_CODE_ANALYTICS: AnalyticsEngineDataset;
   GA_ANALYTICS: AnalyticsEngineDataset;
+  DB: D1Database;
 }
 
 /**
@@ -47,6 +51,7 @@ export interface ClaudeCodeMetric {
   user_account_uuid?: string;
   metric_name: string;
   value: number;
+  project_id?: string;
   attributes?: {
     type?: 'input' | 'output' | 'cacheRead' | 'cacheCreation';
     model?: string;
@@ -64,6 +69,7 @@ export interface ClaudeCodeEvent {
   event_name: 'user_prompt' | 'tool_result' | 'api_request' | 'api_error' | 'tool_decision';
   timestamp: string;
   session_id: string;
+  project_id?: string;
   attributes: Record<string, string | number | boolean>;
 }
 
@@ -86,6 +92,7 @@ export interface GoogleAnalyticsEvent {
 export interface GoogleAnalyticsData {
   client_id: string;
   user_id?: string;
+  project_id?: string;
   timestamp_micros?: string;
   user_properties?: Record<string, { value: string | number | boolean }>;
   events: GoogleAnalyticsEvent[];
@@ -123,4 +130,39 @@ export interface SuccessResponse {
 export interface PingResponse {
   status: 'ok';
   timestamp: string;
+}
+
+/**
+ * Project entity
+ */
+export interface Project {
+  id: string;
+  description: string;
+  created_at: number;
+  last_used: number | null;
+}
+
+/**
+ * Project creation request
+ */
+export interface ProjectCreateRequest {
+  id?: string;
+  description: string;
+}
+
+/**
+ * Project creation response
+ */
+export interface ProjectCreateResponse {
+  success: boolean;
+  project: Project;
+}
+
+/**
+ * Project list response
+ */
+export interface ProjectListResponse {
+  success: boolean;
+  projects: Project[];
+  total: number;
 }

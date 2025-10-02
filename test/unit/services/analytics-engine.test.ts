@@ -25,14 +25,15 @@ describe('AnalyticsEngineService', () => {
   const mockEnv: Env = {
     CLAUDE_CODE_ANALYTICS: mockDataset,
     GA_ANALYTICS: mockDataset,
+    DB: {} as D1Database,
   };
 
-  it('should write valid data to Analytics Engine', async () => {
+  it('should write valid data to Analytics Engine', () => {
     const rawData = { test: 'value' };
     const validateSpy = vi.spyOn(mockAdapter, 'validate');
     const transformSpy = vi.spyOn(mockAdapter, 'transform');
 
-    await service.writeDataPoint(mockEnv, 'CLAUDE_CODE_ANALYTICS', mockAdapter, rawData);
+    service.writeDataPoint(mockEnv, 'CLAUDE_CODE_ANALYTICS', mockAdapter, rawData);
 
     expect(validateSpy).toHaveBeenCalledWith(rawData);
     expect(transformSpy).toHaveBeenCalledWith(rawData);
@@ -46,7 +47,7 @@ describe('AnalyticsEngineService', () => {
     transformSpy.mockRestore();
   });
 
-  it('should throw error for invalid data', async () => {
+  it('should throw error for invalid data', () => {
     const invalidAdapter: DataAdapter = {
       validate(_data: unknown): _data is unknown {
         return false;
@@ -59,9 +60,9 @@ describe('AnalyticsEngineService', () => {
     const validateSpy = vi.spyOn(invalidAdapter, 'validate');
     const transformSpy = vi.spyOn(invalidAdapter, 'transform');
 
-    await expect(
+    expect(() =>
       service.writeDataPoint(mockEnv, 'CLAUDE_CODE_ANALYTICS', invalidAdapter, { invalid: 'data' })
-    ).rejects.toThrow('Invalid data format');
+    ).toThrow('Invalid data format');
 
     expect(validateSpy).toHaveBeenCalled();
     expect(transformSpy).not.toHaveBeenCalled();
@@ -70,23 +71,23 @@ describe('AnalyticsEngineService', () => {
     transformSpy.mockRestore();
   });
 
-  it('should throw error for missing dataset binding', async () => {
+  it('should throw error for missing dataset binding', () => {
     const emptyEnv = {} as Env;
 
-    await expect(
+    expect(() =>
       service.writeDataPoint(emptyEnv, 'CLAUDE_CODE_ANALYTICS', mockAdapter, { test: 'value' })
-    ).rejects.toThrow('Dataset binding not found: CLAUDE_CODE_ANALYTICS');
+    ).toThrow('Dataset binding not found: CLAUDE_CODE_ANALYTICS');
   });
 
-  it('should handle GA_ANALYTICS dataset', async () => {
+  it('should handle GA_ANALYTICS dataset', () => {
     const rawData = { test: 'value' };
 
-    await service.writeDataPoint(mockEnv, 'GA_ANALYTICS', mockAdapter, rawData);
+    service.writeDataPoint(mockEnv, 'GA_ANALYTICS', mockAdapter, rawData);
 
     expect(mockDataset.writeDataPoint).toHaveBeenCalled();
   });
 
-  it('should validate before transforming', async () => {
+  it('should validate before transforming', () => {
     const callOrder: string[] = [];
 
     const orderedAdapter: DataAdapter = {
@@ -100,7 +101,7 @@ describe('AnalyticsEngineService', () => {
       },
     };
 
-    await service.writeDataPoint(mockEnv, 'CLAUDE_CODE_ANALYTICS', orderedAdapter, { test: 'value' });
+    service.writeDataPoint(mockEnv, 'CLAUDE_CODE_ANALYTICS', orderedAdapter, { test: 'value' });
 
     expect(callOrder).toEqual(['validate', 'transform']);
   });

@@ -22,6 +22,6 @@
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*", "functions/**/*", "test/**/*"],
+  "include": ["src/**/*", "functions/**/*", "test/**/*", "scripts/**/*", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

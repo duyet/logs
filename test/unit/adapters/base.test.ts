@@ -12,7 +12,7 @@ class TestAdapter extends BaseAdapter<{ value: string }> {
   }
 
   validate(data: unknown): data is { value: string } {
-    return this.isObject(data) && this.isString((data as Record<string, unknown>).value);
+    return this.isObject(data) && this.isString((data).value);
   }
 }
 

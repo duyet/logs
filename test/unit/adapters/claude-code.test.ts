@@ -131,9 +131,13 @@ describe('ClaudeCodeAdapter', () => {
       const attributesBlob = result.blobs?.find((blob) => blob.includes('tool_name'));
       expect(attributesBlob).toBeDefined();
       if (attributesBlob) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const parsed = JSON.parse(attributesBlob);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(parsed.tool_name).toBe('Read');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(parsed.success).toBe(true);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(parsed.duration_ms).toBe(50);
       }
     });
@@ -166,6 +170,52 @@ describe('ClaudeCodeAdapter', () => {
       if (firstIndex) {
         expect(firstIndex.length).toBeLessThanOrEqual(96);
       }
+    });
+  });
+
+  describe('project_id support', () => {
+    it('should include project_id in metric indexes as first element', () => {
+      const metric: ClaudeCodeMetric = {
+        session_id: 'session-123',
+        metric_name: 'claude_code.token.usage',
+        value: 100,
+        project_id: 'proj123',
+      };
+
+      const result = adapter.transform(metric);
+
+      expect(result.indexes?.[0]).toBe('proj123');
+      expect(result.indexes).toContain('session-123');
+      expect(result.indexes).toContain('claude_code.token.usage');
+    });
+
+    it('should include project_id in event indexes as first element', () => {
+      const event: ClaudeCodeEvent = {
+        event_name: 'user_prompt',
+        timestamp: '2024-01-01T00:00:00Z',
+        session_id: 'session-123',
+        project_id: 'proj456',
+        attributes: { test: 'value' },
+      };
+
+      const result = adapter.transform(event);
+
+      expect(result.indexes?.[0]).toBe('proj456');
+      expect(result.indexes).toContain('session-123');
+      expect(result.indexes).toContain('user_prompt');
+    });
+
+    it('should work without project_id', () => {
+      const metric: ClaudeCodeMetric = {
+        session_id: 'session-123',
+        metric_name: 'test',
+        value: 1,
+      };
+
+      const result = adapter.transform(metric);
+
+      expect(result.indexes?.[0]).toBe('session-123');
+      expect(result.indexes).not.toContain(undefined);
     });
   });
 });

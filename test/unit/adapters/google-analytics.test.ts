@@ -104,7 +104,9 @@ describe('GoogleAnalyticsAdapter', () => {
       const userPropsBlob = result.blobs?.find((blob) => blob.includes('plan'));
       expect(userPropsBlob).toBeDefined();
       if (userPropsBlob) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const parsed = JSON.parse(userPropsBlob);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         expect(parsed.plan.value).toBe('premium');
       }
     });
@@ -138,9 +140,13 @@ describe('GoogleAnalyticsAdapter', () => {
 
       const paramsBlob = result.blobs?.find((blob) => blob.includes('currency'));
       expect(paramsBlob).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const parsed = JSON.parse(paramsBlob!);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect(parsed.value).toBe(99.99);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect(parsed.currency).toBe('USD');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect(parsed.items).toBe(3);
     });
 
@@ -190,6 +196,47 @@ describe('GoogleAnalyticsAdapter', () => {
 
       const result = adapter.transform(data);
       expect(result.blobs?.some((blob) => blob.includes('deeply'))).toBe(true);
+    });
+  });
+
+  describe('project_id support', () => {
+    it('should include project_id in indexes as first element', () => {
+      const data: GoogleAnalyticsData = {
+        client_id: 'client-123',
+        project_id: 'proj789',
+        events: [{ name: 'page_view' }],
+      };
+
+      const result = adapter.transform(data);
+
+      expect(result.indexes?.[0]).toBe('proj789');
+      expect(result.indexes).toContain('client-123');
+      expect(result.indexes).toContain('page_view');
+    });
+
+    it('should work without project_id', () => {
+      const data: GoogleAnalyticsData = {
+        client_id: 'client-123',
+        events: [{ name: 'event' }],
+      };
+
+      const result = adapter.transform(data);
+
+      expect(result.indexes?.[0]).toBe('client-123');
+      expect(result.indexes).not.toContain(undefined);
+    });
+
+    it('should include project_id with multiple events', () => {
+      const data: GoogleAnalyticsData = {
+        client_id: 'client-123',
+        project_id: 'projmulti',
+        events: [{ name: 'event1' }, { name: 'event2' }, { name: 'event3' }],
+      };
+
+      const result = adapter.transform(data);
+
+      expect(result.indexes?.[0]).toBe('projmulti');
+      expect(result.doubles).toEqual([3]);
     });
   });
 });

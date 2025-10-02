@@ -1,4 +1,9 @@
 import type { AnalyticsEngineDataPoint, DataAdapter } from '../types/index.js';
+import {
+  isValidObject,
+  isValidNumber,
+  sanitizeString,
+} from '../utils/validation.js';
 
 /**
  * Base adapter class with common functionality
@@ -12,7 +17,8 @@ export abstract class BaseAdapter<T> implements DataAdapter<T> {
    */
   protected toBlob(value: unknown, maxLength = 5120): string {
     const str = String(value);
-    return str.length > maxLength ? str.substring(0, maxLength) : str;
+    const sanitized = sanitizeString(str);
+    return sanitized.length > maxLength ? sanitized.substring(0, maxLength) : sanitized;
   }
 
   /**
@@ -20,7 +26,8 @@ export abstract class BaseAdapter<T> implements DataAdapter<T> {
    */
   protected toIndex(value: unknown): string {
     const str = String(value);
-    return str.length > 96 ? str.substring(0, 96) : str;
+    const sanitized = sanitizeString(str);
+    return sanitized.length > 96 ? sanitized.substring(0, 96) : sanitized;
   }
 
   /**
@@ -32,23 +39,23 @@ export abstract class BaseAdapter<T> implements DataAdapter<T> {
   }
 
   /**
-   * Check if value is a non-null object
+   * Check if value is a non-null object (uses validation utility)
    */
   protected isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
+    return isValidObject(value);
   }
 
   /**
-   * Check if value is a string
+   * Check if value is a string (allows empty strings for analytics data)
    */
   protected isString(value: unknown): value is string {
     return typeof value === 'string';
   }
 
   /**
-   * Check if value is a number
+   * Check if value is a number (uses validation utility)
    */
   protected isNumber(value: unknown): value is number {
-    return typeof value === 'number' && !isNaN(value);
+    return isValidNumber(value);
   }
 }

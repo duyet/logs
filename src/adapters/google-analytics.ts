@@ -26,6 +26,11 @@ export class GoogleAnalyticsAdapter extends BaseAdapter<GoogleAnalyticsData> {
   transform(data: GoogleAnalyticsData): AnalyticsEngineDataPoint {
     const indexes: string[] = [this.toIndex(data.client_id)];
 
+    // Add project_id as first indexed field for filtering
+    if (data.project_id) {
+      indexes.unshift(this.toIndex(data.project_id));
+    }
+
     if (data.user_id) {
       indexes.push(this.toIndex(data.user_id));
     }
