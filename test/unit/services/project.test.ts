@@ -86,8 +86,13 @@ describe('isValidProjectId', () => {
     expect(isValidProjectId('Test')).toBe(false);
   });
 
-  it('should reject IDs with special characters', () => {
-    expect(isValidProjectId('test-123')).toBe(false);
+  it('should accept IDs with hyphens', () => {
+    expect(isValidProjectId('test-123')).toBe(true);
+    expect(isValidProjectId('my-project')).toBe(true);
+    expect(isValidProjectId('claude-code')).toBe(true);
+  });
+
+  it('should reject IDs with other special characters', () => {
     expect(isValidProjectId('test_123')).toBe(false);
     expect(isValidProjectId('test.123')).toBe(false);
     expect(isValidProjectId('test 123')).toBe(false);

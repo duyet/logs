@@ -49,11 +49,11 @@ export function sanitizeString(value: string): string {
 }
 
 /**
- * Validate project ID format (3-32 alphanumeric lowercase)
+ * Validate project ID format (3-32 lowercase alphanumeric with hyphens)
  */
 export function isValidProjectId(value: unknown): value is string {
   if (!isValidString(value)) return false;
-  return /^[a-z0-9]{3,32}$/.test(value);
+  return /^[a-z0-9-]{3,32}$/.test(value);
 }
 
 /**

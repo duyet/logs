@@ -122,6 +122,9 @@ describe('validation utilities', () => {
     it('should return true for valid project IDs', () => {
       expect(isValidProjectId('abc')).toBe(true);
       expect(isValidProjectId('project123')).toBe(true);
+      expect(isValidProjectId('test-id')).toBe(true); // hyphens allowed
+      expect(isValidProjectId('my-project')).toBe(true);
+      expect(isValidProjectId('claude-code')).toBe(true);
       expect(isValidProjectId('a'.repeat(32))).toBe(true);
     });
 
@@ -129,7 +132,6 @@ describe('validation utilities', () => {
       expect(isValidProjectId('ab')).toBe(false); // too short
       expect(isValidProjectId('a'.repeat(33))).toBe(false); // too long
       expect(isValidProjectId('ABC')).toBe(false); // uppercase
-      expect(isValidProjectId('test-id')).toBe(false); // has dash
       expect(isValidProjectId('test_id')).toBe(false); // has underscore
       expect(isValidProjectId(123)).toBe(false); // not string
     });

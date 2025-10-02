@@ -14,11 +14,11 @@ export function generateProjectId(): string {
 
 /**
  * Validate project ID format
- * - Alphanumeric only
+ * - Lowercase alphanumeric with hyphens
  * - 3-32 characters
  */
 export function isValidProjectId(id: string): boolean {
-  return /^[a-z0-9]{3,32}$/.test(id);
+  return /^[a-z0-9-]{3,32}$/.test(id);
 }
 
 /**
@@ -51,7 +51,7 @@ export async function createProject(
   // Validate ID format
   if (!isValidProjectId(id)) {
     throw new Error(
-      'Invalid project ID format. Must be 3-32 alphanumeric characters.'
+      'Invalid project ID format. Must be 3-32 lowercase alphanumeric characters (hyphens allowed).'
     );
   }
 

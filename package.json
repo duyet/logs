@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler pages dev",
-    "build": "tsc",
+    "build": "./scripts/build.sh",
+    "build:tsc": "tsc",
     "build:watch": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",

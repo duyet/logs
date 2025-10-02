@@ -7,6 +7,7 @@ import { logger } from '../middleware/logger.js';
 import { projectIdMiddleware } from '../middleware/project-id.js';
 import { createAnalyticsHandler } from '../utils/route-handler.js';
 import { handleError } from '../utils/error-handler.js';
+import { createProjectsRouter } from './projects.js';
 
 /**
  * Create and configure Hono app with all routes
@@ -55,6 +56,9 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   // Google Analytics endpoints
   app.get('/ga', googleAnalyticsHandler.handleGet);
   app.post('/ga', googleAnalyticsHandler.handlePost);
+
+  // Projects API routes
+  app.route('/api/projects', createProjectsRouter());
 
   return app;
 }
