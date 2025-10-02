@@ -919,6 +919,18 @@ GET /ping 200 1ms
   - Verify 100% test coverage before committing
   - Ensure all TypeScript strict mode checks pass
   - Run `npm test` and `npm run lint` before every commit
+- **Git Workflow**:
+  - **Auto-commit when changes have impact or add new features**
+  - Commit after completing any of:
+    - New feature implementation
+    - Bug fixes that affect functionality
+    - Performance improvements
+    - Breaking changes or API modifications
+    - Test coverage improvements
+    - Documentation updates for technical requirements
+  - Use semantic commit messages: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `perf:`
+  - Do NOT auto-commit for: minor typos, formatting-only changes, work-in-progress
+  - Always run tests before committing
 
 ### Performance Targets
 
