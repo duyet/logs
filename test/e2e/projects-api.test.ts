@@ -3,338 +3,338 @@ import { onRequest } from '../../functions/api/projects.js';
 import type { Env, Project } from '../../src/types/index.js';
 
 interface MockD1Result {
-	mockDB: D1Database;
-	statement: {
-		bind: ReturnType<typeof vi.fn>;
-		first: ReturnType<typeof vi.fn>;
-		run: ReturnType<typeof vi.fn>;
-		all: ReturnType<typeof vi.fn>;
-	};
+  mockDB: D1Database;
+  statement: {
+    bind: ReturnType<typeof vi.fn>;
+    first: ReturnType<typeof vi.fn>;
+    run: ReturnType<typeof vi.fn>;
+    all: ReturnType<typeof vi.fn>;
+  };
 }
 
 // Response type helpers - using interfaces to avoid unused type warnings
 interface ProjectResponse {
-	success: boolean;
-	project: Project;
+  success: boolean;
+  project: Project;
 }
 interface ProjectListResponse {
-	success: boolean;
-	projects: Project[];
-	total: number;
+  success: boolean;
+  projects: Project[];
+  total: number;
 }
 interface ErrorResponse {
-	error: string;
-	message: string;
-	status: number;
+  error: string;
+  message: string;
+  status: number;
 }
 
 // Mock D1 Database
 function createMockD1(): MockD1Result {
-	const statement = {
-		bind: vi.fn().mockReturnThis(),
-		first: vi.fn(),
-		run: vi.fn(),
-		all: vi.fn(),
-	};
+  const statement = {
+    bind: vi.fn().mockReturnThis(),
+    first: vi.fn(),
+    run: vi.fn(),
+    all: vi.fn(),
+  };
 
-	const mockDB = {
-		prepare: vi.fn().mockReturnValue(statement),
-	} as unknown as D1Database;
+  const mockDB = {
+    prepare: vi.fn().mockReturnValue(statement),
+  } as unknown as D1Database;
 
-	return { mockDB, statement };
+  return { mockDB, statement };
 }
 
 describe('Projects API E2E', () => {
-	let mockDB: D1Database;
-	let statement: ReturnType<typeof createMockD1>['statement'];
-	let env: Env;
+  let mockDB: D1Database;
+  let statement: ReturnType<typeof createMockD1>['statement'];
+  let env: Env;
 
-	beforeEach(() => {
-		vi.clearAllMocks();
-		const mock = createMockD1();
-		mockDB = mock.mockDB;
-		statement = mock.statement;
-		env = {
-			DB: mockDB,
-			CLAUDE_CODE_ANALYTICS: {} as never,
-			GA_ANALYTICS: {} as never,
-		};
-	});
+  beforeEach(() => {
+    vi.clearAllMocks();
+    const mock = createMockD1();
+    mockDB = mock.mockDB;
+    statement = mock.statement;
+    env = {
+      DB: mockDB,
+      CLAUDE_CODE_ANALYTICS: {} as never,
+      GA_ANALYTICS: {} as never,
+    };
+  });
 
-	describe('POST /api/projects', () => {
-		it('should create project with custom ID', async () => {
-			// Mock: ID doesn't exist
-			statement.first.mockResolvedValueOnce(null);
-			// Mock: INSERT successful
-			statement.run.mockResolvedValueOnce({});
+  describe('POST /api/projects', () => {
+    it('should create project with custom ID', async () => {
+      // Mock: ID doesn't exist
+      statement.first.mockResolvedValueOnce(null);
+      // Mock: INSERT successful
+      statement.run.mockResolvedValueOnce({});
 
-			// Note: Pages Functions strip the /api/projects prefix, so we test with /
-			const request = new Request('http://localhost/', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					id: 'custom123',
-					description: 'My Custom Project',
-				}),
-			});
+      // Note: Pages Functions strip the /api/projects prefix, so we test with /
+      const request = new Request('http://localhost/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'custom123',
+          description: 'My Custom Project',
+        }),
+      });
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ProjectResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ProjectResponse;
 
-			expect(response.status).toBe(201);
-			expect(data.success).toBe(true);
-			expect(data.project.id).toBe('custom123');
-			expect(data.project.description).toBe('My Custom Project');
-			expect(data.project.created_at).toBeGreaterThan(0);
-			expect(data.project.last_used).toBeNull();
-		});
+      expect(response.status).toBe(201);
+      expect(data.success).toBe(true);
+      expect(data.project.id).toBe('custom123');
+      expect(data.project.description).toBe('My Custom Project');
+      expect(data.project.created_at).toBeGreaterThan(0);
+      expect(data.project.last_used).toBeNull();
+    });
 
-		it('should create project with auto-generated ID', async () => {
-			statement.first.mockResolvedValueOnce(null);
-			statement.run.mockResolvedValueOnce({});
+    it('should create project with auto-generated ID', async () => {
+      statement.first.mockResolvedValueOnce(null);
+      statement.run.mockResolvedValueOnce({});
 
-			const request = new Request('http://localhost/', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					description: 'Auto-generated ID Project',
-				}),
-			});
+      const request = new Request('http://localhost/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: 'Auto-generated ID Project',
+        }),
+      });
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ProjectResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ProjectResponse;
 
-			expect(response.status).toBe(201);
-			expect(data.success).toBe(true);
-			expect(data.project.id).toMatch(/^[a-z0-9]{8}$/);
-			expect(data.project.description).toBe('Auto-generated ID Project');
-		});
+      expect(response.status).toBe(201);
+      expect(data.success).toBe(true);
+      expect(data.project.id).toMatch(/^[a-z0-9]{8}$/);
+      expect(data.project.description).toBe('Auto-generated ID Project');
+    });
 
-		it('should return 400 for missing description', async () => {
-			const request = new Request('http://localhost/', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({}),
-			});
+    it('should return 400 for missing description', async () => {
+      const request = new Request('http://localhost/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ErrorResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ErrorResponse;
 
-			expect(response.status).toBe(400);
-			expect(data.error).toBe('Bad Request');
-			expect(data.message).toContain('description');
-		});
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Bad Request');
+      expect(data.message).toContain('description');
+    });
 
-		it('should return 400 for empty description', async () => {
-			const request = new Request('http://localhost/', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ description: '   ' }),
-			});
+    it('should return 400 for empty description', async () => {
+      const request = new Request('http://localhost/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: '   ' }),
+      });
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ErrorResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ErrorResponse;
 
-			expect(response.status).toBe(400);
-			expect(data.error).toBe('Bad Request');
-			expect(data.message).toContain('cannot be empty');
-		});
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Bad Request');
+      expect(data.message).toContain('cannot be empty');
+    });
 
-		it('should return 400 for duplicate ID', async () => {
-			// Mock: ID already exists
-			statement.first.mockResolvedValueOnce({ id: 'existing' });
+    it('should return 400 for duplicate ID', async () => {
+      // Mock: ID already exists
+      statement.first.mockResolvedValueOnce({ id: 'existing' });
 
-			const request = new Request('http://localhost/', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					id: 'existing',
-					description: 'Duplicate',
-				}),
-			});
+      const request = new Request('http://localhost/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'existing',
+          description: 'Duplicate',
+        }),
+      });
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ErrorResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ErrorResponse;
 
-			expect(response.status).toBe(400);
-			expect(data.error).toBe('Bad Request');
-			expect(data.message).toContain('already exists');
-		});
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Bad Request');
+      expect(data.message).toContain('already exists');
+    });
 
-		it('should return 400 for invalid ID format', async () => {
-			const request = new Request('http://localhost/', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					id: 'INVALID-ID!',
-					description: 'Invalid',
-				}),
-			});
+    it('should return 400 for invalid ID format', async () => {
+      const request = new Request('http://localhost/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'INVALID-ID!',
+          description: 'Invalid',
+        }),
+      });
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ErrorResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ErrorResponse;
 
-			expect(response.status).toBe(400);
-			expect(data.error).toBe('Bad Request');
-			expect(data.message).toContain('Invalid project ID format');
-		});
-	});
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Bad Request');
+      expect(data.message).toContain('Invalid project ID format');
+    });
+  });
 
-	describe('GET /api/projects', () => {
-		it('should list all projects', async () => {
-			const mockProjects = [
-				{
-					id: 'proj1',
-					description: 'Project 1',
-					created_at: 3,
-					last_used: null,
-				},
-				{ id: 'proj2', description: 'Project 2', created_at: 2, last_used: 1 },
-				{
-					id: 'proj3',
-					description: 'Project 3',
-					created_at: 1,
-					last_used: null,
-				},
-			];
+  describe('GET /api/projects', () => {
+    it('should list all projects', async () => {
+      const mockProjects = [
+        {
+          id: 'proj1',
+          description: 'Project 1',
+          created_at: 3,
+          last_used: null,
+        },
+        { id: 'proj2', description: 'Project 2', created_at: 2, last_used: 1 },
+        {
+          id: 'proj3',
+          description: 'Project 3',
+          created_at: 1,
+          last_used: null,
+        },
+      ];
 
-			statement.all.mockResolvedValueOnce({ results: mockProjects });
+      statement.all.mockResolvedValueOnce({ results: mockProjects });
 
-			const request = new Request('http://localhost/');
+      const request = new Request('http://localhost/');
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ProjectListResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ProjectListResponse;
 
-			expect(response.status).toBe(200);
-			expect(data.success).toBe(true);
-			expect(data.projects).toHaveLength(3);
-			expect(data.total).toBe(3);
-			expect(data.projects[0]?.id).toBe('proj1');
-		});
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.projects).toHaveLength(3);
+      expect(data.total).toBe(3);
+      expect(data.projects[0]?.id).toBe('proj1');
+    });
 
-		it('should handle empty project list', async () => {
-			statement.all.mockResolvedValueOnce({ results: [] });
+    it('should handle empty project list', async () => {
+      statement.all.mockResolvedValueOnce({ results: [] });
 
-			const request = new Request('http://localhost/');
+      const request = new Request('http://localhost/');
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ProjectListResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ProjectListResponse;
 
-			expect(response.status).toBe(200);
-			expect(data.success).toBe(true);
-			expect(data.projects).toHaveLength(0);
-			expect(data.total).toBe(0);
-		});
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.projects).toHaveLength(0);
+      expect(data.total).toBe(0);
+    });
 
-		it('should support pagination with limit and offset', async () => {
-			statement.all.mockResolvedValueOnce({
-				results: [
-					{
-						id: 'proj2',
-						description: 'Project 2',
-						created_at: 2,
-						last_used: null,
-					},
-				],
-			});
+    it('should support pagination with limit and offset', async () => {
+      statement.all.mockResolvedValueOnce({
+        results: [
+          {
+            id: 'proj2',
+            description: 'Project 2',
+            created_at: 2,
+            last_used: null,
+          },
+        ],
+      });
 
-			const request = new Request('http://localhost/?limit=1&offset=1');
+      const request = new Request('http://localhost/?limit=1&offset=1');
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ProjectListResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ProjectListResponse;
 
-			expect(response.status).toBe(200);
-			expect(data.projects).toHaveLength(1);
-			expect(statement.bind).toHaveBeenCalledWith(1, 1);
-		});
-	});
+      expect(response.status).toBe(200);
+      expect(data.projects).toHaveLength(1);
+      expect(statement.bind).toHaveBeenCalledWith(1, 1);
+    });
+  });
 
-	describe('GET /api/projects/:id', () => {
-		it('should get project by ID', async () => {
-			statement.first.mockResolvedValueOnce({
-				id: 'testproj',
-				description: 'Test Project',
-				created_at: Date.now(),
-				last_used: null,
-			});
+  describe('GET /api/projects/:id', () => {
+    it('should get project by ID', async () => {
+      statement.first.mockResolvedValueOnce({
+        id: 'testproj',
+        description: 'Test Project',
+        created_at: Date.now(),
+        last_used: null,
+      });
 
-			const request = new Request('http://localhost/testproj');
+      const request = new Request('http://localhost/testproj');
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ProjectResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ProjectResponse;
 
-			expect(response.status).toBe(200);
-			expect(data.success).toBe(true);
-			expect(data.project.id).toBe('testproj');
-			expect(data.project.description).toBe('Test Project');
-		});
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.project.id).toBe('testproj');
+      expect(data.project.description).toBe('Test Project');
+    });
 
-		it('should return 404 for non-existent project', async () => {
-			statement.first.mockResolvedValueOnce(null);
+    it('should return 404 for non-existent project', async () => {
+      statement.first.mockResolvedValueOnce(null);
 
-			const request = new Request('http://localhost/nonexistent');
+      const request = new Request('http://localhost/nonexistent');
 
-			const context = {
-				request,
-				env,
-			} as never;
+      const context = {
+        request,
+        env,
+      } as never;
 
-			const response = await onRequest(context);
-			const data = (await response.json()) as ErrorResponse;
+      const response = await onRequest(context);
+      const data = (await response.json()) as ErrorResponse;
 
-			expect(response.status).toBe(404);
-			expect(data.error).toBe('Not Found');
-			expect(data.message).toContain('nonexistent');
-		});
-	});
+      expect(response.status).toBe(404);
+      expect(data.error).toBe('Not Found');
+      expect(data.message).toContain('nonexistent');
+    });
+  });
 });

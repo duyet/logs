@@ -105,10 +105,10 @@ Cloudflare Analytics Engine Dataset
 
 ```typescript
 {
-	event_name: string; // "user_prompt", "tool_result", "api_request"
-	timestamp: string; // ISO 8601
-	session_id: string;
-	attributes: Record<string, any>;
+  event_name: string; // "user_prompt", "tool_result", "api_request"
+  timestamp: string; // ISO 8601
+  session_id: string;
+  attributes: Record<string, any>;
 }
 ```
 
@@ -214,13 +214,13 @@ binding = "GA_ANALYTICS"
 ```typescript
 // src/adapters/custom.ts
 export class CustomAdapter implements DataAdapter {
-	transform(data: CustomFormat): AnalyticsData {
-		return {
-			indexes: [data.id],
-			doubles: [data.value],
-			blobs: [data.metadata],
-		};
-	}
+  transform(data: CustomFormat): AnalyticsData {
+    return {
+      indexes: [data.id],
+      doubles: [data.value],
+      blobs: [data.metadata],
+    };
+  }
 }
 ```
 

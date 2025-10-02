@@ -29,8 +29,8 @@ curl https://logs.duyet.net/ping
 
 ```json
 {
-	"status": "ok",
-	"timestamp": "2024-01-01T00:00:00.000Z"
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
@@ -352,18 +352,18 @@ import { BaseAdapter } from './base.js';
 import type { AnalyticsEngineDataPoint } from '../types/index.js';
 
 export class CustomAdapter extends BaseAdapter<CustomData> {
-	validate(data: unknown): data is CustomData {
-		// Validation logic
-		return this.isObject(data) && 'required_field' in data;
-	}
+  validate(data: unknown): data is CustomData {
+    // Validation logic
+    return this.isObject(data) && 'required_field' in data;
+  }
 
-	transform(data: CustomData): AnalyticsEngineDataPoint {
-		return {
-			indexes: [this.toIndex(data.id)],
-			doubles: [this.toDouble(data.value)],
-			blobs: [this.toBlob(JSON.stringify(data))],
-		};
-	}
+  transform(data: CustomData): AnalyticsEngineDataPoint {
+    return {
+      indexes: [this.toIndex(data.id)],
+      doubles: [this.toDouble(data.value)],
+      blobs: [this.toBlob(JSON.stringify(data))],
+    };
+  }
 }
 ```
 
@@ -382,14 +382,14 @@ binding = "CUSTOM_ANALYTICS"
 const customAdapter = new CustomAdapter();
 
 app.post('/custom', async (c) => {
-	const rawData = await c.req.json();
-	await analyticsService.writeDataPoint(
-		c.env,
-		'CUSTOM_ANALYTICS',
-		customAdapter,
-		rawData
-	);
-	return c.json({ success: true });
+  const rawData = await c.req.json();
+  await analyticsService.writeDataPoint(
+    c.env,
+    'CUSTOM_ANALYTICS',
+    customAdapter,
+    rawData
+  );
+  return c.json({ success: true });
 });
 ```
 
@@ -428,9 +428,9 @@ Adapters transform incoming data formats to Analytics Engine format:
 
 ```typescript
 interface AnalyticsEngineDataPoint {
-	indexes?: string[]; // Max 96 bytes each
-	blobs?: string[]; // Max 5120 bytes each
-	doubles?: number[]; // Numeric values
+  indexes?: string[]; // Max 96 bytes each
+  blobs?: string[]; // Max 5120 bytes each
+  doubles?: number[]; // Numeric values
 }
 ```
 
@@ -447,9 +447,9 @@ All endpoints return JSON error responses:
 
 ```json
 {
-	"error": "Bad Request",
-	"message": "Invalid data format",
-	"status": 400
+  "error": "Bad Request",
+  "message": "Invalid data format",
+  "status": 400
 }
 ```
 

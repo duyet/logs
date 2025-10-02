@@ -1,47 +1,52 @@
 {
-	"name": "duyet-logs",
-	"version": "1.0.0",
-	"description": "Analytics data router for Cloudflare Pages with Hono",
-	"type": "module",
-	"scripts": {
-		"dev": "wrangler pages dev --compatibility-date=2024-01-01 -- npm run build:watch",
-		"build": "tsc",
-		"build:watch": "tsc --watch",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"coverage": "vitest run --coverage",
-		"deploy": "npm run build && npm test && wrangler pages deploy",
-		"type-check": "tsc --noEmit",
-		"lint": "eslint . --ext .ts",
-		"fmt": "prettier --write .",
-		"fmt:check": "prettier --check .",
-		"db:migrate": "wrangler d1 execute duyet-logs --local --file=./migrations/0001_create_projects.sql",
-		"db:migrate:remote": "wrangler d1 execute duyet-logs --file=./migrations/0001_create_projects.sql",
-		"db:seed": "tsx scripts/seed-projects.ts",
-		"db:seed:remote": "tsx scripts/seed-projects.ts --remote",
-		"db:backup": "./scripts/backup-d1.sh",
-		"db:backup:local": "./scripts/backup-d1.sh --local",
-		"db:restore": "./scripts/restore-d1.sh",
-		"db:query": "wrangler d1 execute duyet-logs --local --command",
-		"db:query:remote": "wrangler d1 execute duyet-logs --command",
-		"test:events": "tsx scripts/generate-test-events.ts",
-		"test:events:remote": "tsx scripts/generate-test-events.ts --remote"
-	},
-	"dependencies": {
-		"hono": "^4.0.0"
-	},
-	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.5.0",
-		"@cloudflare/workers-types": "^4.20240117.0",
-		"@types/node": "^20.11.0",
-		"@typescript-eslint/eslint-plugin": "^6.19.0",
-		"@typescript-eslint/parser": "^6.19.0",
-		"@vitest/coverage-v8": "^2.0.0",
-		"eslint": "^8.56.0",
-		"prettier": "^3.2.4",
-		"tsx": "^4.7.0",
-		"typescript": "^5.3.3",
-		"vitest": "^2.0.0",
-		"wrangler": "^4.40.3"
-	}
+  "name": "duyet-logs",
+  "version": "1.0.0",
+  "description": "Analytics data router for Cloudflare Pages with Hono",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev --compatibility-date=2024-01-01 -- npm run build:watch",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "deploy": "npm run build && npm test && wrangler pages deploy",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "fmt": "prettier --write .",
+    "db:migrate": "wrangler d1 execute duyet-logs --local --file=./migrations/0001_create_projects.sql",
+    "db:migrate:remote": "wrangler d1 execute duyet-logs --remote --file=./migrations/0001_create_projects.sql",
+    "db:seed": "tsx scripts/seed-projects.ts",
+    "db:seed:remote": "tsx scripts/seed-projects.ts --remote",
+    "db:backup": "./scripts/backup-d1.sh",
+    "db:backup:local": "./scripts/backup-d1.sh --local",
+    "db:restore": "./scripts/restore-d1.sh",
+    "db:query": "wrangler d1 execute duyet-logs --local --command",
+    "db:query:remote": "wrangler d1 execute duyet-logs --command",
+    "test:events": "tsx scripts/generate-test-events.ts",
+    "test:events:remote": "tsx scripts/generate-test-events.ts --remote"
+  },
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.0",
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0",
+    "wrangler": "^4.40.3"
+  },
+  "config": {
+    "endpoints": {
+      "local": "http://localhost:8788",
+      "production": "https://duyet-logs.pages.dev"
+    }
+  }
 }

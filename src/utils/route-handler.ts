@@ -7,50 +7,50 @@ import { AnalyticsEngineService } from '../services/analytics-engine.js';
  * Eliminates duplication across GET/POST handlers
  */
 export function createAnalyticsHandler<T>(
-	dataset: keyof Env,
-	adapter: DataAdapter<T>,
-	analyticsService: AnalyticsEngineService
+  dataset: keyof Env,
+  adapter: DataAdapter<T>,
+  analyticsService: AnalyticsEngineService
 ): {
-	handleGet: (c: Context<{ Bindings: Env }>) => Response;
-	handlePost: (c: Context<{ Bindings: Env }>) => Promise<Response>;
+  handleGet: (c: Context<{ Bindings: Env }>) => Response;
+  handlePost: (c: Context<{ Bindings: Env }>) => Promise<Response>;
 } {
-	return {
-		/**
-		 * Handle GET requests with query parameters
-		 */
-		handleGet: (c: Context<{ Bindings: Env }>): Response => {
-			const rawData = c.req.query() as Record<string, string | string[]>;
-			const projectId = c.get('project_id');
+  return {
+    /**
+     * Handle GET requests with query parameters
+     */
+    handleGet: (c: Context<{ Bindings: Env }>): Response => {
+      const rawData = c.req.query() as Record<string, string | string[]>;
+      const projectId = c.get('project_id');
 
-			const dataWithProject = projectId
-				? { ...rawData, project_id: projectId }
-				: rawData;
-			analyticsService.writeDataPoint(c.env, dataset, adapter, dataWithProject);
+      const dataWithProject = projectId
+        ? { ...rawData, project_id: projectId }
+        : rawData;
+      analyticsService.writeDataPoint(c.env, dataset, adapter, dataWithProject);
 
-			const response: SuccessResponse = {
-				success: true,
-				message: 'Data recorded successfully',
-			};
-			return c.json(response);
-		},
+      const response: SuccessResponse = {
+        success: true,
+        message: 'Data recorded successfully',
+      };
+      return c.json(response);
+    },
 
-		/**
-		 * Handle POST requests with JSON body
-		 */
-		handlePost: async (c: Context<{ Bindings: Env }>): Promise<Response> => {
-			const rawData = await c.req.json<Record<string, unknown>>();
-			const projectId = c.get('project_id');
+    /**
+     * Handle POST requests with JSON body
+     */
+    handlePost: async (c: Context<{ Bindings: Env }>): Promise<Response> => {
+      const rawData = await c.req.json<Record<string, unknown>>();
+      const projectId = c.get('project_id');
 
-			const dataWithProject = projectId
-				? { ...rawData, project_id: projectId }
-				: rawData;
-			analyticsService.writeDataPoint(c.env, dataset, adapter, dataWithProject);
+      const dataWithProject = projectId
+        ? { ...rawData, project_id: projectId }
+        : rawData;
+      analyticsService.writeDataPoint(c.env, dataset, adapter, dataWithProject);
 
-			const response: SuccessResponse = {
-				success: true,
-				message: 'Data recorded successfully',
-			};
-			return c.json(response);
-		},
-	};
+      const response: SuccessResponse = {
+        success: true,
+        message: 'Data recorded successfully',
+      };
+      return c.json(response);
+    },
+  };
 }
