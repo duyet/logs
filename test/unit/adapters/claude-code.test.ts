@@ -5,6 +5,8 @@ import { ClaudeCodeAdapter } from '../../../src/adapters/claude-code.js';
 import type {
   ClaudeCodeMetric,
   ClaudeCodeEvent,
+  OTLPLogs,
+  OTLPMetrics,
 } from '../../../src/types/index.js';
 
 describe('ClaudeCodeAdapter', () => {
@@ -258,6 +260,541 @@ describe('ClaudeCodeAdapter', () => {
       // Data is in metadata
       const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.session_id).toBe('session-123');
+    });
+  });
+
+  describe('OTLP Logs format', () => {
+    it('should validate OTLP logs format', () => {
+      const otlpLogs: OTLPLogs = {
+        resourceLogs: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'claude-code' } },
+                { key: 'service.version', value: { stringValue: '1.0.0' } },
+              ],
+            },
+            scopeLogs: [
+              {
+                scope: { name: 'claude-code' },
+                logRecords: [
+                  {
+                    timeUnixNano: '1704067200000000000',
+                    severityText: 'INFO',
+                    body: { stringValue: 'User prompt submitted' },
+                    attributes: [
+                      {
+                        key: 'session.id',
+                        value: { stringValue: 'session-123' },
+                      },
+                      { key: 'user.id', value: { stringValue: 'user-456' } },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(adapter.validate(otlpLogs)).toBe(true);
+    });
+
+    it('should transform OTLP logs with resource attributes', () => {
+      const otlpLogs: OTLPLogs = {
+        resourceLogs: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'claude-code' } },
+                { key: 'service.version', value: { stringValue: '1.0.0' } },
+                { key: 'host.arch', value: { stringValue: 'arm64' } },
+                { key: 'os.type', value: { stringValue: 'darwin' } },
+              ],
+            },
+            scopeLogs: [
+              {
+                scope: { name: 'claude-code' },
+                logRecords: [
+                  {
+                    timeUnixNano: '1704067200000000000',
+                    severityText: 'INFO',
+                    body: { stringValue: 'User prompt submitted' },
+                    attributes: [
+                      {
+                        key: 'session.id',
+                        value: { stringValue: 'session-123' },
+                      },
+                      { key: 'prompt.length', value: { intValue: 150 } },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      adapter.setProjectId('test-project');
+      const result = adapter.transform(otlpLogs);
+
+      expect(result.indexes).toEqual(['test-project']);
+      expect(result.blobs).toBeDefined();
+      expect(result.blobs?.length).toBe(1);
+
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.data_type).toBe('otlp_logs');
+      expect(metadata.format).toBe('otlp');
+      expect(metadata.resource['service.name']).toBe('claude-code');
+      expect(metadata.resource['service.version']).toBe('1.0.0');
+      expect(metadata.resource['host.arch']).toBe('arm64');
+      expect(metadata.resource['os.type']).toBe('darwin');
+      expect(metadata.logs).toBeDefined();
+      expect(metadata.logs.length).toBe(1);
+      expect(metadata.logs[0].timestamp).toBe('1704067200000000000');
+      expect(metadata.logs[0].severity).toBe('INFO');
+      expect(metadata.logs[0].body).toBe('User prompt submitted');
+      expect(metadata.logs[0].attributes['session.id']).toBe('session-123');
+      expect(metadata.logs[0].attributes['prompt.length']).toBe(150);
+    });
+
+    it('should handle multiple log records', () => {
+      const otlpLogs: OTLPLogs = {
+        resourceLogs: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'claude-code' } },
+              ],
+            },
+            scopeLogs: [
+              {
+                scope: { name: 'claude-code' },
+                logRecords: [
+                  {
+                    timeUnixNano: '1704067200000000000',
+                    severityText: 'INFO',
+                    body: { stringValue: 'Log 1' },
+                    attributes: [],
+                  },
+                  {
+                    timeUnixNano: '1704067201000000000',
+                    severityText: 'WARN',
+                    body: { stringValue: 'Log 2' },
+                    attributes: [],
+                  },
+                  {
+                    timeUnixNano: '1704067202000000000',
+                    severityText: 'ERROR',
+                    body: { stringValue: 'Log 3' },
+                    attributes: [],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = adapter.transform(otlpLogs);
+
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.logs.length).toBe(3);
+      expect(metadata.logs[0].body).toBe('Log 1');
+      expect(metadata.logs[1].body).toBe('Log 2');
+      expect(metadata.logs[2].body).toBe('Log 3');
+    });
+
+    it('should handle log body with different value types', () => {
+      const otlpLogs: OTLPLogs = {
+        resourceLogs: [
+          {
+            resource: { attributes: [] },
+            scopeLogs: [
+              {
+                scope: { name: 'test' },
+                logRecords: [
+                  {
+                    timeUnixNano: '1704067200000000000',
+                    severityText: 'INFO',
+                    body: { intValue: 42 },
+                    attributes: [],
+                  },
+                  {
+                    timeUnixNano: '1704067201000000000',
+                    severityText: 'INFO',
+                    body: { doubleValue: 3.14 },
+                    attributes: [],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = adapter.transform(otlpLogs);
+
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.logs[0].body).toBe('42');
+      expect(metadata.logs[1].body).toBe('3.14');
+    });
+
+    it('should handle missing optional fields', () => {
+      const otlpLogs: OTLPLogs = {
+        resourceLogs: [
+          {
+            scopeLogs: [
+              {
+                logRecords: [
+                  {
+                    timeUnixNano: '1704067200000000000',
+                    body: { stringValue: 'Minimal log' },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = adapter.transform(otlpLogs);
+
+      expect(result.blobs).toBeDefined();
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.logs[0].body).toBe('Minimal log');
+    });
+  });
+
+  describe('OTLP Metrics format', () => {
+    it('should validate OTLP metrics format', () => {
+      const otlpMetrics: OTLPMetrics = {
+        resourceMetrics: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'claude-code' } },
+              ],
+            },
+            scopeMetrics: [
+              {
+                scope: { name: 'claude-code' },
+                metrics: [
+                  {
+                    name: 'claude_code.token.usage',
+                    gauge: {
+                      dataPoints: [
+                        {
+                          asDouble: 1000,
+                          timeUnixNano: '1704067200000000000',
+                          attributes: [
+                            { key: 'type', value: { stringValue: 'input' } },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(adapter.validate(otlpMetrics)).toBe(true);
+    });
+
+    it('should transform OTLP metrics with gauge', () => {
+      const otlpMetrics: OTLPMetrics = {
+        resourceMetrics: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'claude-code' } },
+                { key: 'service.version', value: { stringValue: '1.0.0' } },
+              ],
+            },
+            scopeMetrics: [
+              {
+                scope: { name: 'claude-code' },
+                metrics: [
+                  {
+                    name: 'claude_code.token.usage',
+                    unit: 'tokens',
+                    gauge: {
+                      dataPoints: [
+                        {
+                          asDouble: 1500,
+                          timeUnixNano: '1704067200000000000',
+                          attributes: [
+                            { key: 'type', value: { stringValue: 'input' } },
+                            {
+                              key: 'model',
+                              value: { stringValue: 'claude-sonnet-4-5' },
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      adapter.setProjectId('metrics-project');
+      const result = adapter.transform(otlpMetrics);
+
+      expect(result.indexes).toEqual(['metrics-project']);
+      expect(result.doubles).toEqual([1500]);
+      expect(result.blobs).toBeDefined();
+
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.data_type).toBe('otlp_metrics');
+      expect(metadata.format).toBe('otlp');
+      expect(metadata.resource['service.name']).toBe('claude-code');
+      expect(metadata.resource['service.version']).toBe('1.0.0');
+      expect(metadata.metrics).toBeDefined();
+      expect(metadata.metrics.length).toBe(1);
+      expect(metadata.metrics[0].name).toBe('claude_code.token.usage');
+      expect(metadata.metrics[0].value).toBe(1500);
+      expect(metadata.metrics[0].unit).toBe('tokens');
+      expect(metadata.metrics[0].attributes.type).toBe('input');
+      expect(metadata.metrics[0].attributes.model).toBe('claude-sonnet-4-5');
+    });
+
+    it('should transform OTLP metrics with sum', () => {
+      const otlpMetrics: OTLPMetrics = {
+        resourceMetrics: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'claude-code' } },
+              ],
+            },
+            scopeMetrics: [
+              {
+                scope: { name: 'claude-code' },
+                metrics: [
+                  {
+                    name: 'claude_code.cost',
+                    unit: 'USD',
+                    sum: {
+                      dataPoints: [
+                        {
+                          asDouble: 0.05,
+                          timeUnixNano: '1704067200000000000',
+                          attributes: [
+                            {
+                              key: 'model',
+                              value: { stringValue: 'claude-sonnet-4-5' },
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = adapter.transform(otlpMetrics);
+
+      expect(result.doubles).toEqual([0.05]);
+
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.metrics[0].name).toBe('claude_code.cost');
+      expect(metadata.metrics[0].value).toBe(0.05);
+      expect(metadata.metrics[0].unit).toBe('USD');
+    });
+
+    it('should handle metrics with asInt value', () => {
+      const otlpMetrics: OTLPMetrics = {
+        resourceMetrics: [
+          {
+            resource: { attributes: [] },
+            scopeMetrics: [
+              {
+                scope: { name: 'test' },
+                metrics: [
+                  {
+                    name: 'test.counter',
+                    gauge: {
+                      dataPoints: [
+                        {
+                          asInt: 42,
+                          timeUnixNano: '1704067200000000000',
+                          attributes: [],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = adapter.transform(otlpMetrics);
+
+      expect(result.doubles).toEqual([42]);
+
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.metrics[0].value).toBe(42);
+    });
+
+    it('should handle multiple metrics', () => {
+      const otlpMetrics: OTLPMetrics = {
+        resourceMetrics: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'claude-code' } },
+              ],
+            },
+            scopeMetrics: [
+              {
+                scope: { name: 'claude-code' },
+                metrics: [
+                  {
+                    name: 'tokens.input',
+                    gauge: {
+                      dataPoints: [
+                        {
+                          asDouble: 1000,
+                          timeUnixNano: '1704067200000000000',
+                          attributes: [],
+                        },
+                      ],
+                    },
+                  },
+                  {
+                    name: 'tokens.output',
+                    gauge: {
+                      dataPoints: [
+                        {
+                          asDouble: 500,
+                          timeUnixNano: '1704067201000000000',
+                          attributes: [],
+                        },
+                      ],
+                    },
+                  },
+                  {
+                    name: 'tokens.cache_read',
+                    gauge: {
+                      dataPoints: [
+                        {
+                          asDouble: 200,
+                          timeUnixNano: '1704067202000000000',
+                          attributes: [],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = adapter.transform(otlpMetrics);
+
+      // Total value is sum of all metrics (stored in doubles)
+      expect(result.doubles).toEqual([1700]);
+
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.metrics.length).toBe(3);
+      expect(metadata.metrics[0].name).toBe('tokens.input');
+      expect(metadata.metrics[0].value).toBe(1000);
+      expect(metadata.metrics[1].name).toBe('tokens.output');
+      expect(metadata.metrics[1].value).toBe(500);
+      expect(metadata.metrics[2].name).toBe('tokens.cache_read');
+      expect(metadata.metrics[2].value).toBe(200);
+    });
+
+    it('should handle metrics with multiple data points', () => {
+      const otlpMetrics: OTLPMetrics = {
+        resourceMetrics: [
+          {
+            resource: { attributes: [] },
+            scopeMetrics: [
+              {
+                scope: { name: 'test' },
+                metrics: [
+                  {
+                    name: 'test.metric',
+                    gauge: {
+                      dataPoints: [
+                        {
+                          asDouble: 10,
+                          timeUnixNano: '1704067200000000000',
+                          attributes: [
+                            { key: 'label', value: { stringValue: 'a' } },
+                          ],
+                        },
+                        {
+                          asDouble: 20,
+                          timeUnixNano: '1704067201000000000',
+                          attributes: [
+                            { key: 'label', value: { stringValue: 'b' } },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = adapter.transform(otlpMetrics);
+
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.metrics.length).toBe(2);
+      expect(metadata.metrics[0].attributes.label).toBe('a');
+      expect(metadata.metrics[1].attributes.label).toBe('b');
+    });
+
+    it('should handle missing optional fields', () => {
+      const otlpMetrics: OTLPMetrics = {
+        resourceMetrics: [
+          {
+            scopeMetrics: [
+              {
+                metrics: [
+                  {
+                    name: 'minimal.metric',
+                    gauge: {
+                      dataPoints: [
+                        {
+                          asDouble: 100,
+                          timeUnixNano: '1704067200000000000',
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = adapter.transform(otlpMetrics);
+
+      expect(result.doubles).toEqual([100]);
+      const metadata = JSON.parse(result.blobs![0]!);
+      expect(metadata.metrics[0].name).toBe('minimal.metric');
     });
   });
 });
