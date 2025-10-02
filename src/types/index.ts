@@ -20,6 +20,8 @@ export interface Env {
   GA_ANALYTICS: AnalyticsEngineDataset;
   DB: D1Database;
   ASSETS?: Fetcher; // Optional ASSETS binding for static files
+  CLOUDFLARE_ACCOUNT_ID?: string; // For GraphQL Analytics API
+  CLOUDFLARE_API_TOKEN?: string; // For GraphQL Analytics API
 }
 
 /**

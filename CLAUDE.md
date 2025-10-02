@@ -216,6 +216,77 @@ cloudflare-analytics-router/
 - **POST** - Create new project
 - **GET /:id** - Get project details
 
+### `/api/analytics/insights` - Analytics Insights (New)
+
+- **Methods**: GET
+- **Purpose**: Query Analytics Engine data and generate insights
+- **Query Parameters**:
+  - `dataset` (required): CLAUDE_CODE_ANALYTICS | CLAUDE_CODE_LOGS | CLAUDE_CODE_METRICS | GA_ANALYTICS
+  - `project_id` (optional): Filter by project ID
+  - `start` (optional): Start time in ISO 8601 format (default: 24h ago)
+  - `end` (optional): End time in ISO 8601 format (default: now)
+  - `limit` (optional): Max number of results (default: 10000)
+- **Response Format**:
+  ```json
+  {
+    "summary": {
+      "totalEvents": 1150,
+      "timeRange": { "start": "2024-01-01T00:00:00Z", "end": "2024-01-02T00:00:00Z" },
+      "topProjects": [
+        { "id": "default", "count": 450 },
+        { "id": "duyet", "count": 320 }
+      ],
+      "dataset": "CLAUDE_CODE_METRICS"
+    },
+    "insights": {
+      "trends": [
+        {
+          "metric": "event_volume",
+          "change": 15.3,
+          "direction": "up",
+          "description": "Event volume is up by 15%"
+        }
+      ],
+      "anomalies": [
+        {
+          "timestamp": "2024-01-01T15:30:00Z",
+          "description": "Unusual spike detected: 120 events",
+          "severity": "medium",
+          "value": 120
+        }
+      ],
+      "recommendations": [
+        "Consider adding more projects to organize analytics data",
+        "Review high-volume projects for optimization opportunities"
+      ]
+    },
+    "data": {
+      "timeseries": [
+        { "timestamp": "2024-01-01T00:00:00Z", "value": 45 },
+        { "timestamp": "2024-01-01T01:00:00Z", "value": 52 }
+      ],
+      "breakdown": {
+        "default": 450,
+        "duyet": 320,
+        "blog": 180
+      }
+    }
+  }
+  ```
+- **Use Case**: Dashboard insights, trend analysis, anomaly detection
+- **Features**:
+  - Automatic trend detection (up/down/stable)
+  - Statistical anomaly detection (z-score based)
+  - Project breakdown and top projects
+  - Time series data for charting
+  - Actionable recommendations
+
+### `/api/analytics/datasets` - List Available Datasets (New)
+
+- **Methods**: GET
+- **Purpose**: List all available Analytics Engine datasets
+- **Response**: Array of dataset names and descriptions
+
 ## Data Formats
 
 ### Claude Code OpenTelemetry Format
