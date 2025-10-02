@@ -57,7 +57,7 @@ async function seedProjects(): Promise<void> {
 
   for (const project of DEFAULT_PROJECTS) {
     try {
-      const response = await fetch(`${endpoint}/api/projects`, {
+      const response = await fetch(`${endpoint}/api/project`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

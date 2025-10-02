@@ -61,7 +61,7 @@ describe('Projects API E2E', () => {
     };
   });
 
-  describe('POST /api/projects', () => {
+  describe('POST /api/project', () => {
     it('should create project with custom ID', async () => {
       // Mock: ID doesn't exist
       statement.first.mockResolvedValueOnce(null);
@@ -69,7 +69,7 @@ describe('Projects API E2E', () => {
       statement.run.mockResolvedValueOnce({});
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects', {
+      const request = new Request('http://localhost/api/project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,7 +94,7 @@ describe('Projects API E2E', () => {
       statement.run.mockResolvedValueOnce({});
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects', {
+      const request = new Request('http://localhost/api/project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -113,7 +113,7 @@ describe('Projects API E2E', () => {
 
     it('should return 400 for missing description', async () => {
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects', {
+      const request = new Request('http://localhost/api/project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -129,7 +129,7 @@ describe('Projects API E2E', () => {
 
     it('should return 400 for empty description', async () => {
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects', {
+      const request = new Request('http://localhost/api/project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: '   ' }),
@@ -148,7 +148,7 @@ describe('Projects API E2E', () => {
       statement.first.mockResolvedValueOnce({ id: 'existing' });
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects', {
+      const request = new Request('http://localhost/api/project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -167,7 +167,7 @@ describe('Projects API E2E', () => {
 
     it('should return 400 for invalid ID format', async () => {
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects', {
+      const request = new Request('http://localhost/api/project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -185,7 +185,7 @@ describe('Projects API E2E', () => {
     });
   });
 
-  describe('GET /api/projects', () => {
+  describe('GET /api/project', () => {
     it('should list all projects', async () => {
       const mockProjects = [
         {
@@ -206,7 +206,7 @@ describe('Projects API E2E', () => {
       statement.all.mockResolvedValueOnce({ results: mockProjects });
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects');
+      const request = new Request('http://localhost/api/project');
 
       const response = await app.fetch(request, env);
       const data = (await response.json()) as ProjectListResponse;
@@ -222,7 +222,7 @@ describe('Projects API E2E', () => {
       statement.all.mockResolvedValueOnce({ results: [] });
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects');
+      const request = new Request('http://localhost/api/project');
 
       const response = await app.fetch(request, env);
       const data = (await response.json()) as ProjectListResponse;
@@ -246,7 +246,7 @@ describe('Projects API E2E', () => {
       });
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects?limit=1&offset=1');
+      const request = new Request('http://localhost/api/project?limit=1&offset=1');
 
       const response = await app.fetch(request, env);
       const data = (await response.json()) as ProjectListResponse;
@@ -257,7 +257,7 @@ describe('Projects API E2E', () => {
     });
   });
 
-  describe('GET /api/projects/:id', () => {
+  describe('GET /api/project/:id', () => {
     it('should get project by ID', async () => {
       statement.first.mockResolvedValueOnce({
         id: 'testproj',
@@ -267,7 +267,7 @@ describe('Projects API E2E', () => {
       });
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects/testproj');
+      const request = new Request('http://localhost/api/project/testproj');
 
       const response = await app.fetch(request, env);
       const data = (await response.json()) as ProjectResponse;
@@ -282,7 +282,7 @@ describe('Projects API E2E', () => {
       statement.first.mockResolvedValueOnce(null);
 
       const app = createRouter();
-      const request = new Request('http://localhost/api/projects/nonexistent');
+      const request = new Request('http://localhost/api/project/nonexistent');
 
       const response = await app.fetch(request, env);
       const data = (await response.json()) as ErrorResponse;

@@ -187,7 +187,7 @@
         </div>
 
         <div class="links">
-            <a href="/">← View All Projects</a>
+            <a href="/api/project">← View All Projects</a>
         </div>
     </div>
 
@@ -215,7 +215,7 @@
                 const body = { description };
                 if (id) body.id = id;
 
-                const response = await fetch('/api/projects', {
+                const response = await fetch('/api/project', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)

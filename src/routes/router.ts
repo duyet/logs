@@ -47,13 +47,15 @@ export function createRouter(): Hono<{ Bindings: Env }> {
       timestamp: new Date().toISOString(),
       endpoints: {
         ping: '/ping',
-        'create-project': '/create',
+        ui: {
+          'new project': '/ui/project',
+        },
         analytics: {
           'claude-code': '/cc',
           'google-analytics': '/ga',
         },
         api: {
-          projects: '/api/projects',
+          projects: '/api/project',
         },
       },
     });
@@ -81,10 +83,10 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   app.post('/ga', googleAnalyticsHandler.handlePost);
 
   // Projects API routes
-  app.route('/api/projects', createProjectsRouter());
+  app.route('/api/project', createProjectsRouter());
 
   // Create project UI
-  app.get('/create', async (c) => {
+  app.get('/ui/project', async (c) => {
     if (c.env.ASSETS) {
       // Fetch create.html from ASSETS
       const response = await c.env.ASSETS.fetch(
