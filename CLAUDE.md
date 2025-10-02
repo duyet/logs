@@ -1,59 +1,131 @@
-# Cloudflare Analytics Router
+# Cloudflare Analytics Router - Developer Documentation
 
 ## Project Overview
 
 A TypeScript-based analytics data router built on Cloudflare Pages using the Hono framework. Routes multiple analytics data formats to Cloudflare Analytics Engine datasets.
 
-## Deployment Configuration
-
-- **Platform**: Cloudflare Pages
-- **Project Name**: `duyet-logs`
-- **Custom Domain**: `logs.duyet.net`
-- **Framework**: Hono (ultra-fast web framework)
-- **Runtime**: Cloudflare Pages Functions
+**Production**: [logs.duyet.net](https://logs.duyet.net)
 
 ## Architecture
+
+### System Overview
+
+```
+┌─────────────┐
+│   Client    │  (Claude Code, GA4, Custom Apps)
+└──────┬──────┘
+       │ HTTP POST
+       ↓
+┌─────────────────────┐
+│  Cloudflare Pages   │  (Edge Network - 300+ locations)
+│   + Hono Router     │
+└──────────┬──────────┘
+       │ Transform & Validate
+       ↓
+┌─────────────────────┐
+│ Analytics Engine    │  (Time-series Storage)
+│      + D1 DB        │  (Project Metadata)
+└─────────────────────┘
+```
 
 ### Core Components
 
 1. **Pages Function** (`functions/[[path]].ts`)
-   - Catch-all route handler
-   - Hono app initialization
-   - Request routing
+   - Catch-all route handler for all requests
+   - Hono app initialization and configuration
+   - Request routing to appropriate handlers
 
 2. **Adapters** (`src/adapters/`)
-   - Base adapter interface
+   - Base adapter interface with type guards
    - Claude Code OpenTelemetry adapter
-   - Google Analytics adapter
-   - Extensible pattern for future formats
+   - Google Analytics GA4 adapter
+   - Extensible pattern for adding new formats
 
 3. **Services** (`src/services/`)
-   - Analytics Engine client
-   - Data validation
-   - Error handling with retries
+   - Analytics Engine client with error handling
+   - Project management service (D1 integration)
+   - Data validation and transformation
 
-4. **Routes**
+4. **Routes** (`src/routes/router.ts`)
    - `/ping` - Health check endpoint
-   - `/cc` - Claude Code OpenTelemetry data → `CLAUDE_CODE_ANALYTICS` dataset
-   - `/ga` - Google Analytics format → `GA_ANALYTICS` dataset
+   - `/cc`, `/cc/:project_id` - Claude Code OpenTelemetry data
+   - `/ga`, `/ga/:project_id` - Google Analytics GA4 data
+   - `/api/projects` - Project management API
 
-5. **Middleware**
-   - Global error handler
-   - Request/response logging
-   - CORS handling
+5. **Middleware** (`src/middleware/`)
+   - Global error handler with JSON responses
+   - Request/response logger
+   - Project ID extraction and validation
+   - CORS handling (configurable)
 
-## Data Flow
+### Data Flow
 
 ```
 HTTP Request (GET/POST)
     ↓
 Hono Router (/cc, /ga, /ping)
     ↓
-Format Adapter (transform data)
+Project ID Middleware (extract & validate)
     ↓
-Analytics Engine Service (validate & write)
+Format Adapter (validate & transform)
+    ↓
+Analytics Engine Service (write to dataset)
     ↓
 Cloudflare Analytics Engine Dataset
+```
+
+## Project Structure
+
+```
+cloudflare-analytics-router/
+├── functions/
+│   ├── [[path]].ts              # Catch-all Pages Function (entry point)
+│   ├── index.ts                 # Root page handler (Web UI)
+│   ├── index.html               # Project management UI
+│   └── api/
+│       └── projects.ts          # Project management API
+├── src/
+│   ├── adapters/                # Data format transformers
+│   │   ├── base.ts             # Base adapter with utilities
+│   │   ├── claude-code.ts      # Claude Code → Analytics Engine
+│   │   └── google-analytics.ts # GA4 → Analytics Engine
+│   ├── services/
+│   │   ├── analytics-engine.ts # Analytics Engine client
+│   │   └── project.ts          # Project management (D1)
+│   ├── middleware/
+│   │   ├── error-handler.ts    # Global error handling
+│   │   ├── logger.ts           # Request/response logging
+│   │   └── project-id.ts       # Project ID extraction & validation
+│   ├── routes/
+│   │   ├── router.ts           # Main Hono router configuration
+│   │   └── projects.ts         # Projects API router
+│   ├── utils/
+│   │   ├── route-handler.ts    # Generic route handler factory
+│   │   └── validation.ts       # Data validation utilities
+│   └── types/
+│       ├── index.ts            # TypeScript types and interfaces
+│       └── hono.ts             # Hono context extensions
+├── migrations/
+│   └── 0001_create_projects.sql # D1 database schema
+├── test/
+│   ├── unit/                   # Unit tests (100% coverage)
+│   │   ├── adapters/
+│   │   ├── services/
+│   │   ├── middleware/
+│   │   └── utils/
+│   └── e2e/                    # End-to-end tests
+│       ├── endpoints.test.ts
+│       └── projects-api.test.ts
+├── scripts/
+│   ├── deploy.sh               # Deployment script
+│   ├── seed-projects.ts        # Generate default projects
+│   ├── backup-d1.sh            # Backup D1 database
+│   ├── restore-d1.sh           # Restore D1 database
+│   ├── generate-test-events.ts # Test event generator
+│   └── README.md               # Scripts documentation
+├── wrangler.toml               # Cloudflare configuration
+├── CLAUDE.md                   # This file
+└── README.md                   # User documentation
 ```
 
 ## Endpoints
@@ -64,17 +136,17 @@ Cloudflare Analytics Engine Dataset
 - **Response**: `{ status: "ok", timestamp: ISO8601 }`
 - **Use Case**: Monitoring, uptime checks
 
-### `/cc` - Claude Code Analytics
+### `/cc` and `/cc/:project_id` - Claude Code Analytics
 
 - **Methods**: GET, POST
 - **Input Format**: OpenTelemetry metrics/logs format
 - **Dataset**: `CLAUDE_CODE_ANALYTICS`
 - **Key Fields**:
-  - Metrics: session.id, app.version, tokens, cost
+  - Metrics: session_id, app_version, tokens, cost
   - Events: user_prompt, tool_result, api_request
 - **Use Case**: Claude Code telemetry monitoring
 
-### `/ga` - Google Analytics
+### `/ga` and `/ga/:project_id` - Google Analytics
 
 - **Methods**: GET, POST
 - **Input Format**: GA4 Measurement Protocol
@@ -82,9 +154,17 @@ Cloudflare Analytics Engine Dataset
 - **Key Fields**: client_id, events, user_properties
 - **Use Case**: Web analytics tracking
 
-## Claude Code OpenTelemetry Format
+### `/api/projects` - Project Management
 
-### Metrics Format
+- **GET** - List all projects
+- **POST** - Create new project
+- **GET /:id** - Get project details
+
+## Data Formats
+
+### Claude Code OpenTelemetry Format
+
+#### Metrics Format
 
 ```typescript
 {
@@ -101,7 +181,12 @@ Cloudflare Analytics Engine Dataset
 }
 ```
 
-### Events Format
+**Available Metrics**:
+- `claude_code.token.usage` - Token consumption by type
+- `claude_code.cost` - API cost tracking
+- `claude_code.session.duration` - Session duration
+
+#### Events Format
 
 ```typescript
 {
@@ -112,9 +197,12 @@ Cloudflare Analytics Engine Dataset
 }
 ```
 
-## Google Analytics Format
+**Available Events**:
+- `user_prompt` - User prompts submitted
+- `tool_result` - Tool execution results
+- `api_request` - API requests made
 
-### GA4 Measurement Protocol
+### Google Analytics GA4 Format
 
 ```typescript
 {
@@ -127,7 +215,7 @@ Cloudflare Analytics Engine Dataset
 }
 ```
 
-## Analytics Engine Data Format
+### Analytics Engine Data Format
 
 Cloudflare Analytics Engine expects:
 
@@ -140,152 +228,6 @@ Cloudflare Analytics Engine expects:
 ```
 
 **Important Limitation**: Analytics Engine supports a **maximum of 1 indexed field** per data point. The adapters use `project_id` as the single index for filtering. All other metadata is stored in blobs as JSON.
-
-## Technical Requirements
-
-### Code Quality
-
-- **Language**: TypeScript (strict mode)
-- **Test Coverage**: 100% required
-- **Testing Framework**: Vitest
-- **Code Style**: ESLint + Prettier
-- **Type Safety**: No `any` types without justification
-
-### Performance
-
-- **Response Time**: < 100ms p95
-- **Error Rate**: < 0.1%
-- **Availability**: > 99.9%
-
-### Security
-
-- CORS configuration
-- Input validation
-- Rate limiting (future)
-- API key authentication (future)
-
-## Development Workflow
-
-### Local Development
-
-```bash
-npm install
-npm run dev          # Start local server with wrangler
-npm test            # Run tests
-npm run coverage    # Check 100% coverage
-```
-
-### Testing Strategy
-
-1. **Unit Tests**: All adapters, services, middleware (100% coverage)
-2. **E2E Tests**: All endpoints with mock Analytics Engine
-3. **Integration Tests**: Real Analytics Engine (optional)
-
-### Deployment
-
-```bash
-npm run build       # TypeScript compilation
-npm test           # Verify tests pass
-npm run deploy     # Deploy to Cloudflare Pages
-```
-
-## Cloudflare Analytics Engine Bindings
-
-Configure in `wrangler.toml`:
-
-```toml
-[[analytics_engine_datasets]]
-binding = "CLAUDE_CODE_ANALYTICS"
-
-[[analytics_engine_datasets]]
-binding = "GA_ANALYTICS"
-```
-
-## Extensibility
-
-### Adding New Endpoints
-
-1. Create adapter in `src/adapters/`
-2. Implement `DataAdapter` interface
-3. Add endpoint config in `src/config/endpoints.ts`
-4. Add Analytics Engine binding in `wrangler.toml`
-5. Write tests (100% coverage)
-
-### Example: Custom Format
-
-```typescript
-// src/adapters/custom.ts
-export class CustomAdapter implements DataAdapter {
-  transform(data: CustomFormat): AnalyticsData {
-    return {
-      indexes: [data.id],
-      doubles: [data.value],
-      blobs: [data.metadata],
-    };
-  }
-}
-```
-
-## Project Tasks
-
-### Phase 1: Setup ✅
-
-- [x] Create CLAUDE.md
-- [ ] Initialize TypeScript project
-- [ ] Setup Vitest with 100% coverage
-- [ ] Configure wrangler.toml
-
-### Phase 2: Core Implementation
-
-- [ ] Implement TypeScript types
-- [ ] Create base adapter interface
-- [ ] Implement Claude Code adapter
-- [ ] Implement Google Analytics adapter
-- [ ] Build Analytics Engine service
-- [ ] Create middleware (error, logging)
-- [ ] Build Hono router
-- [ ] Create Pages Function handler
-
-### Phase 3: Testing
-
-- [ ] Unit tests for all modules (100%)
-- [ ] E2E tests for all endpoints
-- [ ] Verify 100% coverage
-- [ ] Performance testing
-
-### Phase 4: Deployment
-
-- [ ] Create deployment script
-- [ ] Deploy to Cloudflare Pages
-- [ ] Configure custom domain
-- [ ] Verify production deployment
-- [ ] Write README documentation
-
-## Resources
-
-### Cloudflare Documentation
-
-- [Pages Functions](https://developers.cloudflare.com/pages/functions/)
-- [Analytics Engine](https://developers.cloudflare.com/analytics/analytics-engine/)
-- [Hono on Cloudflare](https://hono.dev/docs/getting-started/cloudflare-workers)
-
-### Claude Code Monitoring
-
-- [OpenTelemetry Format](https://docs.anthropic.com/en/docs/claude-code/monitoring)
-- [Metrics & Events](https://docs.anthropic.com/en/docs/claude-code/monitoring#available-metrics-and-events)
-
-### Google Analytics
-
-- [GA4 Measurement Protocol](https://developers.google.com/analytics/devguides/collection/protocol/ga4)
-
-## Notes
-
-- All HTTP methods (GET, POST) supported per endpoint
-- GET requests use query parameters
-- POST requests use JSON body
-- Error responses follow standard HTTP status codes
-- All timestamps use ISO 8601 format
-- Analytics Engine has size limits: blobs (5120 bytes), indexes (96 bytes)
 
 ## Project ID System
 
@@ -309,208 +251,82 @@ CREATE INDEX idx_projects_created_at ON projects(created_at DESC);
 ```
 
 **Fields:**
-
-- `id` - Project identifier (3-32 lowercase alphanumeric characters)
+- `id` - Project identifier (3-32 lowercase alphanumeric characters with hyphens)
 - `description` - Human-readable project description
 - `created_at` - Unix timestamp (milliseconds) when project was created
-- `last_used` - Unix timestamp (milliseconds) of last analytics event with this project_id
-
-### Project Management
-
-#### Web UI
-
-Access the web interface at: `https://logs.duyet.net/`
-
-Features:
-
-- Create new projects with custom or auto-generated IDs
-- View all existing projects
-- See project creation time and last usage
-- Copy-paste examples for using project IDs
-
-#### API Endpoints
-
-**POST `/api/projects`** - Create new project
-
-```bash
-curl -X POST https://logs.duyet.net/api/projects \
-  -H "Content-Type: application/json" \
-  -d '{"id": "myproject", "description": "My analytics project"}'
-```
-
-**GET `/api/projects`** - List all projects
-
-```bash
-curl https://logs.duyet.net/api/projects
-```
-
-**GET `/api/projects/:id`** - Get specific project
-
-```bash
-curl https://logs.duyet.net/api/projects/myproject
-```
+- `last_used` - Unix timestamp (milliseconds) of last analytics event
 
 ### Using Project IDs
 
-Project IDs can be provided in three ways (in order of precedence):
+Project IDs can be provided in **four ways** (in order of precedence):
 
-#### 1. HTTP Header (Recommended)
+#### 1. URL Path Parameter (Recommended)
+
+```bash
+curl -X POST https://logs.duyet.net/cc/myproject \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "...", "metric_name": "...", "value": 123}'
+```
+
+**Perfect for Claude Code**:
+```json
+{
+  "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc/myproject"
+}
+```
+
+#### 2. HTTP Header
 
 ```bash
 curl -X POST https://logs.duyet.net/cc \
   -H "X-Project-ID: myproject" \
   -H "Content-Type: application/json" \
-  -d '{"session_id": "...", "metric_name": "...", "value": 123}'
+  -d '{"session_id": "...", "value": 123}'
 ```
 
-#### 2. Query Parameter
+#### 3. Query Parameter
 
 ```bash
 curl "https://logs.duyet.net/cc?project_id=myproject&session_id=..."
 ```
 
-#### 3. Request Body
+#### 4. Request Body
 
 ```bash
 curl -X POST https://logs.duyet.net/cc \
   -H "Content-Type: application/json" \
-  -d '{"project_id": "myproject", "session_id": "...", "metric_name": "...", "value": 123}'
+  -d '{"project_id": "myproject", "session_id": "...", "value": 123}'
 ```
 
-### Project ID in Analytics Data
+### Auto-Creation
 
-When a project_id is provided, it's automatically added as the **first indexed field** in Analytics Engine data, allowing efficient filtering:
+Projects are **automatically created** when first used. No manual setup required.
 
-#### Claude Code Metrics with Project ID
+When you send an analytics event with a project_id (via any method above), the project will be created automatically with a description like:
 
-```typescript
-{
-  session_id: "session-123",
-  metric_name: "claude_code.token.usage",
-  value: 1000,
-  project_id: "myproject",  // ← Added
-  attributes: {
-    type: "input",
-    model: "claude-sonnet-4-5"
-  }
-}
+```
+Auto-created from POST /cc/myproject
 ```
 
-#### Google Analytics with Project ID
-
-```typescript
-{
-  client_id: "client-123",
-  project_id: "myproject",  // ← Added
-  events: [{
-    name: "page_view",
-    params: {...}
-  }]
-}
-```
-
-### Default Projects
-
-Six default projects are created via seed script:
-
-| Project ID | Description                          |
-| ---------- | ------------------------------------ |
-| `debug`    | Development and debugging project    |
-| `duyet`    | duyet.net personal website analytics |
-| `blog`     | Blog analytics and metrics           |
-| `prod`     | Production environment               |
-| `staging`  | Staging environment                  |
-| `test`     | Testing and QA environment           |
-
-Create default projects:
-
-```bash
-npm run db:seed          # Seed via local API (http://localhost:8788)
-npm run db:seed:remote   # Seed via production API (https://logs.duyet.net)
-```
-
-The seed script uses the Projects API to create projects, ensuring proper validation and error handling.
-
-### Database Management Scripts
-
-#### Migrations
-
-```bash
-npm run db:migrate         # Run migrations locally
-npm run db:migrate:remote  # Run migrations on production
-```
-
-#### Seeding
-
-```bash
-npm run db:seed           # Seed local database with default projects
-npm run db:seed:remote    # Seed production database
-```
-
-#### Backup
-
-```bash
-npm run db:backup         # Backup production database
-npm run db:backup:local   # Backup local database
-```
-
-Backups are stored in `./backups/` directory with timestamp:
-
-- `duyet-logs_[local|prod]_YYYYMMDD_HHMMSS.sql.gz` - Compressed SQL dump
-- `duyet-logs_[local|prod]_YYYYMMDD_HHMMSS.sql.projects.json` - JSON export
-
-#### Restore
-
-```bash
-npm run db:restore latest              # Restore latest backup to production (with confirmation)
-npm run db:restore latest --local      # Restore latest backup to local
-npm run db:restore ./backups/file.sql.gz --local
-```
-
-#### Query
-
-```bash
-npm run db:query "SELECT * FROM projects;"         # Query local
-npm run db:query:remote "SELECT COUNT(*) FROM projects;"  # Query production
-```
-
-See `scripts/README.md` for comprehensive database script documentation.
-
-### Test Event Generation
-
-Generate test analytics events for debugging:
-
-```bash
-npm run test:events                    # Send to local dev server (http://localhost:8788)
-npm run test:events:remote             # Send to production (https://logs.duyet.net)
-
-# With options
-npx tsx scripts/generate-test-events.ts --count 50 --project debug
-npx tsx scripts/generate-test-events.ts --endpoint http://localhost:3000 --count 100
-```
-
-The script generates:
-
-- 40% Claude Code metrics
-- 40% Claude Code events
-- 20% Google Analytics events
-
-All with realistic random data.
+**Validation**:
+- Valid format: 3-32 lowercase alphanumeric characters with hyphens
+- Invalid IDs trigger a warning but don't reject the request
+- Auto-creation is non-blocking
 
 ### Project ID Middleware
 
-The project ID middleware:
+The middleware performs the following (all non-blocking):
 
-- Extracts `project_id` from header → query → body (in that order)
-- Validates project existence in D1 (non-blocking, warnings only)
-- Updates `last_used` timestamp asynchronously
-- Attaches project_id to context for adapters
+1. **Extract** project_id from: path param → header → query → body
+2. **Validate** project ID format (3-32 chars, lowercase alphanumeric + hyphens)
+3. **Auto-create** project if it doesn't exist and format is valid
+4. **Update** last_used timestamp asynchronously (fire-and-forget)
+5. **Attach** project_id to context for adapters
 
 **Non-blocking behavior:**
-
 - Invalid or non-existent project IDs produce warnings but don't reject requests
 - Project ID is completely optional
-- Failed database lookups don't block analytics recording
+- Failed database operations don't block analytics recording
 
 ### Analytics Engine Storage
 
@@ -519,6 +335,444 @@ Project IDs are stored as the **only indexed field** in Analytics Engine:
 - **Index**: Single index field (Analytics Engine limit: max 1 index)
 - **Max Length**: 96 bytes (enforced by adapter)
 - **Filtering**: Efficient queries by project_id
-- **Metadata**: All other data (session_id, metric_name, etc.) stored in blobs as JSON
+- **Metadata**: All other data stored in blobs as JSON
 
-This allows Cloudflare Analytics Engine to efficiently filter and aggregate data by project while working within the 1-index limitation.
+### Default Projects
+
+Six default projects:
+
+| Project ID | Description |
+|------------|-------------|
+| `debug` | Development and debugging |
+| `duyet` | duyet.net personal website analytics |
+| `blog` | Blog analytics and metrics |
+| `prod` | Production environment |
+| `staging` | Staging environment |
+| `test` | Testing and QA environment |
+
+Create via seed script:
+```bash
+npm run db:seed          # Local
+npm run db:seed:remote   # Production
+```
+
+## Development
+
+### Prerequisites
+
+- Node.js 20+
+- npm or yarn
+- Cloudflare account (for deployment)
+
+### Local Development
+
+```bash
+npm install              # Install dependencies
+npm run dev              # Start local server (http://localhost:8788)
+npm test                 # Run tests (167 tests)
+npm run test:watch       # Watch mode
+npm run coverage         # Coverage report (100% required)
+npm run build            # Build for production
+npm run type-check       # TypeScript type checking
+```
+
+### Testing Strategy
+
+**100% Code Coverage Required**
+
+1. **Unit Tests** (`test/unit/`)
+   - All adapters (base, claude-code, google-analytics)
+   - All services (analytics-engine, project)
+   - All middleware (logger, project-id, error-handler)
+   - All utilities (validation, route-handler)
+
+2. **E2E Tests** (`test/e2e/`)
+   - All endpoints with mock Analytics Engine
+   - Project management API
+   - Error handling scenarios
+   - Path parameter routes
+
+3. **Test Framework**: Vitest with Cloudflare Workers integration
+
+```bash
+npm test                    # Run all tests
+npm run test:watch          # Watch mode
+npm run coverage            # Coverage report
+
+# Generate test events
+npm run test:events         # Send to local server
+npm run test:events:remote  # Send to production
+```
+
+## Adding New Log Sources
+
+Complete guide to adding a custom log format.
+
+### 1. Create Adapter (`src/adapters/custom.ts`)
+
+```typescript
+import { BaseAdapter } from './base.js';
+import type { AnalyticsEngineDataPoint } from '../types/index.js';
+
+interface CustomData {
+  id: string;
+  value: number;
+  metadata: Record<string, any>;
+}
+
+export class CustomAdapter extends BaseAdapter<CustomData> {
+  validate(data: unknown): data is CustomData {
+    // Use built-in type guards from BaseAdapter
+    return (
+      this.isObject(data) &&
+      'id' in data &&
+      'value' in data &&
+      this.isString(data.id) &&
+      this.isNumber(data.value)
+    );
+  }
+
+  transform(data: CustomData): AnalyticsEngineDataPoint {
+    // Get project_id from context (if provided)
+    const projectId = this.getProjectId();
+
+    return {
+      // Max 1 index field - use project_id if available
+      indexes: projectId ? [this.toIndex(projectId)] : [],
+
+      // Numeric values
+      doubles: [this.toDouble(data.value)],
+
+      // String data as JSON
+      blobs: [this.toBlob(JSON.stringify({
+        id: data.id,
+        metadata: data.metadata,
+        timestamp: new Date().toISOString()
+      }))]
+    };
+  }
+}
+```
+
+**BaseAdapter utilities:**
+- `toIndex(value)` - Convert & truncate to 96 bytes
+- `toBlob(value)` - Convert & truncate to 5120 bytes
+- `toDouble(value)` - Convert to number
+- `isObject(value)`, `isString(value)`, `isNumber(value)` - Type guards
+- `getProjectId()` - Get project_id from context
+
+### 2. Add Route (`src/routes/router.ts`)
+
+```typescript
+import { CustomAdapter } from '../adapters/custom.js';
+
+// Create adapter instance
+const customAdapter = new CustomAdapter();
+
+// Create handler
+const customHandler = createAnalyticsHandler(
+  'CUSTOM_ANALYTICS',
+  customAdapter,
+  analyticsService
+);
+
+// Add routes
+app.use('/custom', projectIdMiddleware);
+app.use('/custom/:project_id', projectIdMiddleware);
+app.get('/custom', customHandler.handleGet);
+app.post('/custom', customHandler.handlePost);
+app.get('/custom/:project_id', customHandler.handleGet);
+app.post('/custom/:project_id', customHandler.handlePost);
+```
+
+### 3. Configure Binding (`wrangler.toml`)
+
+```toml
+[[analytics_engine_datasets]]
+binding = "CUSTOM_ANALYTICS"
+```
+
+### 4. Add TypeScript Types (`src/types/index.ts`)
+
+```typescript
+export interface Env {
+  // ... existing bindings
+  CUSTOM_ANALYTICS: AnalyticsEngineDataset;
+}
+```
+
+### 5. Write Tests
+
+```typescript
+// test/unit/adapters/custom.test.ts
+import { describe, it, expect } from 'vitest';
+import { CustomAdapter } from '../../../src/adapters/custom.js';
+
+describe('CustomAdapter', () => {
+  const adapter = new CustomAdapter();
+
+  describe('validate', () => {
+    it('should accept valid custom data', () => {
+      const data = {
+        id: 'test-123',
+        value: 100,
+        metadata: { foo: 'bar' }
+      };
+      expect(adapter.validate(data)).toBe(true);
+    });
+
+    it('should reject invalid data', () => {
+      expect(adapter.validate({})).toBe(false);
+      expect(adapter.validate({ id: 'test' })).toBe(false);
+    });
+  });
+
+  describe('transform', () => {
+    it('should transform data correctly', () => {
+      const data = {
+        id: 'test-123',
+        value: 100,
+        metadata: { foo: 'bar' }
+      };
+
+      const result = adapter.transform(data);
+
+      expect(result.doubles).toEqual([100]);
+      expect(result.blobs?.[0]).toContain('test-123');
+    });
+  });
+});
+```
+
+## Deployment
+
+### Cloudflare Pages
+
+**Automated Deployment**:
+```bash
+./scripts/deploy.sh  # Build + Test + Type-check + Deploy
+```
+
+**Manual Deployment**:
+```bash
+npm run build        # Build TypeScript
+npm test             # Run all tests
+npm run deploy       # Deploy to Cloudflare Pages
+```
+
+### Configuration
+
+**wrangler.toml**:
+```toml
+name = "duyet-logs"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "dist"
+
+# D1 Database for project metadata
+[[d1_databases]]
+binding = "DB"
+database_name = "duyet-logs"
+database_id = "<your-database-id>"
+
+# Analytics Engine datasets
+[[analytics_engine_datasets]]
+binding = "CLAUDE_CODE_ANALYTICS"
+
+[[analytics_engine_datasets]]
+binding = "GA_ANALYTICS"
+```
+
+### Environment Setup
+
+1. **Create D1 Database**:
+```bash
+wrangler d1 create duyet-logs
+# Copy database_id to wrangler.toml
+```
+
+2. **Run Migrations**:
+```bash
+npm run db:migrate:remote
+```
+
+3. **Seed Default Projects**:
+```bash
+npm run db:seed:remote
+```
+
+4. **Deploy**:
+```bash
+npm run deploy
+```
+
+## Database Management
+
+### Migrations
+
+```bash
+npm run db:migrate              # Run migrations locally
+npm run db:migrate:remote       # Run migrations on production
+```
+
+### Seeding
+
+```bash
+npm run db:seed                 # Seed local database
+npm run db:seed:remote          # Seed production database
+```
+
+### Backup & Restore
+
+```bash
+# Backup
+npm run db:backup               # Backup production → ./backups/
+npm run db:backup:local         # Backup local → ./backups/
+
+# Restore
+npm run db:restore latest              # Restore to production (with confirmation)
+npm run db:restore latest --local      # Restore to local
+npm run db:restore ./backups/file.sql.gz --local
+```
+
+**Backup formats**:
+- `duyet-logs_[prod|local]_YYYYMMDD_HHMMSS.sql.gz` - Compressed SQL dump
+- `duyet-logs_[prod|local]_YYYYMMDD_HHMMSS.sql.projects.json` - JSON export
+
+### Query
+
+```bash
+npm run db:query "SELECT * FROM projects;"                      # Local
+npm run db:query:remote "SELECT COUNT(*) FROM projects;"        # Production
+```
+
+See `scripts/README.md` for comprehensive documentation.
+
+## Performance & Limits
+
+| Metric | Value |
+|--------|-------|
+| **Response Time** | <100ms p95 |
+| **Analytics Engine** | 1M writes/day (free tier) |
+| **D1 Database** | 5GB storage (free tier) |
+| **Global Edge** | 300+ locations |
+| **Payload Size** | Max 5KB per event |
+| **Blob Size** | Max 5120 bytes each |
+| **Index Size** | Max 96 bytes |
+| **Index Count** | Max 1 per data point |
+
+### Error Handling
+
+All endpoints return JSON error responses:
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Invalid data format",
+  "status": 400
+}
+```
+
+**Status Codes**:
+- `200` - Success
+- `400` - Bad Request (invalid data format)
+- `404` - Not Found (unknown endpoint)
+- `500` - Internal Server Error / Configuration Error
+
+### Request Logging
+
+Format: `{METHOD} {PATH} {STATUS} {TIME}ms`
+
+Example:
+```
+POST /cc/myproject 200 15ms
+GET /ping 200 1ms
+```
+
+## Technical Requirements
+
+### Code Quality
+
+- **Language**: TypeScript (strict mode enabled)
+- **Test Coverage**: 100% required
+- **Testing Framework**: Vitest
+- **Code Style**: ESLint + Prettier
+- **Type Safety**: No `any` types without justification
+- **Documentation**: JSDoc for all public APIs
+
+### Performance Targets
+
+- **Response Time**: < 100ms p95
+- **Error Rate**: < 0.1%
+- **Availability**: > 99.9%
+- **Cold Start**: None (Cloudflare Pages)
+
+### Security
+
+- Input validation for all endpoints
+- Type-safe TypeScript throughout
+- No sensitive data logged
+- CORS support (configurable)
+- Rate limiting (planned)
+- API key authentication (planned)
+
+## Why Cloudflare + Hono?
+
+### Cloudflare Advantages
+
+- ✅ **Global Edge Network** - 300+ locations worldwide
+- ✅ **Free Tier** - 100K requests/day, 1M Analytics Engine writes/day
+- ✅ **Zero Cold Starts** - Always ready, no warmup needed
+- ✅ **Built-in DDoS Protection** - Automatic threat mitigation
+- ✅ **Integrated Storage** - D1 SQL database + Analytics Engine
+- ✅ **No Infrastructure Management** - Fully serverless
+
+### Hono Framework Benefits
+
+- ✅ **Ultra-Fast** - ~11KB bundle, faster than Express
+- ✅ **Web Standard API** - Uses native Request/Response
+- ✅ **TypeScript-First** - Excellent type inference
+- ✅ **Middleware Support** - Composable request handling
+- ✅ **Zero Dependencies** - Minimal attack surface
+- ✅ **Cloudflare Optimized** - Built for edge runtime
+
+### Cost Comparison
+
+**Cloudflare (This Project)**:
+- 100K requests/day: **$0/month**
+- 1M Analytics Engine writes: **$0/month**
+- 5GB D1 storage: **$0/month**
+
+**Traditional Stack (AWS)**:
+- Lambda + API Gateway: **~$20/month**
+- RDS database: **~$15/month**
+- CloudWatch logs: **~$5/month**
+- Total: **~$40/month** vs **$0/month**
+
+## Resources
+
+### Cloudflare Documentation
+
+- [Pages Functions](https://developers.cloudflare.com/pages/functions/)
+- [Analytics Engine](https://developers.cloudflare.com/analytics/analytics-engine/)
+- [D1 Database](https://developers.cloudflare.com/d1/)
+- [Hono on Cloudflare](https://hono.dev/docs/getting-started/cloudflare-workers)
+
+### Claude Code Monitoring
+
+- [OpenTelemetry Format](https://docs.anthropic.com/en/docs/claude-code/monitoring)
+- [Metrics & Events](https://docs.anthropic.com/en/docs/claude-code/monitoring#available-metrics-and-events)
+
+### Google Analytics
+
+- [GA4 Measurement Protocol](https://developers.google.com/analytics/devguides/collection/protocol/ga4)
+
+## Notes
+
+- All HTTP methods (GET, POST) supported per endpoint
+- GET requests use query parameters
+- POST requests use JSON body
+- Error responses follow standard HTTP status codes
+- All timestamps use ISO 8601 format
+- Analytics Engine has size limits: blobs (5120 bytes), indexes (96 bytes)
+- Project IDs are auto-created on first use
+- Database operations are non-blocking for analytics recording
