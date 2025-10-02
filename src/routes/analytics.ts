@@ -98,15 +98,22 @@ export function createAnalyticsRouter(): Hono<{ Bindings: Env }> {
       return c.json(insights);
     } catch (error) {
       console.error('[Analytics API] Failed to get insights:', error);
+
+      // Check if it's a credentials error
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to query analytics';
+      const isCredentialsError = errorMessage.includes(
+        'credentials not configured'
+      );
+
       return c.json(
         {
-          error: 'Internal Server Error',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Failed to query analytics',
+          error: isCredentialsError
+            ? 'Service Unavailable'
+            : 'Internal Server Error',
+          message: errorMessage,
         },
-        500
+        isCredentialsError ? 503 : 500
       );
     }
   });

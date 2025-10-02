@@ -34,23 +34,17 @@ describe('Analytics API E2E', () => {
   });
 
   describe('GET /api/analytics/insights', () => {
-    it('should return insights for valid dataset', async () => {
+    it('should return 503 when credentials not configured', async () => {
       const req = new Request(
         'http://localhost/api/analytics/insights?dataset=CLAUDE_CODE_METRICS'
       );
       const res = await app.fetch(req, env);
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(503);
 
       const data = (await res.json()) as any;
-      expect(data).toBeDefined();
-      expect(data.summary).toBeDefined();
-      expect(data.summary.dataset).toBe('CLAUDE_CODE_METRICS');
-      expect(data.summary.totalEvents).toBeGreaterThan(0);
-      expect(data.insights).toBeDefined();
-      expect(data.insights.trends).toBeInstanceOf(Array);
-      expect(data.insights.recommendations).toBeInstanceOf(Array);
-      expect(data.data.timeseries).toBeInstanceOf(Array);
+      expect(data.error).toBe('Service Unavailable');
+      expect(data.message).toContain('credentials not configured');
     });
 
     it('should return 400 for missing dataset parameter', async () => {
@@ -91,14 +85,14 @@ describe('Analytics API E2E', () => {
         );
         const res = await app.fetch(req, env);
 
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(503);
 
         const data = (await res.json()) as any;
-        expect(data.summary.dataset).toBe(dataset);
+        expect(data.error).toBe('Service Unavailable');
       }
     });
 
-    it('should handle custom time range', async () => {
+    it('should return 503 when credentials missing even with time range', async () => {
       const start = '2024-01-01T00:00:00Z';
       const end = '2024-01-02T00:00:00Z';
       const req = new Request(
@@ -106,16 +100,11 @@ describe('Analytics API E2E', () => {
       );
       const res = await app.fetch(req, env);
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(503);
 
       const data = (await res.json()) as any;
-      // Both formats are valid ISO 8601
-      expect(new Date(data.summary.timeRange.start).toISOString()).toBe(
-        new Date(start).toISOString()
-      );
-      expect(new Date(data.summary.timeRange.end).toISOString()).toBe(
-        new Date(end).toISOString()
-      );
+      expect(data.error).toBe('Service Unavailable');
+      expect(data.message).toContain('credentials not configured');
     });
 
     it('should return 400 for invalid time format', async () => {
@@ -131,56 +120,41 @@ describe('Analytics API E2E', () => {
       expect(data.message).toContain('time format');
     });
 
-    it('should include all required response fields', async () => {
+    it('should return 503 for any query without credentials', async () => {
       const req = new Request(
         'http://localhost/api/analytics/insights?dataset=CLAUDE_CODE_ANALYTICS'
       );
       const res = await app.fetch(req, env);
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(503);
 
       const data = (await res.json()) as any;
-
-      // Summary fields
-      expect(data.summary.totalEvents).toBeDefined();
-      expect(data.summary.timeRange).toBeDefined();
-      expect(data.summary.timeRange.start).toBeDefined();
-      expect(data.summary.timeRange.end).toBeDefined();
-      expect(data.summary.topProjects).toBeInstanceOf(Array);
-      expect(data.summary.dataset).toBeDefined();
-
-      // Insights fields
-      expect(data.insights.trends).toBeInstanceOf(Array);
-      expect(data.insights.anomalies).toBeInstanceOf(Array);
-      expect(data.insights.recommendations).toBeInstanceOf(Array);
-
-      // Data fields
-      expect(data.data.timeseries).toBeInstanceOf(Array);
-      expect(data.data.breakdown).toBeDefined();
+      expect(data.error).toBe('Service Unavailable');
+      expect(data.message).toContain('credentials not configured');
     });
 
-    it('should handle project_id filter parameter', async () => {
+    it('should return 503 even with project_id filter', async () => {
       const req = new Request(
         'http://localhost/api/analytics/insights?dataset=CLAUDE_CODE_METRICS&project_id=duyet'
       );
       const res = await app.fetch(req, env);
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(503);
 
       const data = (await res.json()) as any;
-      expect(data).toBeDefined();
+      expect(data.error).toBe('Service Unavailable');
     });
 
-    it('should handle limit parameter', async () => {
+    it('should return 503 even with limit parameter', async () => {
       const req = new Request(
         'http://localhost/api/analytics/insights?dataset=GA_ANALYTICS&limit=100'
       );
       const res = await app.fetch(req, env);
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(503);
 
       const data = (await res.json()) as any;
-      expect(data).toBeDefined();
+      expect(data.error).toBe('Service Unavailable');
     });
   });
 

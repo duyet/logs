@@ -201,8 +201,9 @@ export class AnalyticsQueryService {
     const apiToken = await this.getSecretValue(env.CLOUDFLARE_API_TOKEN);
 
     if (!accountId || !apiToken) {
-      // Return mock data for development/testing
-      return this.getMockInsights(params);
+      throw new Error(
+        'Analytics Engine credentials not configured. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN in Cloudflare Pages dashboard.'
+      );
     }
 
     const timeRange = params.timeRange || this.getDefaultTimeRange();
@@ -229,27 +230,21 @@ export class AnalyticsQueryService {
       }
     `;
 
-    try {
-      const result = await this.queryGraphQL(apiToken, query, {
-        accountId,
-        dataset: datasetName,
-        start: timeRange.start,
-        end: timeRange.end,
-      });
+    const result = await this.queryGraphQL(apiToken, query, {
+      accountId,
+      dataset: datasetName,
+      start: timeRange.start,
+      end: timeRange.end,
+    });
 
-      if (result.errors) {
-        throw new Error(
-          `GraphQL errors: ${result.errors.map((e) => e.message).join(', ')}`
-        );
-      }
-
-      // Process results
-      return this.processQueryResults(result, params, timeRange);
-    } catch (error) {
-      console.error('[Analytics Query] Failed to query GraphQL API:', error);
-      // Fallback to mock data
-      return this.getMockInsights(params);
+    if (result.errors) {
+      throw new Error(
+        `GraphQL query failed: ${result.errors.map((e) => e.message).join(', ')}`
+      );
     }
+
+    // Process results
+    return this.processQueryResults(result, params, timeRange);
   }
 
   /**
@@ -382,81 +377,5 @@ export class AnalyticsQueryService {
     }
 
     return { trends, anomalies, recommendations };
-  }
-
-  /**
-   * Get mock insights for development/testing
-   */
-  private getMockInsights(
-    params: AnalyticsQueryParams
-  ): AnalyticsInsightsResponse {
-    const timeRange = params.timeRange || this.getDefaultTimeRange();
-
-    // Generate mock time series (hourly data for last 24h)
-    const timeseries: TimeSeriesPoint[] = [];
-    const start = new Date(timeRange.start);
-    const end = new Date(timeRange.end);
-    const hoursDiff = Math.floor(
-      (end.getTime() - start.getTime()) / (60 * 60 * 1000)
-    );
-
-    for (let i = 0; i <= hoursDiff; i++) {
-      const timestamp = new Date(start.getTime() + i * 60 * 60 * 1000);
-      const baseValue = 50 + Math.sin(i / 6) * 20; // Sinusoidal pattern
-      const noise = Math.random() * 10;
-      timeseries.push({
-        timestamp: timestamp.toISOString(),
-        value: Math.round(baseValue + noise),
-      });
-    }
-
-    const breakdown = {
-      default: 450,
-      duyet: 320,
-      blog: 180,
-      prod: 150,
-      test: 50,
-    };
-
-    const totalEvents = Object.values(breakdown).reduce((a, b) => a + b, 0);
-
-    return {
-      summary: {
-        totalEvents,
-        timeRange,
-        topProjects: Object.entries(breakdown)
-          .map(([id, count]) => ({ id, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5),
-        dataset: params.dataset,
-      },
-      insights: {
-        trends: [
-          {
-            metric: 'event_volume',
-            change: 15.3,
-            direction: 'up',
-            description: 'Event volume is up by 15%',
-          },
-        ],
-        anomalies: [
-          {
-            timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-            description: 'Unusual spike detected: 120 events',
-            severity: 'medium',
-            value: 120,
-          },
-        ],
-        recommendations: [
-          'Consider adding more projects to organize analytics data',
-          'Review high-volume projects for optimization opportunities',
-          'Set up alerts for anomaly detection',
-        ],
-      },
-      data: {
-        timeseries,
-        breakdown,
-      },
-    };
   }
 }
