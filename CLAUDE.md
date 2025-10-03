@@ -88,7 +88,10 @@ cloudflare-analytics-router/
 │   ├── adapters/                # Data format transformers
 │   │   ├── base.ts             # Base adapter with utilities
 │   │   ├── claude-code.ts      # Claude Code → Analytics Engine
-│   │   └── google-analytics.ts # GA4 → Analytics Engine
+│   │   ├── google-analytics.ts # GA4 → Analytics Engine
+│   │   └── realtime.ts         # Real-time events → Analytics Engine
+│   ├── durable-objects/
+│   │   └── realtime-aggregator.ts # 5-minute window aggregation
 │   ├── services/
 │   │   ├── analytics-engine.ts # Analytics Engine client
 │   │   └── project.ts          # Project management (D1)
@@ -98,13 +101,19 @@ cloudflare-analytics-router/
 │   │   └── project-id.ts       # Project ID extraction & validation
 │   ├── routes/
 │   │   ├── router.ts           # Main Hono router configuration
-│   │   └── projects.ts         # Projects API router
+│   │   ├── projects.ts         # Projects API router
+│   │   ├── analytics.ts        # Analytics insights API
+│   │   └── realtime.ts         # Real-time tracking API
 │   ├── utils/
 │   │   ├── route-handler.ts    # Generic route handler factory
-│   │   └── validation.ts       # Data validation utilities
+│   │   ├── validation.ts       # Data validation utilities
+│   │   ├── user-agent-parser.ts # UA parsing (browser/OS/device)
+│   │   ├── fingerprint.ts      # Privacy-first fingerprinting
+│   │   └── bot-detection.ts    # Multi-layer bot detection
 │   └── types/
 │       ├── index.ts            # TypeScript types and interfaces
-│       └── hono.ts             # Hono context extensions
+│       ├── hono.ts             # Hono context extensions
+│       └── realtime.ts         # Real-time analytics types
 ├── migrations/
 │   └── 0001_create_projects.sql # D1 database schema
 ├── test/
@@ -210,13 +219,71 @@ cloudflare-analytics-router/
 - **Key Fields**: client_id, events, user_properties
 - **Use Case**: Web analytics tracking
 
+### `/realtime` and `/realtime/:project_id` - Real-Time Analytics (New)
+
+- **Methods**: POST, GET
+- **Purpose**: Track real-time website visitor events and retrieve live statistics
+- **Dataset**: `REALTIME_ANALYTICS` (Analytics Engine) + `REALTIME_AGGREGATOR` (Durable Object)
+- **Architecture**: Dual-write system - Analytics Engine for long-term storage, Durable Object for 5-minute window aggregation
+- **Tracked Metrics**:
+  - Live visitor count (5-minute sliding window)
+  - Browser detection (Chrome, Firefox, Safari, Edge, Opera, etc.)
+  - OS detection (Windows, macOS, Linux, iOS, Android)
+  - Device type (mobile, desktop, tablet)
+  - Bot classification (user, bot, ai-bot including GPTBot, ClaudeBot, etc.)
+  - Event types (pageview, click, custom)
+  - User fingerprinting (privacy-first FNV-1a hash)
+  - Geographic data (IP, country, city, region, timezone)
+- **POST /realtime** - Track event:
+  ```json
+  {
+    "event_type": "pageview",
+    "timestamp": 1704067200000,
+    "url": "https://example.com/page",
+    "referrer": "https://google.com",
+    "user_agent": "Mozilla/5.0...",
+    "fingerprint": {
+      "hash": "a3f2b1c0",
+      "components": {...},
+      "confidence": 85
+    },
+    "session_id": "session-123",
+    "visitor_id": "visitor-456"
+  }
+  ```
+- **GET /realtime/stats** - Get current statistics:
+  ```json
+  {
+    "timestamp": 1704067200000,
+    "window_size": 300000,
+    "total_events": 150,
+    "unique_visitors": 45,
+    "pageviews": 120,
+    "clicks": 25,
+    "custom_events": 5,
+    "browsers": { "Chrome": 80, "Firefox": 40, "Safari": 30 },
+    "operating_systems": { "Windows": 60, "macOS": 50, "Linux": 40 },
+    "device_types": { "desktop": 90, "mobile": 60 },
+    "bot_traffic": 10,
+    "human_traffic": 140
+  }
+  ```
+- **GET /realtime/data** - Get full aggregated data with event list
+
+**Client Integration**:
+
+- JavaScript tracking snippet: `https://logs.duyet.net/realtime.js` (TODO)
+- Lightweight (< 5KB) browser-side tracking
+- Privacy-first fingerprinting (no PII storage)
+- Multi-layer bot detection
+
 ### `/api/projects` - Project Management
 
 - **GET** - List all projects
 - **POST** - Create new project
 - **GET /:id** - Get project details
 
-### `/api/analytics/insights` - Analytics Insights (New)
+### `/api/analytics/insights` - Analytics Insights
 
 - **Methods**: GET
 - **Purpose**: Query Analytics Engine data and generate insights
@@ -526,10 +593,11 @@ npm run type-check       # TypeScript type checking
 **100% Code Coverage Required**
 
 1. **Unit Tests** (`test/unit/`)
-   - All adapters (base, claude-code, google-analytics)
+   - All adapters (base, claude-code, google-analytics, realtime)
    - All services (analytics-engine, project)
    - All middleware (logger, project-id, error-handler)
-   - All utilities (validation, route-handler)
+   - All utilities (validation, route-handler, user-agent-parser, fingerprint, bot-detection)
+   - All Durable Objects (realtime-aggregator)
 
 2. **E2E Tests** (`test/e2e/`)
    - All endpoints with mock Analytics Engine
@@ -747,12 +815,25 @@ dataset = "duyet_logs_claude_code_metrics"
 binding = "GA_ANALYTICS"
 dataset = "duyet_logs_ga_analytics"
 
+[[analytics_engine_datasets]]
+binding = "REALTIME_ANALYTICS"  # Real-time analytics
+dataset = "duyet_logs_realtime_analytics"
+
+# Note: Durable Objects bindings for Pages must be configured via Cloudflare Pages dashboard
+# The RealtimeAggregator Durable Object is exported from functions/[[path]].ts
+# To configure:
+# 1. Go to Cloudflare Pages dashboard → Settings → Functions
+# 2. Add Durable Object binding:
+#    - Variable name: REALTIME_AGGREGATOR
+#    - Durable Object class: RealtimeAggregator
+
 # Environment Variables (for Analytics Insights API)
 [vars]
 DATASET_CLAUDE_CODE_ANALYTICS = "duyet_logs_claude_code_analytics"
 DATASET_CLAUDE_CODE_LOGS = "duyet_logs_claude_code_logs"
 DATASET_CLAUDE_CODE_METRICS = "duyet_logs_claude_code_metrics"
 DATASET_GA_ANALYTICS = "duyet_logs_ga_analytics"
+DATASET_REALTIME_ANALYTICS = "duyet_logs_realtime_analytics"
 ```
 
 ### Environment Setup
@@ -776,7 +857,16 @@ npm run db:migrate:remote
 npm run db:seed:remote
 ```
 
-4. **Set Up Secrets Store** (for Analytics Insights API):
+4. **Configure Durable Objects** (for Real-time Analytics):
+
+For Cloudflare Pages, Durable Objects must be configured via the dashboard:
+
+- Go to Cloudflare Pages dashboard → Settings → Functions
+- Add Durable Object binding:
+  - Variable name: `REALTIME_AGGREGATOR`
+  - Durable Object class: `RealtimeAggregator`
+
+5. **Set Up Secrets Store** (for Analytics Insights API):
 
 The Analytics Insights API requires Cloudflare credentials to query Analytics Engine via GraphQL. Use Secrets Store for secure credential management.
 
@@ -807,7 +897,7 @@ secret_name = "CLOUDFLARE_API_TOKEN"
 
 **Note**: Without these secrets, the Analytics Insights API will return mock data. The bindings support both Secrets Store (recommended) and environment variables (fallback).
 
-5. **Deploy**:
+6. **Deploy**:
 
 ```bash
 npm run deploy

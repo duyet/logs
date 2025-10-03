@@ -43,6 +43,10 @@ describe('Analytics API E2E', () => {
       GA_ANALYTICS: {
         writeDataPoint: (): void => {},
       },
+      REALTIME_ANALYTICS: {
+        writeDataPoint: (): void => {},
+      },
+      REALTIME_AGGREGATOR: {} as DurableObjectNamespace,
       DB: {
         prepare: () => ({
           bind: () => ({
