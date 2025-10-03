@@ -63,6 +63,21 @@ class MockDurableObjectState implements DurableObjectState {
   } as unknown as DurableObjectStorage;
 
   public waitUntil = vi.fn();
+
+  // WebSocket-related properties (not used but required by interface)
+  public props = {};
+  public acceptWebSocket = vi.fn();
+  public getWebSockets = vi.fn(() => []);
+  public setWebSocketAutoResponse = vi.fn();
+  public getWebSocketAutoResponse = vi.fn();
+  public setWebSocketAutoResponseTimestamp = vi.fn();
+  public getWebSocketAutoResponseTimestamp = vi.fn();
+  public getTags = vi.fn(() => []);
+  public setTags = vi.fn();
+  public getHibernationEventType = vi.fn();
+  public setHibernatableWebSocketEventTimeout = vi.fn();
+  public getHibernatableWebSocketEventTimeout = vi.fn();
+  public abort = vi.fn();
 }
 
 describe('RealtimeAggregator', () => {
@@ -71,7 +86,7 @@ describe('RealtimeAggregator', () => {
 
   beforeEach(() => {
     state = new MockDurableObjectState();
-    aggregator = new RealtimeAggregator(state, {} as Env);
+    aggregator = new RealtimeAggregator(state);
   });
 
   describe('addEvent', () => {
@@ -149,7 +164,7 @@ describe('RealtimeAggregator', () => {
       });
 
       const response = await aggregator.fetch(request);
-      const data = await response.json();
+      const data = (await response.json()) as { success: boolean };
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ success: true });
@@ -161,7 +176,10 @@ describe('RealtimeAggregator', () => {
       });
 
       const response = await aggregator.fetch(request);
-      const stats = await response.json();
+      const stats = (await response.json()) as {
+        timestamp: number;
+        total_events: number;
+      };
 
       expect(response.status).toBe(200);
       expect(stats.timestamp).toBeGreaterThan(0);
@@ -174,7 +192,10 @@ describe('RealtimeAggregator', () => {
       });
 
       const response = await aggregator.fetch(request);
-      const data = await response.json();
+      const data = (await response.json()) as {
+        current_window: unknown;
+        events: unknown[];
+      };
 
       expect(response.status).toBe(200);
       expect(data.current_window).toBeDefined();
@@ -187,7 +208,7 @@ describe('RealtimeAggregator', () => {
       });
 
       const response = await aggregator.fetch(request);
-      const data = await response.json();
+      const data = (await response.json()) as { cleaned: number };
 
       expect(response.status).toBe(200);
       expect(data.cleaned).toBeGreaterThanOrEqual(0);
