@@ -19,19 +19,19 @@ const colors = {
   yellow: '\x1b[33m',
 };
 
-function log(emoji: string, message: string) {
+function log(emoji: string, message: string): void {
   console.log(`${emoji} ${colors.bright}${message}${colors.reset}`);
 }
 
-function logSuccess(message: string) {
+function logSuccess(message: string): void {
   console.log(`${colors.green}✅ ${message}${colors.reset}`);
 }
 
-function logError(message: string) {
+function logError(message: string): void {
   console.error(`${colors.red}❌ ${message}${colors.reset}`);
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     log('🔨', 'Building Cloudflare Pages with Hono...');
     console.log();
@@ -98,4 +98,4 @@ async function main() {
   }
 }
 
-main();
+void main();

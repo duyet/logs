@@ -17,15 +17,15 @@ const colors = {
   yellow: '\x1b[33m',
 };
 
-function log(emoji: string, message: string) {
+function log(emoji: string, message: string): void {
   console.log(`${emoji} ${colors.bright}${message}${colors.reset}`);
 }
 
-function logSuccess(message: string) {
+function logSuccess(message: string): void {
   console.log(`${colors.green}✅ ${message}${colors.reset}`);
 }
 
-function logError(message: string) {
+function logError(message: string): void {
   console.error(`${colors.red}❌ ${message}${colors.reset}`);
 }
 
@@ -42,7 +42,7 @@ function runCommand(command: string, description: string): boolean {
   }
 }
 
-async function main() {
+function main(): void {
   try {
     log('🚀', 'Starting deployment process...');
     console.log();
@@ -88,4 +88,4 @@ async function main() {
   }
 }
 
-main();
+void main();

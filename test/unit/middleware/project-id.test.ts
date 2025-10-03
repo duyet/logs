@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 import type { Env } from '../../../src/types/index.js';
@@ -31,7 +32,7 @@ describe('extractProjectId', () => {
     const req = new Request('http://localhost/test/path123');
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as any;
     expect(data.projectId).toBe('path123');
   });
 
@@ -48,7 +49,7 @@ describe('extractProjectId', () => {
     });
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as any;
     expect(data.projectId).toBe('header123');
   });
 
@@ -63,7 +64,7 @@ describe('extractProjectId', () => {
     const req = new Request('http://localhost/test?project_id=query123');
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as any;
     expect(data.projectId).toBe('query123');
   });
 
@@ -80,7 +81,7 @@ describe('extractProjectId', () => {
     });
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as any;
     expect(data.projectId).toBe('path123');
   });
 
@@ -97,7 +98,7 @@ describe('extractProjectId', () => {
     );
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as any;
     expect(data.projectId).toBe('path123');
   });
 
@@ -114,7 +115,7 @@ describe('extractProjectId', () => {
     });
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as any;
     expect(data.projectId).toBe('header123');
   });
 
@@ -129,7 +130,7 @@ describe('extractProjectId', () => {
     const req = new Request('http://localhost/test');
 
     const res = await app.request(req);
-    const data = (await res.json()) as { projectId: string | null };
+    const data = (await res.json()) as any;
     expect(data.projectId).toBeNull();
   });
 });
@@ -154,7 +155,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = await res.json();
+    const data = (await res.json()) as any;
 
     expect(data).toEqual({ status: 'ok' });
   });
@@ -186,7 +187,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as any;
 
     expect(data.projectId).toBe('existing123');
     expect(projectService.projectExists).toHaveBeenCalledWith(
@@ -234,7 +235,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as any;
 
     expect(data.projectId).toBe('nonexistent');
     expect(createProjectSpy).toHaveBeenCalledWith(mockDB, {
@@ -274,7 +275,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = await res.json();
+    const data = (await res.json()) as any;
 
     // Should continue despite error
     expect(data).toEqual({ status: 'ok' });
@@ -308,7 +309,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as { projectId: string | null };
 
     expect(data.projectId).toBe('query456');
   });
@@ -339,7 +340,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = await res.json();
+    const data = (await res.json()) as any;
 
     // Should continue despite error
     expect(data).toEqual({ status: 'ok' });
@@ -385,7 +386,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as { projectId: string | null };
 
     expect(data.projectId).toBe('newproject');
     expect(createProjectSpy).toHaveBeenCalledWith(mockDB, {
@@ -423,7 +424,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = (await res.json()) as { projectId: string };
+    const data = (await res.json()) as { projectId: string | null };
 
     expect(data.projectId).toBe('INVALID_ID!');
     expect(consoleWarnSpy).toHaveBeenCalledWith(
@@ -459,7 +460,7 @@ describe('projectIdMiddleware', () => {
     };
 
     const res = await app.request(req, {}, env);
-    const data = await res.json();
+    const data = (await res.json()) as any;
 
     // Should continue despite error
     expect(data).toEqual({ status: 'ok' });
@@ -469,5 +470,83 @@ describe('projectIdMiddleware', () => {
     );
 
     consoleErrorSpy.mockRestore();
+  });
+
+  it('should handle executionCtx.waitUntil when available', async () => {
+    const mockDB = createMockD1Database();
+    const app = new Hono<{ Bindings: Env }>();
+
+    // Mock projectExists to return true
+    vi.spyOn(projectService, 'projectExists').mockResolvedValueOnce(true);
+
+    // Mock updateLastUsed
+    const updateLastUsedSpy = vi
+      .spyOn(projectService, 'updateLastUsed')
+      .mockResolvedValueOnce();
+
+    app.use('/test', projectIdMiddleware);
+    app.get('/test', (c) => c.json({ status: 'ok' }));
+
+    const req = new Request('http://localhost/test', {
+      headers: { 'X-Project-ID': 'testproject' },
+    });
+
+    // Mock executionCtx with waitUntil
+    const mockWaitUntil = vi.fn();
+    const mockExecutionCtx = {
+      waitUntil: mockWaitUntil,
+      passThroughOnException: vi.fn(),
+      props: {},
+    } as unknown as ExecutionContext;
+
+    const env = {
+      DB: mockDB,
+      CLAUDE_CODE_ANALYTICS: {} as never,
+      GA_ANALYTICS: {} as never,
+    };
+
+    const res = await app.request(req, {}, env, mockExecutionCtx);
+    const data = (await res.json()) as any;
+
+    expect(data).toEqual({ status: 'ok' });
+    expect(mockWaitUntil).toHaveBeenCalled();
+    expect(updateLastUsedSpy).toHaveBeenCalledWith(mockDB, 'testproject');
+
+    updateLastUsedSpy.mockRestore();
+  });
+
+  it('should handle missing executionCtx gracefully', async () => {
+    const mockDB = createMockD1Database();
+    const app = new Hono<{ Bindings: Env }>();
+
+    // Mock projectExists to return true
+    vi.spyOn(projectService, 'projectExists').mockResolvedValueOnce(true);
+
+    // Mock updateLastUsed
+    const updateLastUsedSpy = vi
+      .spyOn(projectService, 'updateLastUsed')
+      .mockResolvedValueOnce();
+
+    app.use('/test', projectIdMiddleware);
+    app.get('/test', (c) => c.json({ status: 'ok' }));
+
+    const req = new Request('http://localhost/test', {
+      headers: { 'X-Project-ID': 'testproject' },
+    });
+
+    const env = {
+      DB: mockDB,
+      CLAUDE_CODE_ANALYTICS: {} as never,
+      GA_ANALYTICS: {} as never,
+    };
+
+    // No executionCtx provided
+    const res = await app.request(req, {}, env);
+    const data = (await res.json()) as any;
+
+    expect(data).toEqual({ status: 'ok' });
+    expect(updateLastUsedSpy).toHaveBeenCalledWith(mockDB, 'testproject');
+
+    updateLastUsedSpy.mockRestore();
   });
 });

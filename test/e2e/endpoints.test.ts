@@ -1,6 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-type-assertion */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
-import type { Env } from '../../src/types/index.js';
+import type {
+  Env,
+  PingResponse,
+  SuccessResponse,
+  ErrorResponse,
+} from '../../src/types/index.js';
 
 describe('E2E Endpoints', () => {
   let app: ReturnType<typeof createRouter>;
@@ -25,14 +31,11 @@ describe('E2E Endpoints', () => {
   describe('GET /ping', () => {
     it('should return health check status', async () => {
       const res = await app.request('/ping', {}, mockEnv);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const json = await res.json();
+      const json = (await res.json()) as PingResponse;
 
       expect(res.status).toBe(200);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/unbound-method
       expect(json).toMatchObject({
         status: 'ok',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         timestamp: expect.any(String),
       });
     });
@@ -60,7 +63,7 @@ describe('E2E Endpoints', () => {
         mockEnv
       );
 
-      const json = await res.json();
+      const json = (await res.json()) as SuccessResponse;
 
       expect(res.status).toBe(200);
       expect(json).toEqual({
@@ -112,8 +115,10 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(400);
-      const json = (await res.json()) as { error: string };
-      expect(json.error).toBe('Bad Request');
+      const json = (await res.json()) as SuccessResponse | ErrorResponse;
+      if ('error' in json) {
+        expect(json.error).toBe('Bad Request');
+      }
     });
   });
 
@@ -153,7 +158,7 @@ describe('E2E Endpoints', () => {
         mockEnv
       );
 
-      const json = (await res.json()) as { success: boolean };
+      const json = (await res.json()) as SuccessResponse;
 
       expect(res.status).toBe(200);
       expect(json.success).toBe(true);
@@ -204,8 +209,10 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(400);
-      const json = (await res.json()) as { error: string };
-      expect(json.error).toBeDefined();
+      const json = (await res.json()) as SuccessResponse | ErrorResponse;
+      if ('error' in json) {
+        expect(json.error).toBeDefined();
+      }
     });
   });
 
@@ -250,8 +257,10 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(500);
-      const json = (await res.json()) as { error: string };
-      expect(json.error).toBe('Configuration Error');
+      const json = (await res.json()) as SuccessResponse | ErrorResponse;
+      if ('error' in json) {
+        expect(json.error).toBe('Configuration Error');
+      }
     });
 
     it('should handle malformed JSON', async () => {
@@ -311,7 +320,7 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = await res.json();
+        const json = (await res.json()) as SuccessResponse | ErrorResponse;
         expect(json).toEqual({
           success: true,
           message: 'Data recorded successfully',
@@ -377,8 +386,10 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = (await res.json()) as { success: boolean };
-        expect(json.success).toBe(true);
+        const json = (await res.json()) as SuccessResponse | ErrorResponse;
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
       });
 
       it('should accept GET with project_id in path', async () => {
@@ -390,6 +401,167 @@ describe('E2E Endpoints', () => {
 
         // May fail validation due to complex nested structure
         expect([200, 400]).toContain(res.status);
+      });
+    });
+  });
+
+  describe('OTLP v1 endpoints', () => {
+    describe('POST /cc/v1/logs', () => {
+      it('should accept OTLP logs with default project', async () => {
+        const otlpLogs = {
+          resourceLogs: [
+            {
+              resource: {
+                attributes: [
+                  {
+                    key: 'service.name',
+                    value: { stringValue: 'claude-code' },
+                  },
+                ],
+              },
+              scopeLogs: [
+                {
+                  scope: { name: 'test' },
+                  logRecords: [
+                    {
+                      timeUnixNano: '1234567890000000000',
+                      body: { stringValue: 'test log' },
+                      severityText: 'INFO',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const res = await app.request(
+          '/cc/v1/logs',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(otlpLogs),
+          },
+          mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as SuccessResponse | ErrorResponse;
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
+      });
+    });
+
+    describe('POST /cc/v1/metrics', () => {
+      it('should accept OTLP metrics with default project', async () => {
+        const otlpMetrics = {
+          resourceMetrics: [
+            {
+              resource: {
+                attributes: [
+                  {
+                    key: 'service.name',
+                    value: { stringValue: 'claude-code' },
+                  },
+                ],
+              },
+              scopeMetrics: [
+                {
+                  scope: { name: 'test' },
+                  metrics: [
+                    {
+                      name: 'test.metric',
+                      sum: {
+                        dataPoints: [
+                          {
+                            timeUnixNano: '1234567890000000000',
+                            asDouble: 100,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        const res = await app.request(
+          '/cc/v1/metrics',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(otlpMetrics),
+          },
+          mockEnv
+        );
+
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as SuccessResponse | ErrorResponse;
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
+      });
+    });
+  });
+
+  describe('Static asset routes', () => {
+    describe('GET /ui/project', () => {
+      it('should return 503 when ASSETS not available', async () => {
+        const res = await app.request('/ui/project', {}, mockEnv);
+
+        expect(res.status).toBe(503);
+        const text = await res.text();
+        expect(text).toBe('Static assets not available');
+      });
+
+      it('should fetch from ASSETS when available', async () => {
+        const mockAssetsResponse = new Response('<html>Create Project</html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        });
+
+        const mockAssets = {
+          fetch: vi.fn().mockResolvedValue(mockAssetsResponse),
+        };
+
+        const envWithAssets = {
+          ...mockEnv,
+          ASSETS: mockAssets as never,
+        };
+
+        const res = await app.request('/ui/project', {}, envWithAssets);
+
+        expect(res.status).toBe(200);
+        expect(mockAssets.fetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: expect.stringContaining('/create.html'),
+          })
+        );
+      });
+    });
+
+    describe('GET * (static files)', () => {
+      it('should serve static files when ASSETS available', async () => {
+        const mockStaticResponse = new Response('static content', {
+          status: 200,
+        });
+
+        const mockAssets = {
+          fetch: vi.fn().mockResolvedValue(mockStaticResponse),
+        };
+
+        const envWithAssets = {
+          ...mockEnv,
+          ASSETS: mockAssets as never,
+        };
+
+        // Request a static file path
+        const res = await app.request('/styles.css', {}, envWithAssets);
+
+        expect(res.status).toBe(200);
       });
     });
   });

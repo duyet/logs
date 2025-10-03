@@ -1,6 +1,6 @@
 name = "duyet-logs"
 compatibility_date = "2025-10-01"
-compatibility_flags = ["nodejs_compat"]
+compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
 pages_build_output_dir = "dist"
 
 # Analytics Engine Bindings
@@ -25,6 +25,17 @@ dataset = "duyet_logs_ga_analytics"
 binding = "DB"
 database_name = "duyet-logs"
 database_id = "1d875c4d-9e1c-4f96-99c1-08386c53670c"
+
+# Environment Variables
+[vars]
+DATASET_CLAUDE_CODE_ANALYTICS = "duyet_logs_claude_code_analytics"
+DATASET_CLAUDE_CODE_LOGS = "duyet_logs_claude_code_logs"
+DATASET_CLAUDE_CODE_METRICS = "duyet_logs_claude_code_metrics"
+DATASET_GA_ANALYTICS = "duyet_logs_ga_analytics"
+
+# Note: Secrets for Analytics Insights API should be set via Cloudflare dashboard
+# Pages projects don't support secrets_store_secrets in wrangler.toml
+# Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN as environment variables in the dashboard
 
 [observability]
 enabled = true

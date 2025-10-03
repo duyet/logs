@@ -17,15 +17,15 @@ const colors = {
   cyan: '\x1b[36m',
 };
 
-function log(emoji: string, message: string) {
+function log(emoji: string, message: string): void {
   console.log(`${emoji} ${colors.bright}${message}${colors.reset}`);
 }
 
-function logSuccess(message: string) {
+function logSuccess(message: string): void {
   console.log(`${colors.green}✅ ${message}${colors.reset}`);
 }
 
-function logError(message: string) {
+function logError(message: string): void {
   console.error(`${colors.red}❌ ${message}${colors.reset}`);
 }
 
@@ -70,7 +70,7 @@ async function testEndpoint(
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   const endpoint = process.argv[2] || 'http://localhost:8788/cc/duyet';
 
   log('🧪', 'OTLP Format Testing');
@@ -208,4 +208,4 @@ async function main() {
   }
 }
 
-main();
+void main();

@@ -70,7 +70,7 @@ async function seedProjects(): Promise<void> {
         console.log(`✅ Created project: ${project.id}`);
         succeeded++;
       } else if (response.status === 400) {
-        const errorData = (await response.json()) as { message?: string };
+        const errorData: { message?: string } = await response.json();
         // Check if it's a duplicate project error
         if (
           errorData.message?.includes('UNIQUE constraint failed') ||

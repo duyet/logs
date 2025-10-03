@@ -796,5 +796,151 @@ describe('ClaudeCodeAdapter', () => {
       const metadata = JSON.parse(result.blobs![0]!);
       expect(metadata.metrics[0].name).toBe('minimal.metric');
     });
+
+    it('should handle logs with missing timestamps (fallback to Date.now)', () => {
+      const otlpLogs = {
+        resourceLogs: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'test' } },
+              ],
+            },
+            scopeLogs: [
+              {
+                scope: { name: 'test-scope' },
+                logRecords: [
+                  {
+                    // No timeUnixNano or observedTimeUnixNano
+                    body: { stringValue: 'log without timestamp' },
+                    severityText: 'INFO',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      } as unknown as OTLPLogs;
+
+      const result = adapter.transform(otlpLogs);
+      const metadata = JSON.parse(result.blobs![0]!);
+
+      // Should use Date.now() fallback
+      expect(metadata.logs[0].timestamp).toBeDefined();
+      expect(typeof metadata.logs[0].timestamp).toBe('string');
+    });
+
+    it('should handle logs with observedTimeUnixNano as string', () => {
+      const otlpLogs = {
+        resourceLogs: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'test' } },
+              ],
+            },
+            scopeLogs: [
+              {
+                scope: { name: 'test-scope' },
+                logRecords: [
+                  {
+                    // No timeUnixNano, use observedTimeUnixNano as string
+                    observedTimeUnixNano: '1704067200000000000',
+                    body: { stringValue: 'log with observed time' },
+                    severityText: 'INFO',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      } as unknown as OTLPLogs;
+
+      const result = adapter.transform(otlpLogs);
+      const metadata = JSON.parse(result.blobs![0]!);
+
+      // Should use observedTimeUnixNano
+      expect(metadata.logs[0].timestamp).toBe('1704067200000000000');
+    });
+
+    it('should handle metrics with no value (fallback to 0)', () => {
+      const otlpMetrics = {
+        resourceMetrics: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'test' } },
+              ],
+            },
+            scopeMetrics: [
+              {
+                scope: { name: 'test-scope' },
+                metrics: [
+                  {
+                    name: 'metric.no.value',
+                    sum: {
+                      dataPoints: [
+                        {
+                          // No asDouble or asInt
+                          timeUnixNano: '1704067200000000000',
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      } as unknown as OTLPMetrics;
+
+      const result = adapter.transform(otlpMetrics);
+
+      // Should use 0 as fallback
+      expect(result.doubles).toEqual([0]);
+    });
+
+    it('should handle attributes with doubleValue and boolValue', () => {
+      const otlpLogs = {
+        resourceLogs: [
+          {
+            resource: {
+              attributes: [
+                { key: 'service.name', value: { stringValue: 'test' } },
+                { key: 'metric.value', value: { doubleValue: 123.45 } },
+                { key: 'is.enabled', value: { boolValue: true } },
+              ],
+            },
+            scopeLogs: [
+              {
+                scope: { name: 'test-scope' },
+                logRecords: [
+                  {
+                    timeUnixNano: '1704067200000000000',
+                    body: { stringValue: 'test log' },
+                    severityText: 'INFO',
+                    attributes: [
+                      { key: 'double.attr', value: { doubleValue: 99.99 } },
+                      { key: 'bool.attr', value: { boolValue: false } },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      } as unknown as OTLPLogs;
+
+      const result = adapter.transform(otlpLogs);
+      const metadata = JSON.parse(result.blobs![0]!);
+
+      // Check resource attributes
+      expect(metadata.resource['metric.value']).toBe(123.45);
+      expect(metadata.resource['is.enabled']).toBe(true);
+
+      // Check log attributes
+      expect(metadata.logs[0].attributes['double.attr']).toBe(99.99);
+      expect(metadata.logs[0].attributes['bool.attr']).toBe(false);
+    });
   });
 });

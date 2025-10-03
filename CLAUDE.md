@@ -216,6 +216,80 @@ cloudflare-analytics-router/
 - **POST** - Create new project
 - **GET /:id** - Get project details
 
+### `/api/analytics/insights` - Analytics Insights (New)
+
+- **Methods**: GET
+- **Purpose**: Query Analytics Engine data and generate insights
+- **Query Parameters**:
+  - `dataset` (required): CLAUDE_CODE_ANALYTICS | CLAUDE_CODE_LOGS | CLAUDE_CODE_METRICS | GA_ANALYTICS
+  - `project_id` (optional): Filter by project ID
+  - `start` (optional): Start time in ISO 8601 format (default: 24h ago)
+  - `end` (optional): End time in ISO 8601 format (default: now)
+  - `limit` (optional): Max number of results (default: 10000)
+- **Response Format**:
+  ```json
+  {
+    "summary": {
+      "totalEvents": 1150,
+      "timeRange": {
+        "start": "2024-01-01T00:00:00Z",
+        "end": "2024-01-02T00:00:00Z"
+      },
+      "topProjects": [
+        { "id": "default", "count": 450 },
+        { "id": "duyet", "count": 320 }
+      ],
+      "dataset": "CLAUDE_CODE_METRICS"
+    },
+    "insights": {
+      "trends": [
+        {
+          "metric": "event_volume",
+          "change": 15.3,
+          "direction": "up",
+          "description": "Event volume is up by 15%"
+        }
+      ],
+      "anomalies": [
+        {
+          "timestamp": "2024-01-01T15:30:00Z",
+          "description": "Unusual spike detected: 120 events",
+          "severity": "medium",
+          "value": 120
+        }
+      ],
+      "recommendations": [
+        "Consider adding more projects to organize analytics data",
+        "Review high-volume projects for optimization opportunities"
+      ]
+    },
+    "data": {
+      "timeseries": [
+        { "timestamp": "2024-01-01T00:00:00Z", "value": 45 },
+        { "timestamp": "2024-01-01T01:00:00Z", "value": 52 }
+      ],
+      "breakdown": {
+        "default": 450,
+        "duyet": 320,
+        "blog": 180
+      }
+    }
+  }
+  ```
+- **Use Case**: Dashboard insights, trend analysis, anomaly detection
+- **Features**:
+  - Automatic trend detection (up/down/stable)
+  - Statistical anomaly detection (z-score based)
+  - Project breakdown and top projects
+  - Time series data for charting
+  - Actionable recommendations
+
+### `/api/analytics/datasets` - List Available Datasets (New)
+
+- **Methods**: GET
+- **Purpose**: List all available Analytics Engine datasets
+- **Response**: Array of dataset names and descriptions
+
 ## Data Formats
 
 ### Claude Code OpenTelemetry Format
@@ -659,15 +733,26 @@ database_id = "<your-database-id>"
 # Analytics Engine datasets
 [[analytics_engine_datasets]]
 binding = "CLAUDE_CODE_ANALYTICS"  # Legacy + auto-detect
+dataset = "duyet_logs_claude_code_analytics"
 
 [[analytics_engine_datasets]]
 binding = "CLAUDE_CODE_LOGS"  # OTLP Logs
+dataset = "duyet_logs_claude_code_logs"
 
 [[analytics_engine_datasets]]
 binding = "CLAUDE_CODE_METRICS"  # OTLP Metrics
+dataset = "duyet_logs_claude_code_metrics"
 
 [[analytics_engine_datasets]]
 binding = "GA_ANALYTICS"
+dataset = "duyet_logs_ga_analytics"
+
+# Environment Variables (for Analytics Insights API)
+[vars]
+DATASET_CLAUDE_CODE_ANALYTICS = "duyet_logs_claude_code_analytics"
+DATASET_CLAUDE_CODE_LOGS = "duyet_logs_claude_code_logs"
+DATASET_CLAUDE_CODE_METRICS = "duyet_logs_claude_code_metrics"
+DATASET_GA_ANALYTICS = "duyet_logs_ga_analytics"
 ```
 
 ### Environment Setup
@@ -691,7 +776,38 @@ npm run db:migrate:remote
 npm run db:seed:remote
 ```
 
-4. **Deploy**:
+4. **Set Up Secrets Store** (for Analytics Insights API):
+
+The Analytics Insights API requires Cloudflare credentials to query Analytics Engine via GraphQL. Use Secrets Store for secure credential management.
+
+**Create secrets**:
+
+```bash
+# Get your store ID
+npx wrangler secrets-store store list
+
+# Create secrets (you'll be prompted for values)
+npx wrangler secrets-store secret create <STORE_ID> --name CLOUDFLARE_ACCOUNT_ID --scopes workers --remote
+npx wrangler secrets-store secret create <STORE_ID> --name CLOUDFLARE_API_TOKEN --scopes workers --remote
+```
+
+**Configure bindings in `wrangler.toml`**:
+
+```toml
+[[secrets_store_secrets]]
+binding = "CLOUDFLARE_ACCOUNT_ID"
+store_id = "<YOUR_STORE_ID>"
+secret_name = "CLOUDFLARE_ACCOUNT_ID"
+
+[[secrets_store_secrets]]
+binding = "CLOUDFLARE_API_TOKEN"
+store_id = "<YOUR_STORE_ID>"
+secret_name = "CLOUDFLARE_API_TOKEN"
+```
+
+**Note**: Without these secrets, the Analytics Insights API will return mock data. The bindings support both Secrets Store (recommended) and environment variables (fallback).
+
+5. **Deploy**:
 
 ```bash
 npm run deploy
@@ -788,11 +904,52 @@ GET /ping 200 1ms
 ### Code Quality
 
 - **Language**: TypeScript (strict mode enabled)
-- **Test Coverage**: 100% required
+- **Test Coverage**:
+  - **100% coverage required** for all new code
+  - Write tests BEFORE or ALONGSIDE implementation
+  - Cover all code paths, edge cases, and error scenarios
+  - Unit tests for functions, integration tests for workflows
 - **Testing Framework**: Vitest
 - **Code Style**: ESLint + Prettier
-- **Type Safety**: No `any` types without justification
+- **Type Safety**:
+  - **100% TypeScript typing required** - No implicit `any`
+  - **NEVER use `any` or `unknown` types** - Always use specific types
+  - **NEVER import `.js` files** - Use `.ts` imports only (TypeScript will resolve)
+  - Use proper type guards and assertions
+  - Prefer `interface` over `type` for object shapes
+  - All function parameters and return types must be explicitly typed
 - **Documentation**: JSDoc for all public APIs
+- **Development Workflow**:
+  - When adding new functions/code: Write tests first or simultaneously
+  - Verify 100% test coverage before committing
+  - Ensure all TypeScript strict mode checks pass
+  - **MANDATORY pre-commit checks** (ALL must pass):
+    - `npx prettier --write .` - Format code
+    - `npm run lint` - Zero errors
+    - `npm test` - All tests passing
+    - `npm run type-check` - TypeScript compilation success
+  - **Post-push workflow**:
+    - Monitor build status on Cloudflare Pages
+    - If build fails, immediately investigate and fix
+    - Continue fixing until build succeeds
+    - Never leave failing builds unattended
+- **Git Workflow**:
+  - **Auto-commit when changes have impact or add new features**
+  - Commit after completing any of:
+    - New feature implementation
+    - Bug fixes that affect functionality
+    - Performance improvements
+    - Breaking changes or API modifications
+    - Test coverage improvements
+    - Documentation updates for technical requirements
+  - Use semantic commit messages: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `perf:`
+  - Do NOT auto-commit for: minor typos, formatting-only changes, work-in-progress
+  - **Pre-commit validation sequence**:
+    1. Format code with Prettier
+    2. Run linter and fix issues
+    3. Run all tests
+    4. Run type-check
+    5. Only commit if all checks pass
 
 ### Performance Targets
 

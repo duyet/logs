@@ -10,6 +10,7 @@ import { projectIdMiddleware } from '../middleware/project-id.js';
 import { createAnalyticsHandler } from '../utils/route-handler.js';
 import { handleError } from '../utils/error-handler.js';
 import { createProjectsRouter } from './projects.js';
+import { createAnalyticsRouter } from './analytics.js';
 
 /**
  * Create and configure Hono app with all routes
@@ -67,6 +68,7 @@ export function createRouter(): Hono<{ Bindings: Env }> {
         },
         api: {
           projects: '/api/project',
+          analytics: '/api/analytics/insights',
         },
       },
     });
@@ -85,7 +87,7 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   const defaultProjectMiddleware = async (
     c: Context<{ Bindings: Env }>,
     next: Next
-  ) => {
+  ): Promise<void> => {
     // If no project_id is in the path, set it to "default"
     if (!c.req.param('project_id')) {
       c.set('project_id', 'default');
@@ -125,6 +127,9 @@ export function createRouter(): Hono<{ Bindings: Env }> {
 
   // Projects API routes
   app.route('/api/project', createProjectsRouter());
+
+  // Analytics API routes
+  app.route('/api/analytics', createAnalyticsRouter());
 
   // Create project UI
   app.get('/ui/project', async (c) => {
