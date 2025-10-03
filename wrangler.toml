@@ -24,13 +24,6 @@ dataset = "duyet_logs_ga_analytics"
 binding = "REALTIME_ANALYTICS"
 dataset = "duyet_logs_realtime_analytics"
 
-# Durable Object Bindings
-# For Pages, the Durable Object is exported from functions/[[path]].ts
-[[durable_objects.bindings]]
-name = "REALTIME_AGGREGATOR"
-class_name = "RealtimeAggregator"
-script_name = "duyet-logs"
-
 # D1 Database Binding
 [[d1_databases]]
 binding = "DB"

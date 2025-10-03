@@ -819,14 +819,13 @@ dataset = "duyet_logs_ga_analytics"
 binding = "REALTIME_ANALYTICS"  # Real-time analytics
 dataset = "duyet_logs_realtime_analytics"
 
-# Durable Objects for real-time aggregation
-[[durable_objects.bindings]]
-name = "REALTIME_AGGREGATOR"
-class_name = "RealtimeAggregator"
-
-[[migrations]]
-tag = "v1"
-new_classes = ["RealtimeAggregator"]
+# Note: Durable Objects bindings for Pages must be configured via Cloudflare Pages dashboard
+# The RealtimeAggregator Durable Object is exported from functions/[[path]].ts
+# To configure:
+# 1. Go to Cloudflare Pages dashboard → Settings → Functions
+# 2. Add Durable Object binding:
+#    - Variable name: REALTIME_AGGREGATOR
+#    - Durable Object class: RealtimeAggregator
 
 # Environment Variables (for Analytics Insights API)
 [vars]
@@ -858,7 +857,15 @@ npm run db:migrate:remote
 npm run db:seed:remote
 ```
 
-4. **Set Up Secrets Store** (for Analytics Insights API):
+4. **Configure Durable Objects** (for Real-time Analytics):
+
+For Cloudflare Pages, Durable Objects must be configured via the dashboard:
+- Go to Cloudflare Pages dashboard → Settings → Functions
+- Add Durable Object binding:
+  - Variable name: `REALTIME_AGGREGATOR`
+  - Durable Object class: `RealtimeAggregator`
+
+5. **Set Up Secrets Store** (for Analytics Insights API):
 
 The Analytics Insights API requires Cloudflare credentials to query Analytics Engine via GraphQL. Use Secrets Store for secure credential management.
 
@@ -889,7 +896,7 @@ secret_name = "CLOUDFLARE_API_TOKEN"
 
 **Note**: Without these secrets, the Analytics Insights API will return mock data. The bindings support both Secrets Store (recommended) and environment variables (fallback).
 
-5. **Deploy**:
+6. **Deploy**:
 
 ```bash
 npm run deploy
