@@ -860,6 +860,7 @@ npm run db:seed:remote
 4. **Configure Durable Objects** (for Real-time Analytics):
 
 For Cloudflare Pages, Durable Objects must be configured via the dashboard:
+
 - Go to Cloudflare Pages dashboard → Settings → Functions
 - Add Durable Object binding:
   - Variable name: `REALTIME_AGGREGATOR`
