@@ -23,6 +23,7 @@ describe('E2E Endpoints', () => {
       CLAUDE_CODE_METRICS: mockDataset,
       GA_ANALYTICS: mockDataset,
       REALTIME_ANALYTICS: mockDataset,
+      LOGTAIL_ANALYTICS: mockDataset,
       REALTIME_AGGREGATOR: {} as DurableObjectNamespace,
       DB: {} as D1Database,
     };

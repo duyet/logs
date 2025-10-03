@@ -181,7 +181,9 @@ describe('LogtailAdapter', () => {
         expect(result.doubles![0]).toBeGreaterThan(0);
         expect(result.blobs).toHaveLength(1);
 
-        const blob = JSON.parse(result.blobs![0]) as {
+        const blobData = result.blobs?.[0];
+        expect(blobData).toBeDefined();
+        const blob = JSON.parse(blobData!) as {
           message: string;
           level: string;
           event_count: number;
@@ -217,7 +219,9 @@ describe('LogtailAdapter', () => {
         expect(result.doubles).toHaveLength(1);
         expect(result.blobs).toHaveLength(1);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+        expect(blobData).toBeDefined();
+        const blob = JSON.parse(blobData!);
         expect(blob.timestamp).toBe('2022-12-31T13:45:59.123Z');
       });
 
@@ -229,7 +233,9 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+        expect(blobData).toBeDefined();
+        const blob = JSON.parse(blobData!);
         // UNIX timestamp is already in UTC
         expect(blob.timestamp).toBe(new Date(1672490759 * 1000).toISOString());
       });
@@ -242,7 +248,9 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+        expect(blobData).toBeDefined();
+        const blob = JSON.parse(blobData!);
         expect(blob.timestamp).toBe(new Date(1672490759123).toISOString());
       });
 
@@ -254,7 +262,9 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+        expect(blobData).toBeDefined();
+        const blob = JSON.parse(blobData!);
         expect(blob.timestamp).toBe(
           new Date(Math.floor(1672490759123456000 / 1000000)).toISOString()
         );
@@ -268,7 +278,9 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+        expect(blobData).toBeDefined();
+        const blob = JSON.parse(blobData!);
         expect(blob.level).toBe('error');
       });
 
@@ -283,7 +295,11 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+
+        expect(blobData).toBeDefined();
+
+        const blob = JSON.parse(blobData!);
         expect(blob.metadata).toEqual({
           userId: 'user-123',
           action: 'login',
@@ -299,7 +315,11 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+
+        expect(blobData).toBeDefined();
+
+        const blob = JSON.parse(blobData!);
         expect(blob.metadata).toBeUndefined();
       });
 
@@ -312,7 +332,7 @@ describe('LogtailAdapter', () => {
         const result = adapter.transform(data);
 
         // Blob itself is truncated at 5120 bytes, not the message inside
-        expect(result.blobs![0].length).toBeLessThanOrEqual(5120);
+        expect(result.blobs?.[0]?.length).toBeLessThanOrEqual(5120);
       });
     });
 
@@ -331,7 +351,11 @@ describe('LogtailAdapter', () => {
         expect(result.doubles![1]).toBe(3); // Event count
         expect(result.blobs).toHaveLength(1);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+
+        expect(blobData).toBeDefined();
+
+        const blob = JSON.parse(blobData!);
         expect(blob.batch).toBe(true);
         expect(blob.event_count).toBe(3);
         expect(blob.events).toHaveLength(3);
@@ -361,7 +385,11 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+
+        expect(blobData).toBeDefined();
+
+        const blob = JSON.parse(blobData!);
         expect(blob.events[0].timestamp).toBe('2022-12-31T13:45:59.000Z');
         expect(blob.events[1].timestamp).toBe(
           new Date(1672490759 * 1000).toISOString()
@@ -376,7 +404,11 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+
+        expect(blobData).toBeDefined();
+
+        const blob = JSON.parse(blobData!);
         expect(blob.events[0].metadata).toEqual({ userId: 'user-1' });
         expect(blob.events[1].metadata).toEqual({ requestId: 'req-2' });
       });
@@ -391,7 +423,7 @@ describe('LogtailAdapter', () => {
         const result = adapter.transform(data);
 
         // Entire blob is truncated at 5120 bytes
-        expect(result.blobs![0].length).toBeLessThanOrEqual(5120);
+        expect(result.blobs?.[0]?.length).toBeLessThanOrEqual(5120);
       });
     });
 
@@ -403,7 +435,11 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+
+        expect(blobData).toBeDefined();
+
+        const blob = JSON.parse(blobData!);
         expect(blob.message).toBe('');
       });
 
@@ -428,7 +464,7 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        expect(result.indexes![0].length).toBe(96);
+        expect(result.indexes?.[0]?.length).toBe(96);
       });
 
       it('should handle nested objects in metadata', () => {
@@ -443,7 +479,11 @@ describe('LogtailAdapter', () => {
 
         const result = adapter.transform(data);
 
-        const blob = JSON.parse(result.blobs![0]);
+        const blobData = result.blobs?.[0];
+
+        expect(blobData).toBeDefined();
+
+        const blob = JSON.parse(blobData!);
         expect(blob.metadata.nested).toEqual({
           level1: {
             level2: 'deep value',

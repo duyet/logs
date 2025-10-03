@@ -93,7 +93,7 @@ export class LogtailAdapter extends BaseAdapter<LogtailData> {
 
     // For multiple events, we'll store them as a batch
     // For single event, store as individual record
-    if (events.length === 1) {
+    if (events.length === 1 && events[0]) {
       return this.transformSingleEvent(events[0], projectId);
     } else {
       return this.transformBatchEvents(events, projectId);

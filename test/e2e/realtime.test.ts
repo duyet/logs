@@ -101,6 +101,9 @@ describe('Realtime Analytics E2E', () => {
       REALTIME_ANALYTICS: {
         writeDataPoint: (): void => {},
       },
+      LOGTAIL_ANALYTICS: {
+        writeDataPoint: (): void => {},
+      },
       REALTIME_AGGREGATOR: {
         idFromName: () => ({ name: 'test' }) as DurableObjectId,
         get: () => mockDurableObjectStub,

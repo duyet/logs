@@ -169,7 +169,7 @@ describe('Logtail Endpoint E2E', () => {
 
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json.error).toBe('Bad Request');
+      expect((json as { error: string }).error).toBe('Bad Request');
     });
 
     it('should reject empty array', async () => {
@@ -213,8 +213,10 @@ describe('Logtail Endpoint E2E', () => {
       expect(mockEnv.LOGTAIL_ANALYTICS.writeDataPoint).toHaveBeenCalledTimes(1);
 
       // Verify project_id was passed to adapter
-      const call = mockEnv.LOGTAIL_ANALYTICS.writeDataPoint.mock.calls[0][0];
-      expect(call.indexes).toEqual(['myproject']);
+      const writeDataPoint = mockEnv.LOGTAIL_ANALYTICS
+        .writeDataPoint as ReturnType<typeof vi.fn>;
+      const call = writeDataPoint.mock.calls[0]?.[0];
+      expect(call?.indexes).toEqual(['myproject']);
     });
 
     it('should handle project_id with hyphens', async () => {
@@ -242,8 +244,10 @@ describe('Logtail Endpoint E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const call = mockEnv.LOGTAIL_ANALYTICS.writeDataPoint.mock.calls[0][0];
-      expect(call.indexes).toEqual(['batchproject']);
+      const writeDataPoint = mockEnv.LOGTAIL_ANALYTICS
+        .writeDataPoint as ReturnType<typeof vi.fn>;
+      const call = writeDataPoint.mock.calls[0]?.[0];
+      expect(call?.indexes).toEqual(['batchproject']);
     });
   });
 
@@ -294,8 +298,10 @@ describe('Logtail Endpoint E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const call = mockEnv.LOGTAIL_ANALYTICS.writeDataPoint.mock.calls[0][0];
-      expect(call.indexes).toEqual(['testproject']);
+      const writeDataPoint = mockEnv.LOGTAIL_ANALYTICS
+        .writeDataPoint as ReturnType<typeof vi.fn>;
+      const call = writeDataPoint.mock.calls[0]?.[0];
+      expect(call?.indexes).toEqual(['testproject']);
     });
   });
 
