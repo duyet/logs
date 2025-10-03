@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
 import type { Env } from '../../src/types/index.js';
@@ -167,7 +168,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, env);
 
       expect(res.status).toBe(200);
-      const data = (await res.json()) as { success: boolean };
+      const data = await res.json();
       expect(data).toEqual({ success: true });
     });
 
@@ -207,7 +208,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, env);
 
       expect(res.status).toBe(400);
-      const data = (await res.json()) as { error: string };
+      const data = (await res.json()) as any;
       expect(data.error).toBe('Invalid event format');
     });
 
@@ -235,7 +236,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, envWithoutBinding);
 
       expect(res.status).toBe(503);
-      const data = (await res.json()) as { error: string };
+      const data = (await res.json()) as any;
       expect(data.error).toBe('REALTIME_ANALYTICS not configured');
     });
 
@@ -263,7 +264,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, envWithoutBinding);
 
       expect(res.status).toBe(503);
-      const data = (await res.json()) as { error: string };
+      const data = (await res.json()) as any;
       expect(data.error).toBe('REALTIME_AGGREGATOR not configured');
     });
   });
@@ -300,11 +301,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, env);
 
       expect(res.status).toBe(200);
-      const data = (await res.json()) as {
-        timestamp: number;
-        window_size: number;
-        total_events: number;
-      };
+      const data = (await res.json()) as any;
       expect(data.timestamp).toBeGreaterThan(0);
       expect(data.window_size).toBe(300000);
       expect(data.total_events).toBeGreaterThanOrEqual(0);
@@ -316,7 +313,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, envWithoutBinding);
 
       expect(res.status).toBe(503);
-      const data = (await res.json()) as { error: string };
+      const data = (await res.json()) as any;
       expect(data.error).toBe('REALTIME_AGGREGATOR not configured');
     });
   });
@@ -327,7 +324,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, env);
 
       expect(res.status).toBe(200);
-      const data = (await res.json()) as { timestamp: number };
+      const data = (await res.json()) as any;
       expect(data.timestamp).toBeGreaterThan(0);
     });
   });
@@ -338,10 +335,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, env);
 
       expect(res.status).toBe(200);
-      const data = (await res.json()) as {
-        current_window: unknown;
-        events: unknown[];
-      };
+      const data = (await res.json()) as any;
       expect(data.current_window).toBeDefined();
       expect(data.events).toBeInstanceOf(Array);
     });
@@ -352,7 +346,7 @@ describe('Realtime Analytics E2E', () => {
       const res = await app.fetch(req, envWithoutBinding);
 
       expect(res.status).toBe(503);
-      const data = (await res.json()) as { error: string };
+      const data = (await res.json()) as any;
       expect(data.error).toBe('REALTIME_AGGREGATOR not configured');
     });
   });

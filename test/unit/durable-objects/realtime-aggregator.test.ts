@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RealtimeAggregator } from '../../../src/durable-objects/realtime-aggregator';
 import type {
@@ -164,7 +165,7 @@ describe('RealtimeAggregator', () => {
       });
 
       const response = await aggregator.fetch(request);
-      const data = (await response.json()) as { success: boolean };
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ success: true });
@@ -176,10 +177,7 @@ describe('RealtimeAggregator', () => {
       });
 
       const response = await aggregator.fetch(request);
-      const stats = (await response.json()) as {
-        timestamp: number;
-        total_events: number;
-      };
+      const stats = (await response.json()) as any;
 
       expect(response.status).toBe(200);
       expect(stats.timestamp).toBeGreaterThan(0);
@@ -192,10 +190,7 @@ describe('RealtimeAggregator', () => {
       });
 
       const response = await aggregator.fetch(request);
-      const data = (await response.json()) as {
-        current_window: unknown;
-        events: unknown[];
-      };
+      const data = (await response.json()) as any;
 
       expect(response.status).toBe(200);
       expect(data.current_window).toBeDefined();
@@ -208,7 +203,7 @@ describe('RealtimeAggregator', () => {
       });
 
       const response = await aggregator.fetch(request);
-      const data = (await response.json()) as { cleaned: number };
+      const data = (await response.json()) as any;
 
       expect(response.status).toBe(200);
       expect(data.cleaned).toBeGreaterThanOrEqual(0);
