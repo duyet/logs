@@ -60,7 +60,7 @@ async function testEndpoint(
     console.log(`Response:`, result);
     console.log();
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     logError(`${name} failed`);
     if (error instanceof Error) {
       console.error(error.message);

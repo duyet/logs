@@ -27,7 +27,7 @@ export function createAnalyticsHandler<T>(
         'setProjectId' in adapter &&
         typeof adapter.setProjectId === 'function'
       ) {
-        adapter.setProjectId(projectId);
+        (adapter.setProjectId as (id?: string) => void)(projectId);
       }
 
       const dataWithProject = projectId
@@ -63,7 +63,7 @@ export function createAnalyticsHandler<T>(
         'setProjectId' in adapter &&
         typeof adapter.setProjectId === 'function'
       ) {
-        adapter.setProjectId(projectId);
+        (adapter.setProjectId as (id?: string) => void)(projectId);
       }
 
       const dataWithProject = projectId
