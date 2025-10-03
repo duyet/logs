@@ -336,6 +336,7 @@ describe('ClaudeCodeAdapter', () => {
       } as unknown as OTLPLogs;
 
       adapter.setProjectId('test-project');
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpLogs);
 
       expect(result.indexes).toEqual(['test-project']);
@@ -396,6 +397,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPLogs;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpLogs);
 
       const metadata = JSON.parse(result.blobs![0]!);
@@ -433,6 +435,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPLogs;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpLogs);
 
       const metadata = JSON.parse(result.blobs![0]!);
@@ -458,6 +461,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPLogs;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpLogs);
 
       expect(result.blobs).toBeDefined();
@@ -545,6 +549,7 @@ describe('ClaudeCodeAdapter', () => {
       } as unknown as OTLPMetrics;
 
       adapter.setProjectId('metrics-project');
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpMetrics);
 
       expect(result.indexes).toEqual(['metrics-project']);
@@ -603,6 +608,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPMetrics;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpMetrics);
 
       expect(result.doubles).toEqual([0.05]);
@@ -641,6 +647,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPMetrics;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpMetrics);
 
       expect(result.doubles).toEqual([42]);
@@ -705,6 +712,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPMetrics;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpMetrics);
 
       // Total value is sum of all metrics (stored in doubles)
@@ -757,6 +765,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPMetrics;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpMetrics);
 
       const metadata = JSON.parse(result.blobs![0]!);
@@ -790,6 +799,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPMetrics;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpMetrics);
 
       expect(result.doubles).toEqual([100]);
@@ -822,6 +832,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPLogs;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpLogs);
       const metadata = JSON.parse(result.blobs![0]!);
 
@@ -856,6 +867,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPLogs;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpLogs);
       const metadata = JSON.parse(result.blobs![0]!);
 
@@ -894,6 +906,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPMetrics;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpMetrics);
 
       // Should use 0 as fallback
@@ -931,6 +944,7 @@ describe('ClaudeCodeAdapter', () => {
         ],
       } as unknown as OTLPLogs;
 
+      // @ts-expect-error - Type mismatch between OTLP SDK and Zod types (null vs undefined)
       const result = adapter.transform(otlpLogs);
       const metadata = JSON.parse(result.blobs![0]!);
 

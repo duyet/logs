@@ -158,7 +158,7 @@ async function sendEvent(
           (data.events as { name: string }[])?.[0]?.name
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`❌ Error sending ${type} event:`, error);
   }
 }
