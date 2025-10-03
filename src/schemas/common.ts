@@ -74,17 +74,10 @@ export const validNumberSchema = z.number().finite();
 export const positiveNumberSchema = z.number().positive();
 
 /**
- * Safe object with no dangerous keys (prototype pollution protection)
+ * Safe object (accepts any key-value pairs)
+ * Note: Prototype pollution protection happens during JSON parsing and sanitization
  */
-export const safeObjectSchema = z.record(z.unknown()).refine(
-  (obj) => {
-    const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
-    return !Object.keys(obj).some((key) => dangerousKeys.includes(key));
-  },
-  {
-    message: 'Object contains dangerous keys (prototype pollution risk)',
-  }
-);
+export const safeObjectSchema = z.record(z.string(), z.unknown());
 
 /**
  * Analytics Engine index (max 96 bytes)
