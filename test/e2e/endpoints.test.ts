@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-type-assertion */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
-import type { Env } from '../../src/types/index.js';
+import type {
+  Env,
+  PingResponse,
+  SuccessResponse,
+  ErrorResponse,
+} from '../../src/types/index.js';
 
 describe('E2E Endpoints', () => {
   let app: ReturnType<typeof createRouter>;
@@ -26,7 +31,7 @@ describe('E2E Endpoints', () => {
   describe('GET /ping', () => {
     it('should return health check status', async () => {
       const res = await app.request('/ping', {}, mockEnv);
-      const json = (await res.json()) as any;
+      const json = (await res.json()) as PingResponse;
 
       expect(res.status).toBe(200);
       expect(json).toMatchObject({
@@ -58,13 +63,14 @@ describe('E2E Endpoints', () => {
         mockEnv
       );
 
-      const json = (await res.json()) as any;
+      const json = (await res.json()) as SuccessResponse;
 
       expect(res.status).toBe(200);
       expect(json).toEqual({
         success: true,
         message: 'Data recorded successfully',
       });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.CLAUDE_CODE_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -89,6 +95,7 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(200);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.CLAUDE_CODE_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -108,8 +115,10 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(400);
-      const json = (await res.json()) as any;
-      expect(json.error).toBe('Bad Request');
+      const json = (await res.json()) as SuccessResponse | ErrorResponse;
+      if ('error' in json) {
+        expect(json.error).toBe('Bad Request');
+      }
     });
   });
 
@@ -149,10 +158,11 @@ describe('E2E Endpoints', () => {
         mockEnv
       );
 
-      const json = (await res.json()) as any;
+      const json = (await res.json()) as SuccessResponse;
 
       expect(res.status).toBe(200);
       expect(json.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.GA_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -178,6 +188,7 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(200);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.GA_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -198,8 +209,10 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(400);
-      const json = (await res.json()) as any;
-      expect(json.error).toBeDefined();
+      const json = (await res.json()) as SuccessResponse | ErrorResponse;
+      if ('error' in json) {
+        expect(json.error).toBeDefined();
+      }
     });
   });
 
@@ -244,8 +257,10 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(500);
-      const json = (await res.json()) as any;
-      expect(json.error).toBe('Configuration Error');
+      const json = (await res.json()) as SuccessResponse | ErrorResponse;
+      if ('error' in json) {
+        expect(json.error).toBe('Configuration Error');
+      }
     });
 
     it('should handle malformed JSON', async () => {
@@ -305,7 +320,7 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = (await res.json()) as any;
+        const json = (await res.json()) as SuccessResponse | ErrorResponse;
         expect(json).toEqual({
           success: true,
           message: 'Data recorded successfully',
@@ -371,8 +386,10 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = (await res.json()) as any;
-        expect(json.success).toBe(true);
+        const json = (await res.json()) as SuccessResponse | ErrorResponse;
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
       });
 
       it('should accept GET with project_id in path', async () => {
@@ -429,8 +446,10 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = (await res.json()) as any;
-        expect(json.success).toBe(true);
+        const json = (await res.json()) as SuccessResponse | ErrorResponse;
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
       });
     });
 
@@ -480,8 +499,10 @@ describe('E2E Endpoints', () => {
         );
 
         expect(res.status).toBe(200);
-        const json = (await res.json()) as any;
-        expect(json.success).toBe(true);
+        const json = (await res.json()) as SuccessResponse | ErrorResponse;
+        if ('success' in json) {
+          expect(json.success).toBe(true);
+        }
       });
     });
   });
