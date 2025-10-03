@@ -50,7 +50,7 @@ async function main(): Promise<void> {
     try {
       execSync('npm run type-check', { stdio: 'inherit' });
       logSuccess('Type check passed');
-    } catch (error) {
+    } catch {
       logError('Type check failed!');
       process.exit(1);
     }
@@ -61,7 +61,7 @@ async function main(): Promise<void> {
     try {
       execSync('tsc', { stdio: 'inherit' });
       logSuccess('TypeScript compiled');
-    } catch (error) {
+    } catch {
       logError('TypeScript compilation failed!');
       process.exit(1);
     }

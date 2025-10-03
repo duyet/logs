@@ -36,7 +36,7 @@ function runCommand(command: string, description: string): boolean {
     logSuccess(`${description} - Done`);
     console.log();
     return true;
-  } catch (error) {
+  } catch {
     logError(`${description} - Failed`);
     return false;
   }

@@ -32,7 +32,8 @@
   "dependencies": {
     "@opentelemetry/api-logs": "^0.205.0",
     "@opentelemetry/otlp-transformer": "^0.205.0",
-    "hono": "^4.0.0"
+    "hono": "^4.0.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.0",
