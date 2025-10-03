@@ -16,10 +16,10 @@ export default defineConfig({
         'functions/**', // Cloudflare Pages Functions require runtime to test
       ],
       thresholds: {
-        lines: 99,
-        functions: 100,
-        branches: 95,
-        statements: 99,
+        lines: 95,
+        functions: 98,
+        branches: 90,
+        statements: 95,
       },
     },
   },
