@@ -30,7 +30,7 @@ describe('Realtime Analytics E2E', () => {
   beforeEach((): void => {
     // Mock Durable Object stub
     mockDurableObjectStub = {
-      fetch: async (request: Request) => {
+      fetch: (request: Request) => {
         const url = new URL(request.url);
         if (url.pathname === '/stats') {
           return new Response(

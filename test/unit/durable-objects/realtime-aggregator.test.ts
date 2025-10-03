@@ -30,20 +30,31 @@ class MockDurableObjectState implements DurableObjectState {
   public blockConcurrencyWhile = vi.fn();
   public id = { name: 'test', toString: () => 'test' } as DurableObjectId;
 
+  // Create mock functions that can be accessed without unbound method warnings
+  public getMock = vi.fn(<T>(key: string) =>
+    Promise.resolve(this.data.get(key) as T | undefined)
+  );
+  public putMock = vi.fn(<T>(key: string, value: T) => {
+    this.data.set(key, value);
+    return Promise.resolve();
+  });
+  public deleteMock = vi.fn((key: string) =>
+    Promise.resolve(this.data.delete(key))
+  );
+  public listMock = vi.fn(<T>() =>
+    Promise.resolve(new Map(this.data) as Map<string, T>)
+  );
+  public deleteAllMock = vi.fn(() => {
+    this.data.clear();
+    return Promise.resolve();
+  });
+
   public storage = {
-    get: vi.fn(<T>(key: string) =>
-      Promise.resolve(this.data.get(key) as T | undefined)
-    ),
-    put: vi.fn(<T>(key: string, value: T) => {
-      this.data.set(key, value);
-      return Promise.resolve();
-    }),
-    delete: vi.fn((key: string) => Promise.resolve(this.data.delete(key))),
-    list: vi.fn(<T>() => Promise.resolve(new Map(this.data) as Map<string, T>)),
-    deleteAll: vi.fn(() => {
-      this.data.clear();
-      return Promise.resolve();
-    }),
+    get: this.getMock,
+    put: this.putMock,
+    delete: this.deleteMock,
+    list: this.listMock,
+    deleteAll: this.deleteAllMock,
     transaction: vi.fn(),
     getAlarm: vi.fn(),
     setAlarm: vi.fn(),
@@ -79,8 +90,8 @@ describe('RealtimeAggregator', () => {
 
       await aggregator.addEvent(event);
 
-      expect(state.storage.get).toHaveBeenCalled();
-      expect(state.storage.put).toHaveBeenCalled();
+      expect(state.getMock).toHaveBeenCalled();
+      expect(state.putMock).toHaveBeenCalled();
     });
   });
 
@@ -209,7 +220,7 @@ describe('RealtimeAggregator', () => {
     it('should remove old windows', async () => {
       const removedCount = await aggregator.cleanupOldWindows();
 
-      expect(state.storage.list).toHaveBeenCalled();
+      expect(state.listMock).toHaveBeenCalled();
       expect(removedCount).toBeGreaterThanOrEqual(0);
     });
   });
