@@ -25,7 +25,9 @@ export interface Env {
   CLAUDE_CODE_LOGS: AnalyticsEngineDataset; // OTLP Logs
   CLAUDE_CODE_METRICS: AnalyticsEngineDataset; // OTLP Metrics
   GA_ANALYTICS: AnalyticsEngineDataset;
+  REALTIME_ANALYTICS?: AnalyticsEngineDataset; // Real-time analytics (optional for backwards compat)
   DB: D1Database;
+  REALTIME_AGGREGATOR?: DurableObjectNamespace; // Durable Object for 5-min aggregation (optional for backwards compat)
   ASSETS?: Fetcher; // Optional ASSETS binding for static files
   // GraphQL Analytics API credentials (Secrets Store bindings preferred, fallback to env vars)
   CLOUDFLARE_ACCOUNT_ID?: SecretsStoreSecret | string;
@@ -35,6 +37,7 @@ export interface Env {
   DATASET_CLAUDE_CODE_LOGS?: string;
   DATASET_CLAUDE_CODE_METRICS?: string;
   DATASET_GA_ANALYTICS?: string;
+  DATASET_REALTIME_ANALYTICS?: string;
 }
 
 /**

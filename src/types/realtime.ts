@@ -81,14 +81,24 @@ export interface RealtimeEvent {
   event_type: 'pageview' | 'click' | 'custom';
   timestamp: number; // Unix timestamp in milliseconds
   url: string;
-  referrer: string;
+  referrer?: string;
+  user_agent: string;
+  fingerprint: Fingerprint;
 
-  // Optional fields
+  // Optional identification
   project_id?: string;
   session_id?: string;
+  visitor_id?: string;
   user_id?: string;
 
-  // Client info
+  // Click event specific
+  click_target?: string;
+  click_text?: string;
+
+  // Custom event specific
+  custom_data?: Record<string, unknown>;
+
+  // Client info (deprecated - use fingerprint instead)
   viewport?: {
     width: number;
     height: number;
@@ -104,7 +114,7 @@ export interface RealtimeEvent {
   cookieEnabled?: boolean;
   doNotTrack?: boolean;
 
-  // Custom event data
+  // Custom event data (deprecated - use custom_data instead)
   event_name?: string;
   event_properties?: Record<string, string | number | boolean>;
 
@@ -162,29 +172,15 @@ export interface ProcessedRealtimeData {
 export interface RealtimeStats {
   timestamp: number; // Window start time
   window_size: number; // Window size in milliseconds (default 5 minutes)
-  project_id: string;
 
   // Traffic metrics
   total_events: number;
   unique_visitors: number;
-  unique_sessions: number;
 
   // Event breakdown
   pageviews: number;
   clicks: number;
   custom_events: number;
-
-  // Top pages
-  top_pages: Array<{
-    url: string;
-    count: number;
-  }>;
-
-  // Top referrers
-  top_referrers: Array<{
-    referrer: string;
-    count: number;
-  }>;
 
   // Browser breakdown
   browsers: Record<string, number>;
@@ -193,18 +189,11 @@ export interface RealtimeStats {
   operating_systems: Record<string, number>;
 
   // Device breakdown
-  devices: Record<string, number>;
-
-  // Country breakdown
-  countries: Record<string, number>;
+  device_types: Record<string, number>;
 
   // Bot traffic
   bot_traffic: number;
-  bot_percentage: number;
-
-  // Performance metrics (averages)
-  avg_page_load: number | null;
-  avg_ttfb: number | null;
+  human_traffic: number;
 }
 
 /**
@@ -226,4 +215,46 @@ export interface RealtimeDashboardResponse {
     current_stats: RealtimeStats;
     timeseries: RealtimeStats[];
   };
+}
+
+/**
+ * Cloudflare server context from request headers
+ */
+export interface ServerContext {
+  ip: string;
+  country: string | null;
+  city: string | null;
+  region: string | null;
+  timezone: string | null;
+  asn: number | null;
+  isp: string | null;
+  cf_ray: string | null;
+  cf_connecting_ip: string | null;
+}
+
+/**
+ * Aggregated data with event list
+ */
+export interface AggregatedData {
+  current_window: {
+    start: number;
+    end: number;
+    stats: RealtimeStats;
+  };
+  events: Array<{
+    timestamp: number;
+    event_type: string;
+    url: string;
+    visitor_id?: string;
+  }>;
+}
+
+/**
+ * Analytics Engine data point format
+ * Reference: https://developers.cloudflare.com/analytics/analytics-engine/
+ */
+export interface AnalyticsEngineDataPoint {
+  indexes?: string[]; // Max 1 index, max 96 bytes each
+  doubles?: number[]; // Numeric values
+  blobs?: string[]; // String values, max 5120 bytes each
 }

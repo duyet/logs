@@ -43,6 +43,10 @@ describe('Analytics API E2E', () => {
       GA_ANALYTICS: {
         writeDataPoint: (): void => {},
       },
+      REALTIME_ANALYTICS: {
+        writeDataPoint: (): void => {},
+      },
+      REALTIME_AGGREGATOR: {} as DurableObjectNamespace,
       DB: {
         prepare: () => ({
           bind: () => ({
@@ -91,7 +95,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data: ErrorResponse = (await res.json());
+      const data: ErrorResponse = await res.json();
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -102,7 +106,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data: ErrorResponse = (await res.json());
+      const data: ErrorResponse = await res.json();
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('dataset');
     });
@@ -115,7 +119,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data: ErrorResponse = (await res.json());
+      const data: ErrorResponse = await res.json();
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('Invalid dataset');
     });
@@ -136,7 +140,7 @@ describe('Analytics API E2E', () => {
 
         expect(res.status).toBe(503);
 
-        const data: ErrorResponse = (await res.json());
+        const data: ErrorResponse = await res.json();
         expect(data.error).toBe('Service Unavailable');
       }
     });
@@ -151,7 +155,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data: ErrorResponse = (await res.json());
+      const data: ErrorResponse = await res.json();
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -164,7 +168,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(400);
 
-      const data: ErrorResponse = (await res.json());
+      const data: ErrorResponse = await res.json();
       expect(data.error).toBe('Bad Request');
       expect(data.message).toContain('time format');
     });
@@ -177,7 +181,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data: ErrorResponse = (await res.json());
+      const data: ErrorResponse = await res.json();
       expect(data.error).toBe('Service Unavailable');
       expect(data.message).toContain('credentials not configured');
     });
@@ -190,7 +194,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data: ErrorResponse = (await res.json());
+      const data: ErrorResponse = await res.json();
       expect(data.error).toBe('Service Unavailable');
     });
 
@@ -202,7 +206,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(503);
 
-      const data: ErrorResponse = (await res.json());
+      const data: ErrorResponse = await res.json();
       expect(data.error).toBe('Service Unavailable');
     });
   });
@@ -214,7 +218,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data: DatasetResponse = (await res.json());
+      const data: DatasetResponse = await res.json();
       expect(data.datasets).toBeInstanceOf(Array);
       expect(data.datasets.length).toBe(4);
 
@@ -231,7 +235,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data: DatasetResponse = (await res.json());
+      const data: DatasetResponse = await res.json();
 
       data.datasets.forEach((dataset: Dataset) => {
         expect(dataset.name).toBeDefined();
@@ -249,7 +253,7 @@ describe('Analytics API E2E', () => {
 
       expect(res.status).toBe(200);
 
-      const data: EndpointsResponse = (await res.json());
+      const data: EndpointsResponse = await res.json();
       expect(data.endpoints.api.analytics).toBe('/api/analytics/insights');
     });
   });

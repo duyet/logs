@@ -288,7 +288,7 @@ function parseDevice(
 function extractVersion(userAgent: string, pattern: string): string | null {
   const regex = new RegExp(`${pattern}[/\\s]([\\d.]+)`, 'i');
   const match = userAgent.match(regex);
-  return match ? match[1] : null;
+  return match ? match[1] || null : null;
 }
 
 /**

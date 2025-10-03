@@ -11,6 +11,7 @@ import { createAnalyticsHandler } from '../utils/route-handler.js';
 import { handleError } from '../utils/error-handler.js';
 import { createProjectsRouter } from './projects.js';
 import { createAnalyticsRouter } from './analytics.js';
+import { realtimeRouter } from './realtime.js';
 
 /**
  * Create and configure Hono app with all routes
@@ -130,6 +131,12 @@ export function createRouter(): Hono<{ Bindings: Env }> {
 
   // Analytics API routes
   app.route('/api/analytics', createAnalyticsRouter());
+
+  // Real-time analytics routes
+  app.use('/realtime', projectIdMiddleware);
+  app.use('/realtime/:project_id', projectIdMiddleware);
+  app.route('/realtime', realtimeRouter);
+  app.route('/realtime/:project_id', realtimeRouter);
 
   // Create project UI
   app.get('/ui/project', async (c) => {
