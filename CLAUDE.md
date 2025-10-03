@@ -261,9 +261,9 @@ cloudflare-analytics-router/
     "pageviews": 120,
     "clicks": 25,
     "custom_events": 5,
-    "browsers": {"Chrome": 80, "Firefox": 40, "Safari": 30},
-    "operating_systems": {"Windows": 60, "macOS": 50, "Linux": 40},
-    "device_types": {"desktop": 90, "mobile": 60},
+    "browsers": { "Chrome": 80, "Firefox": 40, "Safari": 30 },
+    "operating_systems": { "Windows": 60, "macOS": 50, "Linux": 40 },
+    "device_types": { "desktop": 90, "mobile": 60 },
     "bot_traffic": 10,
     "human_traffic": 140
   }
@@ -271,6 +271,7 @@ cloudflare-analytics-router/
 - **GET /realtime/data** - Get full aggregated data with event list
 
 **Client Integration**:
+
 - JavaScript tracking snippet: `https://logs.duyet.net/realtime.js` (TODO)
 - Lightweight (< 5KB) browser-side tracking
 - Privacy-first fingerprinting (no PII storage)
