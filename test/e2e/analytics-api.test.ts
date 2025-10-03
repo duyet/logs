@@ -51,10 +51,20 @@ describe('Analytics API E2E', () => {
       },
       REALTIME_AGGREGATOR: {} as DurableObjectNamespace,
       DB: {
-        prepare: () => ({
-          bind: () => ({
-            first: () => Promise.resolve(null),
-            all: () =>
+        prepare: (): {
+          bind: () => {
+            first: () => Promise<null>;
+            all: () => Promise<D1Result>;
+            run: () => Promise<D1Result>;
+          };
+        } => ({
+          bind: (): {
+            first: () => Promise<null>;
+            all: () => Promise<D1Result>;
+            run: () => Promise<D1Result>;
+          } => ({
+            first: (): Promise<null> => Promise.resolve(null),
+            all: (): Promise<D1Result> =>
               Promise.resolve({
                 results: [],
                 success: true,
@@ -68,7 +78,7 @@ describe('Analytics API E2E', () => {
                   changes: 0,
                 },
               } as D1Result),
-            run: () =>
+            run: (): Promise<D1Result> =>
               Promise.resolve({
                 success: true,
                 meta: {
@@ -83,8 +93,9 @@ describe('Analytics API E2E', () => {
               } as D1Result),
           }),
         }),
-        batch: () => Promise.resolve([]),
-        exec: () => Promise.resolve({ count: 0, duration: 0 }),
+        batch: (): Promise<never[]> => Promise.resolve([]),
+        exec: (): Promise<{ count: number; duration: number }> =>
+          Promise.resolve({ count: 0, duration: 0 }),
       } as unknown as D1Database,
     };
   });
