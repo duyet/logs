@@ -87,7 +87,7 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   const defaultProjectMiddleware = async (
     c: Context<{ Bindings: Env }>,
     next: Next
-  ) => {
+  ): Promise<void> => {
     // If no project_id is in the path, set it to "default"
     if (!c.req.param('project_id')) {
       c.set('project_id', 'default');
