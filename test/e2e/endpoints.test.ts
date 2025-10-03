@@ -71,7 +71,7 @@ describe('E2E Endpoints', () => {
       expect(res.status).toBe(200);
       expect(json).toEqual({
         success: true,
-        message: 'Data recorded successfully',
+        message: 'Data processed',
       });
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockEnv.CLAUDE_CODE_ANALYTICS.writeDataPoint).toHaveBeenCalled();
@@ -277,7 +277,7 @@ describe('E2E Endpoints', () => {
         mockEnv
       );
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(400); // JSON parse errors return 400 Bad Request
     });
   });
 
@@ -326,7 +326,7 @@ describe('E2E Endpoints', () => {
         const json = (await res.json()) as SuccessResponse | ErrorResponse;
         expect(json).toEqual({
           success: true,
-          message: 'Data recorded successfully',
+          message: 'Data processed',
         });
       });
 
