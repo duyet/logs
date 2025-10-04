@@ -1224,17 +1224,20 @@ Application Error → Sentry Middleware → Sentry SDK → SENTRY_DSN → /sentr
 ### Configuration
 
 **1. Middleware** (`functions/_middleware.ts`):
+
 - Sentry Pages Plugin configured as first middleware
 - Captures all unhandled errors automatically
 - Uses `CF_VERSION_METADATA` for release tracking
 - Sends errors to configurable DSN endpoint
 
 **2. Error Handler** (`src/routes/router.ts`):
+
 - `onError` hook captures all exceptions
 - Integrates with Sentry.captureException()
 - Provides custom error responses for HTTPException
 
 **3. Environment Variables** (`wrangler.toml`):
+
 ```toml
 [version_metadata]
 binding = "CF_VERSION_METADATA"  # For release tracking
@@ -1248,6 +1251,7 @@ ENVIRONMENT = "production"
 ### Default Behavior
 
 By default, Sentry errors are sent to the project's own `/sentry/logs` endpoint:
+
 - **Default DSN**: `https://logs.duyet.net/sentry/logs`
 - **Project ID**: `logs` (auto-created)
 - **Dataset**: `SENTRY_ANALYTICS`
@@ -1255,6 +1259,7 @@ By default, Sentry errors are sent to the project's own `/sentry/logs` endpoint:
 ### Custom Configuration
 
 Override the DSN via environment variable:
+
 ```toml
 [vars]
 SENTRY_DSN = "https://your-sentry-instance.com/project-id"
@@ -1285,6 +1290,7 @@ curl https://logs.duyet.net/debug-sentry
 ### Implementation Details
 
 **Files Modified**:
+
 - `functions/_middleware.ts` - Sentry Pages Plugin configuration
 - `src/routes/router.ts` - Error handler integration, `/debug-sentry` endpoint
 - `src/types/index.ts` - Type definitions for Sentry bindings
@@ -1292,6 +1298,7 @@ curl https://logs.duyet.net/debug-sentry
 - `package.json` - @sentry/cloudflare dependency
 
 **Tests**:
+
 - `test/e2e/debug-sentry.test.ts` - Integration test for error endpoint
 - `test/e2e/sentry.test.ts` - Sentry adapter tests (existing)
 
