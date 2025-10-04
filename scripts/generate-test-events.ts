@@ -36,6 +36,27 @@ const MODELS = ['claude-sonnet-4-5', 'claude-sonnet-3-5', 'claude-opus-3'];
 
 const TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob'];
 
+const SENTRY_LEVELS = ['fatal', 'error', 'warning', 'info', 'debug'] as const;
+
+const ERROR_TYPES = [
+  'ReferenceError',
+  'TypeError',
+  'SyntaxError',
+  'RangeError',
+  'Error',
+];
+
+const LOG_LEVELS = ['debug', 'info', 'warn', 'error', 'fatal'] as const;
+
+/**
+ * Generate random 32-char hex string for Sentry event_id
+ */
+function generateEventId(): string {
+  return Array.from({ length: 32 }, () =>
+    Math.floor(Math.random() * 16).toString(16)
+  ).join('');
+}
+
 /**
  * Generate random Claude Code metric
  */
@@ -126,12 +147,104 @@ function generateGAEvent(projectId?: string): Record<string, unknown> {
 }
 
 /**
+ * Generate random Sentry error event
+ */
+function generateSentryEvent(projectId?: string): Record<string, unknown> {
+  const errorType = ERROR_TYPES[Math.floor(Math.random() * ERROR_TYPES.length)];
+  const level = SENTRY_LEVELS[Math.floor(Math.random() * SENTRY_LEVELS.length)];
+
+  const data = {
+    event_id: generateEventId(),
+    timestamp: new Date().toISOString(),
+    platform: 'javascript',
+    level,
+    exception: {
+      values: [
+        {
+          type: errorType,
+          value: `Test ${errorType}: Simulated error from test script`,
+          stacktrace: {
+            frames: [
+              {
+                filename: 'app.js',
+                function: 'handleRequest',
+                lineno: Math.floor(Math.random() * 100) + 1,
+                colno: Math.floor(Math.random() * 50) + 1,
+              },
+              {
+                filename: 'middleware.js',
+                function: 'processData',
+                lineno: Math.floor(Math.random() * 100) + 1,
+                colno: Math.floor(Math.random() * 50) + 1,
+              },
+            ],
+          },
+        },
+      ],
+    },
+    tags: {
+      environment: 'testing',
+      source: 'test-script',
+    },
+    user: {
+      id: `user-${Math.random().toString(36).substr(2, 9)}`,
+    },
+  };
+
+  if (projectId) {
+    return { ...data, project_id: projectId };
+  }
+
+  return data;
+}
+
+/**
+ * Generate random Logtail log event
+ */
+function generateLogtailEvent(projectId?: string): Record<string, unknown> {
+  const level = LOG_LEVELS[Math.floor(Math.random() * LOG_LEVELS.length)];
+  const messages = [
+    'User authentication successful',
+    'Database query completed',
+    'API request processed',
+    'Cache miss occurred',
+    'File upload completed',
+    'Background job started',
+    'WebSocket connection established',
+    'Rate limit check passed',
+  ];
+
+  const data = {
+    message: messages[Math.floor(Math.random() * messages.length)],
+    level,
+    timestamp: new Date().toISOString(),
+    dt: new Date().toISOString(),
+    context: {
+      service: 'test-service',
+      version: '1.0.0',
+      hostname: `host-${Math.floor(Math.random() * 10)}`,
+    },
+    metadata: {
+      request_id: `req-${Math.random().toString(36).substr(2, 9)}`,
+      user_id: `user-${Math.random().toString(36).substr(2, 9)}`,
+      duration_ms: Math.floor(Math.random() * 1000),
+    },
+  };
+
+  if (projectId) {
+    return { ...data, project_id: projectId };
+  }
+
+  return data;
+}
+
+/**
  * Send event to endpoint
  */
 async function sendEvent(
   endpoint: string,
   data: Record<string, unknown>,
-  type: 'cc' | 'ga'
+  type: 'cc' | 'ga' | 'sentry' | 'logtail'
 ): Promise<void> {
   const url = `${endpoint}/${type}`;
 
@@ -149,12 +262,34 @@ async function sendEvent(
     if (!response.ok) {
       console.error(`❌ Failed to send ${type} event:`, result);
     } else {
-      console.log(
-        `✅ Sent ${type} event:`,
-        data.metric_name ||
-          data.event_name ||
-          (data.events as { name: string }[])?.[0]?.name
-      );
+      let eventInfo = 'event';
+
+      if ('metric_name' in data && typeof data.metric_name === 'string') {
+        eventInfo = data.metric_name;
+      } else if ('event_name' in data && typeof data.event_name === 'string') {
+        eventInfo = data.event_name;
+      } else if (
+        'events' in data &&
+        Array.isArray(data.events) &&
+        data.events[0]
+      ) {
+        const firstEvent = data.events[0] as { name?: string };
+        eventInfo = firstEvent.name || 'event';
+      } else if (
+        type === 'sentry' &&
+        'level' in data &&
+        typeof data.level === 'string'
+      ) {
+        eventInfo = `${data.level} error`;
+      } else if (
+        type === 'logtail' &&
+        'level' in data &&
+        typeof data.level === 'string'
+      ) {
+        eventInfo = `${data.level} log`;
+      }
+
+      console.log(`✅ Sent ${type} event:`, eventInfo);
     }
   } catch (error: unknown) {
     console.error(`❌ Error sending ${type} event:`, error);
@@ -252,18 +387,26 @@ async function main(): Promise<void> {
   for (let i = 0; i < options.count; i++) {
     const type = Math.random();
 
-    if (type < 0.4) {
-      // 40% metrics
+    if (type < 0.3) {
+      // 30% metrics
       const metric = generateMetric(options.projectId);
       promises.push(sendEvent(options.endpoint, metric, 'cc'));
-    } else if (type < 0.8) {
-      // 40% events
+    } else if (type < 0.6) {
+      // 30% events
       const event = generateEvent(options.projectId);
       promises.push(sendEvent(options.endpoint, event, 'cc'));
-    } else {
-      // 20% GA events
+    } else if (type < 0.75) {
+      // 15% GA events
       const gaEvent = generateGAEvent(options.projectId);
       promises.push(sendEvent(options.endpoint, gaEvent, 'ga'));
+    } else if (type < 0.9) {
+      // 15% Sentry events
+      const sentryEvent = generateSentryEvent(options.projectId);
+      promises.push(sendEvent(options.endpoint, sentryEvent, 'sentry'));
+    } else {
+      // 10% Logtail events
+      const logtailEvent = generateLogtailEvent(options.projectId);
+      promises.push(sendEvent(options.endpoint, logtailEvent, 'logtail'));
     }
 
     // Small delay to avoid overwhelming the server
