@@ -2,7 +2,13 @@
 
 ## Project Overview
 
-A TypeScript-based analytics data router built on Cloudflare Pages using the Hono framework. Routes multiple analytics data formats to Cloudflare Analytics Engine datasets.
+**All-in-one TypeScript-based logs and analytics API** built on Cloudflare Pages using the Hono framework. Universal router compatible with multiple data sources (Claude Code, Google Analytics, Sentry, Logtail, Real-time tracking, custom apps) sending to Cloudflare Analytics Engine for unified storage and analysis.
+
+**Key Features**:
+- **Multi-format Support**: Claude Code (OTLP), Google Analytics (GA4), Sentry (error tracking), Logtail (Better Stack), Real-time analytics, custom formats
+- **Type-Safe**: 100% TypeScript with strict mode, no `any` types, comprehensive validation
+- **Well-Tested**: 100% code coverage with 570+ unit and E2E tests
+- **Edge-First**: Global deployment on Cloudflare's 300+ locations with <100ms p95 response time
 
 **Production**: [logs.duyet.net](https://logs.duyet.net)
 
@@ -11,21 +17,31 @@ A TypeScript-based analytics data router built on Cloudflare Pages using the Hon
 ### System Overview
 
 ```
-┌─────────────┐
-│   Client    │  (Claude Code, GA4, Custom Apps)
-└──────┬──────┘
-       │ HTTP POST
-       ↓
-┌─────────────────────┐
-│  Cloudflare Pages   │  (Edge Network - 300+ locations)
-│   + Hono Router     │
-└──────────┬──────────┘
-       │ Transform & Validate
-       ↓
-┌─────────────────────┐
-│ Analytics Engine    │  (Time-series Storage)
-│      + D1 DB        │  (Project Metadata)
-└─────────────────────┘
+┌──────────────────────────────────────────┐
+│  Multiple Data Sources (All-in-One API)  │
+│  • Claude Code (OTLP metrics/logs)       │
+│  • Google Analytics (GA4)                │
+│  • Sentry (error tracking)               │
+│  • Logtail (Better Stack logs)           │
+│  • Real-time analytics                   │
+│  • Custom formats                        │
+└──────────────┬───────────────────────────┘
+               │ HTTP POST
+               ↓
+┌─────────────────────────────────────────┐
+│  Cloudflare Pages                       │
+│  • Hono Router (format detection)       │
+│  • Adapter Layer (validation/transform) │
+│  • Edge Network (300+ locations)        │
+└──────────────┬──────────────────────────┘
+               │ Validated Data
+               ↓
+┌─────────────────────────────────────────┐
+│  Cloudflare Storage                     │
+│  • Analytics Engine (time-series)       │
+│  • D1 Database (project metadata)       │
+│  • Durable Objects (real-time agg)      │
+└─────────────────────────────────────────┘
 ```
 
 ### Core Components
@@ -652,8 +668,8 @@ npm run type-check       # TypeScript type checking
 **100% Code Coverage Required**
 
 1. **Unit Tests** (`test/unit/`)
-   - All adapters (base, claude-code, google-analytics, realtime)
-   - All services (analytics-engine, project)
+   - All adapters (base, claude-code, google-analytics, logtail, sentry, realtime)
+   - All services (analytics-engine, project, analytics-query)
    - All middleware (logger, project-id, error-handler)
    - All utilities (validation, route-handler, user-agent-parser, fingerprint, bot-detection)
    - All Durable Objects (realtime-aggregator)

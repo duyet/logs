@@ -1,8 +1,8 @@
 # Logs Tracking with Cloudflare + Hono
 
-**Serverless logs tracking system built on Cloudflare edge network.**
+**All-in-one serverless logs API built on Cloudflare edge network.**
 
-Send logs from Claude Code, Google Analytics, or custom apps to Cloudflare Analytics Engine for storage and analysis.
+Universal logs and analytics router compatible with multiple data sources (Claude Code, Google Analytics, Sentry, Logtail, custom apps) sending to Cloudflare Analytics Engine for unified storage and analysis.
 
 🚀 **Live**: [logs.duyet.net](https://logs.duyet.net)
 
