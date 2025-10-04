@@ -127,10 +127,14 @@ export class ClaudeCodeAdapter extends BaseAdapter<
             timestamp:
               (typeof log.timeUnixNano === 'string'
                 ? log.timeUnixNano
-                : String(log.timeUnixNano ?? '')) ||
+                : typeof log.timeUnixNano === 'number'
+                  ? String(log.timeUnixNano)
+                  : '') ||
               (typeof log.observedTimeUnixNano === 'string'
                 ? log.observedTimeUnixNano
-                : String(log.observedTimeUnixNano ?? '')) ||
+                : typeof log.observedTimeUnixNano === 'number'
+                  ? String(log.observedTimeUnixNano)
+                  : '') ||
               Date.now().toString(),
             severity: log.severityText || log.severityNumber,
             body:
@@ -208,7 +212,9 @@ export class ClaudeCodeAdapter extends BaseAdapter<
               timestamp:
                 (typeof dp.timeUnixNano === 'string'
                   ? dp.timeUnixNano
-                  : String(dp.timeUnixNano ?? '')) || Date.now().toString(),
+                  : typeof dp.timeUnixNano === 'number'
+                    ? String(dp.timeUnixNano)
+                    : '') || Date.now().toString(),
               attributes: attrs,
               unit: metric.unit,
               scope: scopeName,
