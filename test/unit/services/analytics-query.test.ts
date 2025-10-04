@@ -20,6 +20,7 @@ describe('AnalyticsQueryService', () => {
       CLAUDE_CODE_LOGS: {} as any,
       CLAUDE_CODE_METRICS: {} as any,
       GA_ANALYTICS: {} as any,
+      LOGTAIL_ANALYTICS: {} as any,
       DB: {} as any,
     };
   });

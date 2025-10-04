@@ -1,29 +1,20 @@
 import { BaseAdapter } from './base.js';
-import type {
-  AnalyticsEngineDataPoint,
-  GoogleAnalyticsData,
-} from '../types/index.js';
+import type { AnalyticsEngineDataPoint } from '../types/index.js';
+import {
+  googleAnalyticsDataSchema,
+  type GoogleAnalyticsData,
+} from '../schemas/index.js';
 
 /**
  * Adapter for Google Analytics GA4 Measurement Protocol format
  */
 export class GoogleAnalyticsAdapter extends BaseAdapter<GoogleAnalyticsData> {
+  /**
+   * Validate input data using Zod schema
+   */
   validate(data: unknown): data is GoogleAnalyticsData {
-    if (!this.isObject(data)) {
-      return false;
-    }
-
-    return (
-      this.isString(data.client_id) &&
-      Array.isArray(data.events) &&
-      data.events.length > 0 &&
-      data.events.every(
-        (event) =>
-          this.isObject(event) &&
-          this.isString(event.name) &&
-          (event.params === undefined || this.isObject(event.params))
-      )
-    );
+    const result = googleAnalyticsDataSchema.safeParse(data);
+    return result.success;
   }
 
   transform(data: GoogleAnalyticsData): AnalyticsEngineDataPoint {

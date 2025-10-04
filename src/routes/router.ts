@@ -4,6 +4,7 @@ import { serveStatic } from 'hono/cloudflare-pages';
 import type { Env, PingResponse } from '../types/index.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
 import { GoogleAnalyticsAdapter } from '../adapters/google-analytics.js';
+import { LogtailAdapter } from '../adapters/logtail.js';
 import { AnalyticsEngineService } from '../services/analytics-engine.js';
 import { logger } from '../middleware/logger.js';
 import { projectIdMiddleware } from '../middleware/project-id.js';
@@ -21,6 +22,7 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   const analyticsService = new AnalyticsEngineService();
   const claudeCodeAdapter = new ClaudeCodeAdapter();
   const googleAnalyticsAdapter = new GoogleAnalyticsAdapter();
+  const logtailAdapter = new LogtailAdapter();
 
   // Create route handlers
   const claudeCodeHandler = createAnalyticsHandler(
@@ -41,6 +43,11 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   const googleAnalyticsHandler = createAnalyticsHandler(
     'GA_ANALYTICS',
     googleAnalyticsAdapter,
+    analyticsService
+  );
+  const logtailHandler = createAnalyticsHandler(
+    'LOGTAIL_ANALYTICS',
+    logtailAdapter,
     analyticsService
   );
 
@@ -66,6 +73,7 @@ export function createRouter(): Hono<{ Bindings: Env }> {
         analytics: {
           'claude-code': ['/cc', '/cc/:project_id'],
           'google-analytics': ['/ga', '/ga/:project_id'],
+          logtail: ['/logtail', '/logtail/:project_id'],
         },
         api: {
           projects: '/api/project',
@@ -101,6 +109,8 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   app.use('/cc/:project_id', projectIdMiddleware);
   app.use('/ga', projectIdMiddleware);
   app.use('/ga/:project_id', projectIdMiddleware);
+  app.use('/logtail', projectIdMiddleware);
+  app.use('/logtail/:project_id', projectIdMiddleware);
 
   // OTLP standard endpoints WITHOUT project_id (use "default" project)
   app.use('/cc/v1/logs', defaultProjectMiddleware, projectIdMiddleware);
@@ -125,6 +135,12 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   app.post('/ga', googleAnalyticsHandler.handlePost);
   app.get('/ga/:project_id', googleAnalyticsHandler.handleGet);
   app.post('/ga/:project_id', googleAnalyticsHandler.handlePost);
+
+  // Logtail / Better Stack endpoints
+  app.get('/logtail', logtailHandler.handleGet);
+  app.post('/logtail', logtailHandler.handlePost);
+  app.get('/logtail/:project_id', logtailHandler.handleGet);
+  app.post('/logtail/:project_id', logtailHandler.handlePost);
 
   // Projects API routes
   app.route('/api/project', createProjectsRouter());

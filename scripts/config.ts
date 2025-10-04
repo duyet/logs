@@ -38,7 +38,7 @@ export function loadEndpoints(): {
       'https://duyet-logs.pages.dev';
 
     return { local, production };
-  } catch (error) {
+  } catch {
     // Fallback to defaults if package.json can't be read
     console.warn('Warning: Could not load endpoints from package.json');
     return {

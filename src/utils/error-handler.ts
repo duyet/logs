@@ -25,6 +25,11 @@ export function classifyError(error: Error): {
     return { type: ErrorType.CONFIGURATION_ERROR, status: 500 };
   }
 
+  // JSON parsing errors
+  if (error instanceof SyntaxError && error.message.includes('JSON')) {
+    return { type: ErrorType.BAD_REQUEST, status: 400 };
+  }
+
   return { type: ErrorType.INTERNAL_SERVER_ERROR, status: 500 };
 }
 
