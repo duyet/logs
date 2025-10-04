@@ -42,6 +42,10 @@ export interface Env {
   DATASET_REALTIME_ANALYTICS?: string;
   DATASET_LOGTAIL_ANALYTICS?: string;
   DATASET_SENTRY_ANALYTICS?: string;
+  // Sentry integration
+  CF_VERSION_METADATA?: { id: string; timestamp?: string }; // Cloudflare version metadata
+  ENVIRONMENT?: string; // Environment name (production, staging, etc.)
+  SENTRY_DSN?: string; // Sentry DSN (defaults to self-tracking)
 }
 
 /**

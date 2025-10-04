@@ -7,6 +7,7 @@ export { RealtimeAggregator } from '../src/durable-objects/realtime-aggregator.j
 /**
  * Cloudflare Pages Function - Catch-all route
  * Handles all incoming requests and routes them through Hono
+ * Sentry error tracking is configured in functions/_middleware.ts
  */
 export const onRequest: PagesFunction<Env> = (context) => {
   const app = createRouter();
