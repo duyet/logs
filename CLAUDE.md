@@ -8,8 +8,9 @@
 
 - **Multi-format Support**: Claude Code (OTLP), Google Analytics (GA4), Sentry (error tracking), Logtail (Better Stack), Real-time analytics, custom formats
 - **Type-Safe**: 100% TypeScript with strict mode, no `any` types, comprehensive validation
-- **Well-Tested**: 100% code coverage with 570+ unit and E2E tests
+- **Well-Tested**: 100% code coverage with 524+ unit and E2E tests
 - **Edge-First**: Global deployment on Cloudflare's 300+ locations with <100ms p95 response time
+- **Self-Tracking**: Uses Sentry SDK for own error monitoring (dogfooding)
 
 **Production**: [logs.duyet.net](https://logs.duyet.net)
 
@@ -294,6 +295,20 @@ cloudflare-analytics-router/
   - level must be one of: fatal, error, warning, info, debug
   - Timestamp supports RFC 3339 string or Unix epoch (seconds/milliseconds)
 - **Data Type**: `sentry_event`
+- **Self-Tracking**: This project uses Sentry for its own error tracking. See [Sentry Integration](#sentry-integration-self-tracking) section below.
+
+### `/debug-sentry` - Sentry Integration Test
+
+- **Methods**: GET
+- **Purpose**: Test Sentry error tracking integration
+- **Response**: Returns 500 error with test exception
+- **Use Case**: Verify Sentry is properly capturing and reporting errors
+- **Example**:
+  ```bash
+  curl https://logs.duyet.net/debug-sentry
+  # Returns: {"error":"Internal Server Error",...}
+  # Error is captured by Sentry and sent to /sentry/logs endpoint
+  ```
 
 ### `/realtime` and `/realtime/:project_id` - Real-Time Analytics (New)
 
@@ -1190,6 +1205,102 @@ GET /ping 200 1ms
 ### Google Analytics
 
 - [GA4 Measurement Protocol](https://developers.google.com/analytics/devguides/collection/protocol/ga4)
+
+### Sentry
+
+- [Sentry Hono Integration](https://docs.sentry.io/platforms/javascript/guides/cloudflare/frameworks/hono/)
+- [Sentry Cloudflare](https://docs.sentry.io/platforms/javascript/guides/cloudflare/)
+
+## Sentry Integration (Self-Tracking)
+
+This project uses Sentry to track its own errors, demonstrating the full self-tracking capabilities of the analytics platform.
+
+### Architecture
+
+```
+Application Error → Sentry Middleware → Sentry SDK → SENTRY_DSN → /sentry/logs → Analytics Engine
+```
+
+### Configuration
+
+**1. Middleware** (`functions/_middleware.ts`):
+
+- Sentry Pages Plugin configured as first middleware
+- Captures all unhandled errors automatically
+- Uses `CF_VERSION_METADATA` for release tracking
+- Sends errors to configurable DSN endpoint
+
+**2. Error Handler** (`src/routes/router.ts`):
+
+- `onError` hook captures all exceptions
+- Integrates with Sentry.captureException()
+- Provides custom error responses for HTTPException
+
+**3. Environment Variables** (`wrangler.toml`):
+
+```toml
+[version_metadata]
+binding = "CF_VERSION_METADATA"  # For release tracking
+
+[vars]
+ENVIRONMENT = "production"
+# Optional: Override default self-tracking endpoint
+# SENTRY_DSN = "https://logs.duyet.net/sentry/logs"
+```
+
+### Default Behavior
+
+By default, Sentry errors are sent to the project's own `/sentry/logs` endpoint:
+
+- **Default DSN**: `https://logs.duyet.net/sentry/logs`
+- **Project ID**: `logs` (auto-created)
+- **Dataset**: `SENTRY_ANALYTICS`
+
+### Custom Configuration
+
+Override the DSN via environment variable:
+
+```toml
+[vars]
+SENTRY_DSN = "https://your-sentry-instance.com/project-id"
+```
+
+### Testing
+
+Use the `/debug-sentry` endpoint to test error tracking:
+
+```bash
+# Trigger a test error
+curl https://logs.duyet.net/debug-sentry
+
+# Response: {"error":"Internal Server Error",...}
+# Error captured and sent to /sentry/logs
+```
+
+### Features
+
+- **Automatic Error Capture**: All unhandled exceptions automatically reported
+- **Release Tracking**: Version metadata from Cloudflare deployments
+- **Environment Tagging**: Production/staging/development environment tags
+- **Custom Tags**: Service name, platform, and custom metadata
+- **Performance Tracing**: 100% sample rate for development
+- **User Context**: Request headers and IP information (when enabled)
+- **Self-Hosting**: Errors stored in project's own Analytics Engine dataset
+
+### Implementation Details
+
+**Files Modified**:
+
+- `functions/_middleware.ts` - Sentry Pages Plugin configuration
+- `src/routes/router.ts` - Error handler integration, `/debug-sentry` endpoint
+- `src/types/index.ts` - Type definitions for Sentry bindings
+- `wrangler.toml` - Configuration and bindings
+- `package.json` - @sentry/cloudflare dependency
+
+**Tests**:
+
+- `test/e2e/debug-sentry.test.ts` - Integration test for error endpoint
+- `test/e2e/sentry.test.ts` - Sentry adapter tests (existing)
 
 ## Notes
 

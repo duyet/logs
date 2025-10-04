@@ -3,6 +3,10 @@ compatibility_date = "2025-10-01"
 compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
 pages_build_output_dir = "dist"
 
+# Version metadata for Sentry release tracking
+[version_metadata]
+binding = "CF_VERSION_METADATA"
+
 # Analytics Engine Bindings
 [[analytics_engine_datasets]]
 binding = "CLAUDE_CODE_ANALYTICS"
@@ -47,6 +51,9 @@ DATASET_GA_ANALYTICS = "duyet_logs_ga_analytics"
 DATASET_REALTIME_ANALYTICS = "duyet_logs_realtime_analytics"
 DATASET_LOGTAIL_ANALYTICS = "duyet_logs_logtail_analytics"
 DATASET_SENTRY_ANALYTICS = "duyet_logs_sentry_analytics"
+ENVIRONMENT = "production"
+# Sentry DSN - defaults to self-tracking at https://logs.duyet.net/sentry/logs
+# SENTRY_DSN = "https://logs.duyet.net/sentry/logs"
 
 # Note: Secrets for Analytics Insights API should be set via Cloudflare dashboard
 # Pages projects don't support secrets_store_secrets in wrangler.toml

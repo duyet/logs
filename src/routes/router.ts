@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { serveStatic } from 'hono/cloudflare-pages';
+import * as Sentry from '@sentry/cloudflare';
 import type { Env, PingResponse } from '../types/index.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
 import { GoogleAnalyticsAdapter } from '../adapters/google-analytics.js';
@@ -58,8 +60,19 @@ export function createRouter(): Hono<{ Bindings: Env }> {
     analyticsService
   );
 
-  // Error handler using onError
-  app.onError(handleError);
+  // Sentry error handler (must be before other error handlers)
+  app.onError((err, c) => {
+    // Capture all errors to Sentry
+    Sentry.captureException(err);
+
+    // If it's an HTTPException, return its response
+    if (err instanceof HTTPException) {
+      return err.getResponse();
+    }
+
+    // Otherwise, use the default error handler
+    return handleError(err, c);
+  });
 
   // Global middleware
   app.use('*', logger);
@@ -98,6 +111,22 @@ export function createRouter(): Hono<{ Bindings: Env }> {
       timestamp: new Date().toISOString(),
     };
     return c.json(response);
+  });
+
+  // Sentry debug endpoint - Test error tracking
+  app.get('/debug-sentry', async () => {
+    await Sentry.startSpan(
+      {
+        op: 'test',
+        name: 'Sentry Integration Test',
+      },
+      async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for 100ms
+        throw new Error(
+          'Test error from /debug-sentry - Sentry integration is working!'
+        );
+      }
+    );
   });
 
   // Middleware to set default project_id when not provided
