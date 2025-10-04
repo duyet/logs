@@ -144,13 +144,13 @@ async function sendEvent(
       body: JSON.stringify(data),
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const result = await response.json();
 
     if (!response.ok) {
       console.error(`❌ Failed to send ${type} event:`, result);
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       console.log(
         `✅ Sent ${type} event:`,
         data.metric_name ||
@@ -158,7 +158,7 @@ async function sendEvent(
           (data.events as { name: string }[])?.[0]?.name
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`❌ Error sending ${type} event:`, error);
   }
 }

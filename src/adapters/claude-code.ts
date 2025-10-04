@@ -1,13 +1,13 @@
 import { BaseAdapter } from './base.js';
-import type {
-  AnalyticsEngineDataPoint,
-  ClaudeCodeData,
-  ClaudeCodeMetric,
-  ClaudeCodeEvent,
-  OTLPLogs,
-  OTLPMetrics,
-  IKeyValue,
-} from '../types/index.js';
+import type { AnalyticsEngineDataPoint, IKeyValue } from '../types/index.js';
+import {
+  claudeCodeCombinedSchema,
+  type ClaudeCodeData,
+  type ClaudeCodeMetric,
+  type ClaudeCodeEvent,
+  type OTLPLogs,
+  type OTLPMetrics,
+} from '../schemas/index.js';
 
 /**
  * Adapter for Claude Code OpenTelemetry format
@@ -16,41 +16,13 @@ import type {
 export class ClaudeCodeAdapter extends BaseAdapter<
   ClaudeCodeData | OTLPLogs | OTLPMetrics
 > {
+  /**
+   * Validate input data using Zod schema
+   * Supports: simple metric, simple event, OTLP logs, OTLP metrics
+   */
   validate(data: unknown): data is ClaudeCodeData | OTLPLogs | OTLPMetrics {
-    if (!this.isObject(data)) {
-      return false;
-    }
-
-    // Check if it's OTLP Logs format
-    if ('resourceLogs' in data) {
-      return this.isArray(data.resourceLogs);
-    }
-
-    // Check if it's OTLP Metrics format
-    if ('resourceMetrics' in data) {
-      return this.isArray(data.resourceMetrics);
-    }
-
-    // Check if it's legacy simple format (metric)
-    if ('metric_name' in data && 'value' in data) {
-      return (
-        this.isString(data.session_id) &&
-        this.isString(data.metric_name) &&
-        this.isNumber(data.value)
-      );
-    }
-
-    // Check if it's legacy simple format (event)
-    if ('event_name' in data) {
-      return (
-        this.isString(data.event_name) &&
-        this.isString(data.timestamp) &&
-        this.isString(data.session_id) &&
-        this.isObject(data.attributes)
-      );
-    }
-
-    return false;
+    const result = claudeCodeCombinedSchema.safeParse(data);
+    return result.success;
   }
 
   transform(
@@ -155,10 +127,14 @@ export class ClaudeCodeAdapter extends BaseAdapter<
             timestamp:
               (typeof log.timeUnixNano === 'string'
                 ? log.timeUnixNano
-                : String(log.timeUnixNano ?? '')) ||
+                : typeof log.timeUnixNano === 'number'
+                  ? String(log.timeUnixNano)
+                  : '') ||
               (typeof log.observedTimeUnixNano === 'string'
                 ? log.observedTimeUnixNano
-                : String(log.observedTimeUnixNano ?? '')) ||
+                : typeof log.observedTimeUnixNano === 'number'
+                  ? String(log.observedTimeUnixNano)
+                  : '') ||
               Date.now().toString(),
             severity: log.severityText || log.severityNumber,
             body:
@@ -236,7 +212,9 @@ export class ClaudeCodeAdapter extends BaseAdapter<
               timestamp:
                 (typeof dp.timeUnixNano === 'string'
                   ? dp.timeUnixNano
-                  : String(dp.timeUnixNano ?? '')) || Date.now().toString(),
+                  : typeof dp.timeUnixNano === 'number'
+                    ? String(dp.timeUnixNano)
+                    : '') || Date.now().toString(),
               attributes: attrs,
               unit: metric.unit,
               scope: scopeName,

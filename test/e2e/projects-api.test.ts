@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
 import type {
@@ -51,6 +51,7 @@ describe('Projects API E2E', () => {
       CLAUDE_CODE_LOGS: {} as never,
       CLAUDE_CODE_METRICS: {} as never,
       GA_ANALYTICS: {} as never,
+      LOGTAIL_ANALYTICS: {} as never,
     };
   });
 

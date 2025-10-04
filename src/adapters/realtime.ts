@@ -1,9 +1,10 @@
 import { BaseAdapter } from './base';
-import type {
-  AnalyticsEngineDataPoint,
-  RealtimeEvent,
-  ServerContext,
-} from '../types/realtime';
+import type { AnalyticsEngineDataPoint } from '../types/realtime';
+import {
+  realtimeEventSchema,
+  type RealtimeEvent,
+  type ServerContext,
+} from '../schemas/index.js';
 import { parseUserAgent } from '../utils/user-agent-parser';
 import { detectBot } from '../utils/bot-detection';
 
@@ -17,56 +18,13 @@ import { detectBot } from '../utils/bot-detection';
  */
 export class RealtimeAdapter extends BaseAdapter<RealtimeEvent> {
   /**
-   * Validate RealtimeEvent structure
+   * Validate RealtimeEvent structure using Zod schema
    * Required fields: event_type, timestamp, url, user_agent, fingerprint
    * Optional fields: project_id, session_id, visitor_id, referrer, click_*, custom_data
    */
   validate(data: unknown): data is RealtimeEvent {
-    if (!this.isObject(data)) {
-      return false;
-    }
-
-    // Required fields
-    if (!('event_type' in data) || !this.isString(data.event_type)) {
-      return false;
-    }
-
-    // Validate event_type enum
-    const validEventTypes = ['pageview', 'click', 'custom'];
-    if (!validEventTypes.includes(data.event_type)) {
-      return false;
-    }
-
-    if (!('timestamp' in data) || !this.isNumber(data.timestamp)) {
-      return false;
-    }
-
-    if (!('url' in data) || !this.isString(data.url)) {
-      return false;
-    }
-
-    if (!('user_agent' in data) || !this.isString(data.user_agent)) {
-      return false;
-    }
-
-    if (!('fingerprint' in data) || !this.isObject(data.fingerprint)) {
-      return false;
-    }
-
-    // Validate fingerprint structure
-    const fp = data.fingerprint;
-    if (
-      !('hash' in fp) ||
-      !this.isString(fp.hash) ||
-      !('components' in fp) ||
-      !this.isObject(fp.components) ||
-      !('confidence' in fp) ||
-      !this.isNumber(fp.confidence)
-    ) {
-      return false;
-    }
-
-    return true;
+    const result = realtimeEventSchema.safeParse(data);
+    return result.success;
   }
 
   /**
