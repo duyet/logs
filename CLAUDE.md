@@ -219,6 +219,65 @@ cloudflare-analytics-router/
 - **Key Fields**: client_id, events, user_properties
 - **Use Case**: Web analytics tracking
 
+### `/sentry` and `/sentry/:project_id` - Sentry Error Tracking (New)
+
+- **Methods**: GET, POST
+- **Input Format**: Sentry Event Payload (JSON)
+- **Dataset**: `SENTRY_ANALYTICS`
+- **Key Fields**:
+  - Core: event_id (required, 32 hex chars), timestamp, platform, level
+  - Exception: type, value, stacktrace (frames with file, line, column, function)
+  - Context: tags, user (id, email, ip_address), breadcrumbs, request
+  - Metadata: environment, release, server_name, transaction, sdk
+- **Use Case**: Error tracking and monitoring
+- **Example Payload**:
+  ```json
+  {
+    "event_id": "fc6d8c0c43fc4630ad850ee518f1b9d0",
+    "timestamp": "2024-01-01T12:00:00Z",
+    "platform": "javascript",
+    "level": "error",
+    "exception": {
+      "values": [
+        {
+          "type": "ReferenceError",
+          "value": "foo is not defined",
+          "stacktrace": {
+            "frames": [
+              {
+                "filename": "app.js",
+                "function": "handleClick",
+                "lineno": 42,
+                "colno": 10
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "user": {
+      "id": "user-123",
+      "email": "user@example.com"
+    },
+    "tags": {
+      "environment": "production"
+    }
+  }
+  ```
+- **Supported Features**:
+  - Multiple exception types (chained exceptions)
+  - Stack traces with up to 10 frames (truncated for storage)
+  - Breadcrumbs (last 5 stored)
+  - User identification and context
+  - Request/response context
+  - Browser/OS context
+  - Custom tags and metadata (max 10 keys)
+- **Validation**:
+  - event_id must be 32 lowercase hexadecimal characters (UUID4 without dashes)
+  - level must be one of: fatal, error, warning, info, debug
+  - Timestamp supports RFC 3339 string or Unix epoch (seconds/milliseconds)
+- **Data Type**: `sentry_event`
+
 ### `/realtime` and `/realtime/:project_id` - Real-Time Analytics (New)
 
 - **Methods**: POST, GET
@@ -819,6 +878,10 @@ dataset = "duyet_logs_ga_analytics"
 binding = "REALTIME_ANALYTICS"  # Real-time analytics
 dataset = "duyet_logs_realtime_analytics"
 
+[[analytics_engine_datasets]]
+binding = "SENTRY_ANALYTICS"  # Sentry error tracking
+dataset = "duyet_logs_sentry_analytics"
+
 # Note: Durable Objects bindings for Pages must be configured via Cloudflare Pages dashboard
 # The RealtimeAggregator Durable Object is exported from functions/[[path]].ts
 # To configure:
@@ -834,6 +897,7 @@ DATASET_CLAUDE_CODE_LOGS = "duyet_logs_claude_code_logs"
 DATASET_CLAUDE_CODE_METRICS = "duyet_logs_claude_code_metrics"
 DATASET_GA_ANALYTICS = "duyet_logs_ga_analytics"
 DATASET_REALTIME_ANALYTICS = "duyet_logs_realtime_analytics"
+DATASET_SENTRY_ANALYTICS = "duyet_logs_sentry_analytics"
 ```
 
 ### Environment Setup

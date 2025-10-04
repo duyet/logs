@@ -21,6 +21,7 @@ describe('AnalyticsQueryService', () => {
       CLAUDE_CODE_METRICS: {} as any,
       GA_ANALYTICS: {} as any,
       LOGTAIL_ANALYTICS: {} as any,
+      SENTRY_ANALYTICS: {} as any,
       DB: {} as any,
     };
   });

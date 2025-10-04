@@ -52,6 +52,7 @@ describe('Projects API E2E', () => {
       CLAUDE_CODE_METRICS: {} as never,
       GA_ANALYTICS: {} as never,
       LOGTAIL_ANALYTICS: {} as never,
+      SENTRY_ANALYTICS: {} as never,
     };
   });
 

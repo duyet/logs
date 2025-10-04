@@ -27,6 +27,7 @@ export interface Env {
   GA_ANALYTICS: AnalyticsEngineDataset;
   REALTIME_ANALYTICS?: AnalyticsEngineDataset; // Real-time analytics (optional for backwards compat)
   LOGTAIL_ANALYTICS: AnalyticsEngineDataset; // Logtail / Better Stack
+  SENTRY_ANALYTICS: AnalyticsEngineDataset; // Sentry error tracking
   DB: D1Database;
   REALTIME_AGGREGATOR?: DurableObjectNamespace; // Durable Object for 5-min aggregation (optional for backwards compat)
   ASSETS?: Fetcher; // Optional ASSETS binding for static files
@@ -40,6 +41,7 @@ export interface Env {
   DATASET_GA_ANALYTICS?: string;
   DATASET_REALTIME_ANALYTICS?: string;
   DATASET_LOGTAIL_ANALYTICS?: string;
+  DATASET_SENTRY_ANALYTICS?: string;
 }
 
 /**

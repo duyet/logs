@@ -49,6 +49,9 @@ describe('Analytics API E2E', () => {
       LOGTAIL_ANALYTICS: {
         writeDataPoint: (): void => {},
       },
+      SENTRY_ANALYTICS: {
+        writeDataPoint: (): void => {},
+      },
       REALTIME_AGGREGATOR: {} as DurableObjectNamespace,
       DB: {
         prepare: (): {

@@ -33,6 +33,7 @@ describe('Logtail Endpoint E2E', () => {
       CLAUDE_CODE_METRICS: mockDataset,
       GA_ANALYTICS: mockDataset,
       LOGTAIL_ANALYTICS: mockDataset,
+      SENTRY_ANALYTICS: mockDataset,
       DB: mockDB,
     };
 
