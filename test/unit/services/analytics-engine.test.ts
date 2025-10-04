@@ -33,6 +33,7 @@ describe('AnalyticsEngineService', () => {
     GA_ANALYTICS: mockDataset,
     REALTIME_ANALYTICS: mockDataset,
     LOGTAIL_ANALYTICS: mockDataset,
+    SENTRY_ANALYTICS: mockDataset,
     REALTIME_AGGREGATOR: {} as DurableObjectNamespace,
     DB: {} as D1Database,
   };

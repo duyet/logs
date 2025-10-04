@@ -104,6 +104,9 @@ describe('Realtime Analytics E2E', () => {
       LOGTAIL_ANALYTICS: {
         writeDataPoint: (): void => {},
       },
+      SENTRY_ANALYTICS: {
+        writeDataPoint: (): void => {},
+      },
       REALTIME_AGGREGATOR: {
         idFromName: (): DurableObjectId =>
           ({ name: 'test' }) as DurableObjectId,

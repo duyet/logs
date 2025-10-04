@@ -1,8 +1,8 @@
 # Logs Tracking with Cloudflare + Hono
 
-**Serverless logs tracking system built on Cloudflare edge network.**
+**All-in-one serverless logs API built on Cloudflare edge network.**
 
-Send logs from Claude Code, Google Analytics, or custom apps to Cloudflare Analytics Engine for storage and analysis.
+Universal logs and analytics router compatible with multiple data sources (Claude Code, Google Analytics, Sentry, Logtail, custom apps) sending to Cloudflare Analytics Engine for unified storage and analysis.
 
 🚀 **Live**: [logs.duyet.net](https://logs.duyet.net)
 
@@ -94,6 +94,7 @@ curl -X POST https://logs.duyet.net/ga/myproject \
 | `/cc/v1/metrics`             | POST      | OTLP metrics (default project)       | CLAUDE_CODE_METRICS   | `"default"` (auto) |
 | `/ga/:project_id`            | GET, POST | Google Analytics events              | GA_ANALYTICS          | From URL           |
 | `/logtail/:project_id`       | GET, POST | Logtail/Better Stack compatible logs | LOGTAIL_ANALYTICS     | From URL           |
+| `/sentry/:project_id`        | GET, POST | Sentry error tracking events         | SENTRY_ANALYTICS      | From URL           |
 | `/realtime/:project_id`      | POST      | Real-time website visitor tracking   | REALTIME_ANALYTICS    | From URL           |
 
 ### Analytics Insights & Query
@@ -184,6 +185,43 @@ curl -X POST https://logs.duyet.net/logtail/myproject \
     "message": "Application started",
     "level": "info",
     "dt": "2024-01-01T00:00:00.000Z"
+  }'
+```
+
+</details>
+
+<details>
+<summary><b>Sentry Error Tracking</b></summary>
+
+```bash
+curl -X POST https://logs.duyet.net/sentry/myproject \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_id": "fc6d8c0c43fc4630ad850ee518f1b9d0",
+    "timestamp": "2024-01-01T12:00:00Z",
+    "platform": "javascript",
+    "level": "error",
+    "exception": {
+      "values": [{
+        "type": "ReferenceError",
+        "value": "foo is not defined",
+        "stacktrace": {
+          "frames": [{
+            "filename": "app.js",
+            "function": "handleClick",
+            "lineno": 42,
+            "colno": 10
+          }]
+        }
+      }]
+    },
+    "user": {
+      "id": "user-123",
+      "email": "user@example.com"
+    },
+    "tags": {
+      "environment": "production"
+    }
   }'
 ```
 

@@ -2,7 +2,14 @@
 
 ## Project Overview
 
-A TypeScript-based analytics data router built on Cloudflare Pages using the Hono framework. Routes multiple analytics data formats to Cloudflare Analytics Engine datasets.
+**All-in-one TypeScript-based logs and analytics API** built on Cloudflare Pages using the Hono framework. Universal router compatible with multiple data sources (Claude Code, Google Analytics, Sentry, Logtail, Real-time tracking, custom apps) sending to Cloudflare Analytics Engine for unified storage and analysis.
+
+**Key Features**:
+
+- **Multi-format Support**: Claude Code (OTLP), Google Analytics (GA4), Sentry (error tracking), Logtail (Better Stack), Real-time analytics, custom formats
+- **Type-Safe**: 100% TypeScript with strict mode, no `any` types, comprehensive validation
+- **Well-Tested**: 100% code coverage with 570+ unit and E2E tests
+- **Edge-First**: Global deployment on Cloudflare's 300+ locations with <100ms p95 response time
 
 **Production**: [logs.duyet.net](https://logs.duyet.net)
 
@@ -11,21 +18,31 @@ A TypeScript-based analytics data router built on Cloudflare Pages using the Hon
 ### System Overview
 
 ```
-┌─────────────┐
-│   Client    │  (Claude Code, GA4, Custom Apps)
-└──────┬──────┘
-       │ HTTP POST
-       ↓
-┌─────────────────────┐
-│  Cloudflare Pages   │  (Edge Network - 300+ locations)
-│   + Hono Router     │
-└──────────┬──────────┘
-       │ Transform & Validate
-       ↓
-┌─────────────────────┐
-│ Analytics Engine    │  (Time-series Storage)
-│      + D1 DB        │  (Project Metadata)
-└─────────────────────┘
+┌──────────────────────────────────────────┐
+│  Multiple Data Sources (All-in-One API)  │
+│  • Claude Code (OTLP metrics/logs)       │
+│  • Google Analytics (GA4)                │
+│  • Sentry (error tracking)               │
+│  • Logtail (Better Stack logs)           │
+│  • Real-time analytics                   │
+│  • Custom formats                        │
+└──────────────┬───────────────────────────┘
+               │ HTTP POST
+               ↓
+┌─────────────────────────────────────────┐
+│  Cloudflare Pages                       │
+│  • Hono Router (format detection)       │
+│  • Adapter Layer (validation/transform) │
+│  • Edge Network (300+ locations)        │
+└──────────────┬──────────────────────────┘
+               │ Validated Data
+               ↓
+┌─────────────────────────────────────────┐
+│  Cloudflare Storage                     │
+│  • Analytics Engine (time-series)       │
+│  • D1 Database (project metadata)       │
+│  • Durable Objects (real-time agg)      │
+└─────────────────────────────────────────┘
 ```
 
 ### Core Components
@@ -218,6 +235,65 @@ cloudflare-analytics-router/
 - **Dataset**: `GA_ANALYTICS`
 - **Key Fields**: client_id, events, user_properties
 - **Use Case**: Web analytics tracking
+
+### `/sentry` and `/sentry/:project_id` - Sentry Error Tracking (New)
+
+- **Methods**: GET, POST
+- **Input Format**: Sentry Event Payload (JSON)
+- **Dataset**: `SENTRY_ANALYTICS`
+- **Key Fields**:
+  - Core: event_id (required, 32 hex chars), timestamp, platform, level
+  - Exception: type, value, stacktrace (frames with file, line, column, function)
+  - Context: tags, user (id, email, ip_address), breadcrumbs, request
+  - Metadata: environment, release, server_name, transaction, sdk
+- **Use Case**: Error tracking and monitoring
+- **Example Payload**:
+  ```json
+  {
+    "event_id": "fc6d8c0c43fc4630ad850ee518f1b9d0",
+    "timestamp": "2024-01-01T12:00:00Z",
+    "platform": "javascript",
+    "level": "error",
+    "exception": {
+      "values": [
+        {
+          "type": "ReferenceError",
+          "value": "foo is not defined",
+          "stacktrace": {
+            "frames": [
+              {
+                "filename": "app.js",
+                "function": "handleClick",
+                "lineno": 42,
+                "colno": 10
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "user": {
+      "id": "user-123",
+      "email": "user@example.com"
+    },
+    "tags": {
+      "environment": "production"
+    }
+  }
+  ```
+- **Supported Features**:
+  - Multiple exception types (chained exceptions)
+  - Stack traces with up to 10 frames (truncated for storage)
+  - Breadcrumbs (last 5 stored)
+  - User identification and context
+  - Request/response context
+  - Browser/OS context
+  - Custom tags and metadata (max 10 keys)
+- **Validation**:
+  - event_id must be 32 lowercase hexadecimal characters (UUID4 without dashes)
+  - level must be one of: fatal, error, warning, info, debug
+  - Timestamp supports RFC 3339 string or Unix epoch (seconds/milliseconds)
+- **Data Type**: `sentry_event`
 
 ### `/realtime` and `/realtime/:project_id` - Real-Time Analytics (New)
 
@@ -593,8 +669,8 @@ npm run type-check       # TypeScript type checking
 **100% Code Coverage Required**
 
 1. **Unit Tests** (`test/unit/`)
-   - All adapters (base, claude-code, google-analytics, realtime)
-   - All services (analytics-engine, project)
+   - All adapters (base, claude-code, google-analytics, logtail, sentry, realtime)
+   - All services (analytics-engine, project, analytics-query)
    - All middleware (logger, project-id, error-handler)
    - All utilities (validation, route-handler, user-agent-parser, fingerprint, bot-detection)
    - All Durable Objects (realtime-aggregator)
@@ -819,6 +895,10 @@ dataset = "duyet_logs_ga_analytics"
 binding = "REALTIME_ANALYTICS"  # Real-time analytics
 dataset = "duyet_logs_realtime_analytics"
 
+[[analytics_engine_datasets]]
+binding = "SENTRY_ANALYTICS"  # Sentry error tracking
+dataset = "duyet_logs_sentry_analytics"
+
 # Note: Durable Objects bindings for Pages must be configured via Cloudflare Pages dashboard
 # The RealtimeAggregator Durable Object is exported from functions/[[path]].ts
 # To configure:
@@ -834,6 +914,7 @@ DATASET_CLAUDE_CODE_LOGS = "duyet_logs_claude_code_logs"
 DATASET_CLAUDE_CODE_METRICS = "duyet_logs_claude_code_metrics"
 DATASET_GA_ANALYTICS = "duyet_logs_ga_analytics"
 DATASET_REALTIME_ANALYTICS = "duyet_logs_realtime_analytics"
+DATASET_SENTRY_ANALYTICS = "duyet_logs_sentry_analytics"
 ```
 
 ### Environment Setup

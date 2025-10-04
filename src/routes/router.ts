@@ -5,6 +5,7 @@ import type { Env, PingResponse } from '../types/index.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code.js';
 import { GoogleAnalyticsAdapter } from '../adapters/google-analytics.js';
 import { LogtailAdapter } from '../adapters/logtail.js';
+import { SentryAdapter } from '../adapters/sentry.js';
 import { AnalyticsEngineService } from '../services/analytics-engine.js';
 import { logger } from '../middleware/logger.js';
 import { projectIdMiddleware } from '../middleware/project-id.js';
@@ -23,6 +24,7 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   const claudeCodeAdapter = new ClaudeCodeAdapter();
   const googleAnalyticsAdapter = new GoogleAnalyticsAdapter();
   const logtailAdapter = new LogtailAdapter();
+  const sentryAdapter = new SentryAdapter();
 
   // Create route handlers
   const claudeCodeHandler = createAnalyticsHandler(
@@ -50,6 +52,11 @@ export function createRouter(): Hono<{ Bindings: Env }> {
     logtailAdapter,
     analyticsService
   );
+  const sentryHandler = createAnalyticsHandler(
+    'SENTRY_ANALYTICS',
+    sentryAdapter,
+    analyticsService
+  );
 
   // Error handler using onError
   app.onError(handleError);
@@ -74,6 +81,7 @@ export function createRouter(): Hono<{ Bindings: Env }> {
           'claude-code': ['/cc', '/cc/:project_id'],
           'google-analytics': ['/ga', '/ga/:project_id'],
           logtail: ['/logtail', '/logtail/:project_id'],
+          sentry: ['/sentry', '/sentry/:project_id'],
         },
         api: {
           projects: '/api/project',
@@ -111,6 +119,8 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   app.use('/ga/:project_id', projectIdMiddleware);
   app.use('/logtail', projectIdMiddleware);
   app.use('/logtail/:project_id', projectIdMiddleware);
+  app.use('/sentry', projectIdMiddleware);
+  app.use('/sentry/:project_id', projectIdMiddleware);
 
   // OTLP standard endpoints WITHOUT project_id (use "default" project)
   app.use('/cc/v1/logs', defaultProjectMiddleware, projectIdMiddleware);
@@ -141,6 +151,12 @@ export function createRouter(): Hono<{ Bindings: Env }> {
   app.post('/logtail', logtailHandler.handlePost);
   app.get('/logtail/:project_id', logtailHandler.handleGet);
   app.post('/logtail/:project_id', logtailHandler.handlePost);
+
+  // Sentry error tracking endpoints
+  app.get('/sentry', sentryHandler.handleGet);
+  app.post('/sentry', sentryHandler.handlePost);
+  app.get('/sentry/:project_id', sentryHandler.handleGet);
+  app.post('/sentry/:project_id', sentryHandler.handlePost);
 
   // Projects API routes
   app.route('/api/project', createProjectsRouter());
