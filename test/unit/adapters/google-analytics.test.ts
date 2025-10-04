@@ -3,6 +3,12 @@
 import { describe, it, expect } from 'vitest';
 import { GoogleAnalyticsAdapter } from '../../../src/adapters/google-analytics.js';
 import type { GoogleAnalyticsData } from '../../../src/types/index.js';
+import {
+  parseMetadata,
+  assertAdapterResult,
+  assertIndexes,
+  assertDoubles,
+} from '../../helpers/adapter-test-utils.js';
 
 describe('GoogleAnalyticsAdapter', () => {
   const adapter = new GoogleAnalyticsAdapter();
@@ -62,16 +68,14 @@ describe('GoogleAnalyticsAdapter', () => {
 
       const result = adapter.transform(data);
 
-      // No project_id means indexes should be empty
-      expect(result.indexes).toEqual([]);
-      expect(result.doubles).toEqual([1]);
-
-      // All metadata is in blobs[0] as JSON
-      expect(result.blobs).toBeDefined();
-      expect(result.blobs?.length).toBe(1);
-      const metadata = JSON.parse(result.blobs![0]!);
-      expect(metadata.client_id).toBe('client-123');
-      expect(metadata.events).toEqual([{ name: 'page_view' }]);
+      assertAdapterResult(result, {
+        indexes: [],
+        doubles: [1],
+        metadata: {
+          client_id: 'client-123',
+          events: [{ name: 'page_view' }],
+        },
+      });
     });
 
     it('should include user_id when present', () => {
@@ -83,14 +87,14 @@ describe('GoogleAnalyticsAdapter', () => {
 
       const result = adapter.transform(data);
 
-      // No project_id means indexes should be empty
-      expect(result.indexes).toEqual([]);
-
-      // All metadata is in blobs[0] as JSON
-      const metadata = JSON.parse(result.blobs![0]!);
-      expect(metadata.client_id).toBe('client-123');
-      expect(metadata.user_id).toBe('user-456');
-      expect(metadata.events).toEqual([{ name: 'login' }]);
+      assertAdapterResult(result, {
+        indexes: [],
+        metadata: {
+          client_id: 'client-123',
+          user_id: 'user-456',
+          events: [{ name: 'login' }],
+        },
+      });
     });
 
     it('should include timestamp when present', () => {
@@ -135,16 +139,14 @@ describe('GoogleAnalyticsAdapter', () => {
 
       const result = adapter.transform(data);
 
-      // No project_id means indexes should be empty
-      expect(result.indexes).toEqual([]);
-      expect(result.doubles).toEqual([3]);
+      assertIndexes(result, []);
+      assertDoubles(result, [3]);
 
-      // All events are in metadata
-      const metadata = JSON.parse(result.blobs![0]!);
+      const metadata = parseMetadata<GoogleAnalyticsData>(result);
       expect(metadata.events).toHaveLength(3);
-      expect(metadata.events[0].name).toBe('page_view');
-      expect(metadata.events[1].name).toBe('click');
-      expect(metadata.events[2].name).toBe('scroll');
+      expect(metadata.events[0]!.name).toBe('page_view');
+      expect(metadata.events[1]!.name).toBe('click');
+      expect(metadata.events[2]!.name).toBe('scroll');
     });
 
     it('should serialize event params as JSON blobs', () => {
