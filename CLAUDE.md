@@ -5,6 +5,7 @@
 **All-in-one TypeScript-based logs and analytics API** built on Cloudflare Pages using the Hono framework. Universal router compatible with multiple data sources (Claude Code, Google Analytics, Sentry, Logtail, Real-time tracking, custom apps) sending to Cloudflare Analytics Engine for unified storage and analysis.
 
 **Key Features**:
+
 - **Multi-format Support**: Claude Code (OTLP), Google Analytics (GA4), Sentry (error tracking), Logtail (Better Stack), Real-time analytics, custom formats
 - **Type-Safe**: 100% TypeScript with strict mode, no `any` types, comprehensive validation
 - **Well-Tested**: 100% code coverage with 570+ unit and E2E tests
