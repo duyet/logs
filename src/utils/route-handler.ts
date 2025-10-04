@@ -66,14 +66,16 @@ export function createAnalyticsHandler<T>(
         (adapter.setProjectId as (id?: string) => void)(projectId);
       }
 
-      const dataWithProject = projectId
-        ? { ...rawData, project_id: projectId }
-        : rawData;
+      // Don't add project_id to the data for arrays - adapter handles it via setProjectId
+      const dataWithProject =
+        projectId && !Array.isArray(rawData)
+          ? { ...rawData, project_id: projectId }
+          : rawData;
       analyticsService.writeDataPoint(c.env, dataset, adapter, dataWithProject);
 
       const response: SuccessResponse = {
         success: true,
-        message: 'Data recorded successfully',
+        message: 'Data processed',
       };
       return c.json(response);
     },
