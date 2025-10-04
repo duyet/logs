@@ -83,30 +83,146 @@ curl -X POST https://logs.duyet.net/ga/myproject \
 
 ## API Endpoints
 
-| Endpoint                          | Purpose                               | Dataset               |
-| --------------------------------- | ------------------------------------- | --------------------- |
-| `POST /cc/:project_id`            | Claude Code telemetry (all formats)   | CLAUDE_CODE_ANALYTICS |
-| `POST /cc/:project_id/v1/logs`    | OTLP logs (recommended)               | CLAUDE_CODE_LOGS      |
-| `POST /cc/:project_id/v1/metrics` | OTLP metrics (recommended)            | CLAUDE_CODE_METRICS   |
-| `POST /cc/v1/logs`                | OTLP logs (uses "default" project)    | CLAUDE_CODE_LOGS      |
-| `POST /cc/v1/metrics`             | OTLP metrics (uses "default" project) | CLAUDE_CODE_METRICS   |
-| `POST /ga/:project_id`            | Google Analytics events               | GA_ANALYTICS          |
-| `GET /ping`                       | Health check                          | -                     |
-| `GET /api/projects`               | List projects                         | -                     |
+### Analytics Data Ingestion
 
-**Data Classification**: All data includes `data_type` field for filtering:
+| Endpoint                     | Methods   | Purpose                              | Dataset               | Project ID         |
+| ---------------------------- | --------- | ------------------------------------ | --------------------- | ------------------ |
+| `/cc/:project_id`            | GET, POST | Claude Code telemetry (all formats)  | CLAUDE_CODE_ANALYTICS | From URL           |
+| `/cc/:project_id/v1/logs`    | POST      | OTLP logs (recommended)              | CLAUDE_CODE_LOGS      | From URL           |
+| `/cc/:project_id/v1/metrics` | POST      | OTLP metrics (recommended)           | CLAUDE_CODE_METRICS   | From URL           |
+| `/cc/v1/logs`                | POST      | OTLP logs (default project)          | CLAUDE_CODE_LOGS      | `"default"` (auto) |
+| `/cc/v1/metrics`             | POST      | OTLP metrics (default project)       | CLAUDE_CODE_METRICS   | `"default"` (auto) |
+| `/ga/:project_id`            | GET, POST | Google Analytics events              | GA_ANALYTICS          | From URL           |
+| `/logtail/:project_id`       | GET, POST | Logtail/Better Stack compatible logs | LOGTAIL_ANALYTICS     | From URL           |
+| `/realtime/:project_id`      | POST      | Real-time website visitor tracking   | REALTIME_ANALYTICS    | From URL           |
 
-- `otlp_logs` - OTLP logs in CLAUDE_CODE_LOGS dataset
-- `otlp_metrics` - OTLP metrics in CLAUDE_CODE_METRICS dataset
-- `legacy_metric` / `legacy_event` - Simple format in CLAUDE_CODE_ANALYTICS
+### Analytics Insights & Query
 
-**Project ID Methods** (priority order):
+| Endpoint                  | Method | Purpose                                    | Parameters                                       |
+| ------------------------- | ------ | ------------------------------------------ | ------------------------------------------------ |
+| `/api/analytics/insights` | GET    | Query analytics data and generate insights | `dataset`, `project_id`, `start`, `end`, `limit` |
+| `/api/analytics/datasets` | GET    | List available Analytics Engine datasets   | None                                             |
 
-1. URL path: `/cc/myproject` or `/cc/myproject/v1/logs`
-2. Header: `-H "X-Project-ID: myproject"`
-3. Query: `?project_id=myproject`
-4. Body: `{"project_id": "myproject"}`
-5. Default: `/cc/v1/logs` and `/cc/v1/metrics` use "default" project
+### Real-time Analytics
+
+| Endpoint                      | Method | Purpose                                  | Response                                   |
+| ----------------------------- | ------ | ---------------------------------------- | ------------------------------------------ |
+| `/realtime/:project_id/stats` | GET    | Get 5-minute window statistics           | Live visitor count, browsers, OS, devices  |
+| `/realtime/:project_id/data`  | GET    | Get full aggregated data with event list | Complete analytics data with event details |
+
+### Project Management
+
+| Endpoint           | Method | Purpose                      | Request Body                             |
+| ------------------ | ------ | ---------------------------- | ---------------------------------------- |
+| `/api/project`     | POST   | Create new project           | `{"description": "Project description"}` |
+| `/api/project`     | GET    | List all projects            | Query: `limit`, `offset`                 |
+| `/api/project/:id` | GET    | Get specific project details | None                                     |
+
+### Utility
+
+| Endpoint | Method | Purpose                          |
+| -------- | ------ | -------------------------------- |
+| `/ping`  | GET    | Health check endpoint            |
+| `/`      | GET    | API info and available endpoints |
+
+### Configuration Examples by Service
+
+<details>
+<summary><b>Claude Code (OTLP)</b> - Recommended</summary>
+
+**With project ID** (`~/.claude/settings.json`):
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc/myproject",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json"
+  }
+}
+```
+
+**Quick start (uses "default" project)**:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://logs.duyet.net/cc",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json"
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Google Analytics (GA4)</b></summary>
+
+```bash
+curl -X POST https://logs.duyet.net/ga/myproject \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "123.456",
+    "events": [{"name": "page_view", "params": {"page_title": "Home"}}]
+  }'
+```
+
+</details>
+
+<details>
+<summary><b>Logtail/Better Stack</b></summary>
+
+```bash
+curl -X POST https://logs.duyet.net/logtail/myproject \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Application started",
+    "level": "info",
+    "dt": "2024-01-01T00:00:00.000Z"
+  }'
+```
+
+</details>
+
+<details>
+<summary><b>Real-time Analytics</b></summary>
+
+**Track event**:
+
+```bash
+curl -X POST https://logs.duyet.net/realtime/myproject \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_type": "pageview",
+    "url": "https://example.com/page",
+    "user_agent": "Mozilla/5.0..."
+  }'
+```
+
+**Get live stats**:
+
+```bash
+curl https://logs.duyet.net/realtime/myproject/stats
+```
+
+</details>
+
+### Project ID Methods
+
+Projects can be specified in multiple ways (priority order):
+
+1. **URL path**: `/cc/myproject` or `/cc/myproject/v1/logs` ✨ Recommended
+2. **Header**: `-H "X-Project-ID: myproject"`
+3. **Query parameter**: `?project_id=myproject`
+4. **Request body**: `{"project_id": "myproject", ...}`
+5. **Auto-default**: Endpoints like `/cc/v1/logs` automatically use `"default"` project
+
+**Auto-creation**: Projects are automatically created on first use with format validation (3-32 chars, lowercase alphanumeric + hyphens).
 
 ## Tech Stack
 
