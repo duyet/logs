@@ -89,7 +89,7 @@ async function main(): Promise<void> {
 
     logSuccess('Build completed successfully!');
     log('📦', 'Ready for deployment');
-  } catch (error) {
+  } catch (error: unknown) {
     logError('Build failed!');
     if (error instanceof Error) {
       console.error(error.message);

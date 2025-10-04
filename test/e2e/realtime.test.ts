@@ -31,7 +31,7 @@ describe('Realtime Analytics E2E', () => {
   beforeEach((): void => {
     // Mock Durable Object stub
     mockDurableObjectStub = {
-      fetch: (request: Request) => {
+      fetch: (request: Request): Response => {
         const url = new URL(request.url);
         if (url.pathname === '/stats') {
           return new Response(
@@ -101,15 +101,29 @@ describe('Realtime Analytics E2E', () => {
       REALTIME_ANALYTICS: {
         writeDataPoint: (): void => {},
       },
+      LOGTAIL_ANALYTICS: {
+        writeDataPoint: (): void => {},
+      },
       REALTIME_AGGREGATOR: {
-        idFromName: () => ({ name: 'test' }) as DurableObjectId,
-        get: () => mockDurableObjectStub,
+        idFromName: (): DurableObjectId =>
+          ({ name: 'test' }) as DurableObjectId,
+        get: (): DurableObjectStub => mockDurableObjectStub,
       } as unknown as DurableObjectNamespace,
       DB: {
-        prepare: () => ({
-          bind: () => ({
-            first: () => Promise.resolve(null),
-            all: () =>
+        prepare: (): {
+          bind: () => {
+            first: () => Promise<null>;
+            all: () => Promise<D1Result>;
+            run: () => Promise<D1Result>;
+          };
+        } => ({
+          bind: (): {
+            first: () => Promise<null>;
+            all: () => Promise<D1Result>;
+            run: () => Promise<D1Result>;
+          } => ({
+            first: (): Promise<null> => Promise.resolve(null),
+            all: (): Promise<D1Result> =>
               Promise.resolve({
                 results: [],
                 success: true,
@@ -123,7 +137,7 @@ describe('Realtime Analytics E2E', () => {
                   changes: 0,
                 },
               } as D1Result),
-            run: () =>
+            run: (): Promise<D1Result> =>
               Promise.resolve({
                 success: true,
                 meta: {
@@ -138,8 +152,9 @@ describe('Realtime Analytics E2E', () => {
               } as D1Result),
           }),
         }),
-        batch: () => Promise.resolve([]),
-        exec: () => Promise.resolve({ count: 0, duration: 0 }),
+        batch: (): Promise<never[]> => Promise.resolve([]),
+        exec: (): Promise<{ count: number; duration: number }> =>
+          Promise.resolve({ count: 0, duration: 0 }),
       } as unknown as D1Database,
     };
   });

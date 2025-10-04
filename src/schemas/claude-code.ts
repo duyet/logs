@@ -6,7 +6,7 @@ import {
   validNumberSchema,
   safeStringSchema,
   safeObjectSchema,
-} from './common';
+} from './common.js';
 
 /**
  * Claude Code metric attributes schema
@@ -140,9 +140,13 @@ export const otlpResourceLogsSchema = z.object({
 /**
  * OTLP Logs schema (IExportLogsServiceRequest)
  */
-export const otlpLogsSchema = z.object({
-  resourceLogs: z.array(otlpResourceLogsSchema).optional(),
-});
+export const otlpLogsSchema = z
+  .object({
+    resourceLogs: z.array(otlpResourceLogsSchema).optional(),
+  })
+  .refine((data) => 'resourceLogs' in data, {
+    message: 'OTLP logs must have resourceLogs field',
+  });
 
 /**
  * OTLP NumberDataPoint schema
@@ -201,9 +205,13 @@ export const otlpResourceMetricsSchema = z.object({
 /**
  * OTLP Metrics schema (IExportMetricsServiceRequest)
  */
-export const otlpMetricsSchema = z.object({
-  resourceMetrics: z.array(otlpResourceMetricsSchema).optional(),
-});
+export const otlpMetricsSchema = z
+  .object({
+    resourceMetrics: z.array(otlpResourceMetricsSchema).optional(),
+  })
+  .refine((data) => 'resourceMetrics' in data, {
+    message: 'OTLP metrics must have resourceMetrics field',
+  });
 
 /**
  * Combined schema for all Claude Code formats (auto-detect)

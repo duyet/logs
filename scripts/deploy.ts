@@ -79,7 +79,7 @@ function main(): void {
     console.log();
     logSuccess('Deployment completed successfully! 🎉');
     log('🌐', 'Your site is now live at: https://logs.duyet.net');
-  } catch (error) {
+  } catch (error: unknown) {
     logError('Deployment failed!');
     if (error instanceof Error) {
       console.error(error.message);
