@@ -144,13 +144,11 @@ async function sendEvent(
       body: JSON.stringify(data),
     });
 
-     
     const result = await response.json();
 
     if (!response.ok) {
       console.error(`❌ Failed to send ${type} event:`, result);
     } else {
-       
       console.log(
         `✅ Sent ${type} event:`,
         data.metric_name ||
