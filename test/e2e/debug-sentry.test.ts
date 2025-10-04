@@ -38,7 +38,7 @@ describe('Sentry Debug Endpoint E2E', () => {
       // The endpoint should throw an error, which will be caught by Hono's error handler
       expect(res.status).toBe(500);
 
-      const data = await res.json();
+      const data = (await res.json()) as { error: string };
       expect(data).toHaveProperty('error');
       expect(data.error).toContain('Internal Server Error');
     });
