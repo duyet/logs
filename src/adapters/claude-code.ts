@@ -1,5 +1,6 @@
 import { BaseAdapter } from './base.js';
 import type { AnalyticsEngineDataPoint, IKeyValue } from '../types/index.js';
+import { DATA_TYPE, FORMAT } from '../types/constants.js';
 import {
   claudeCodeCombinedSchema,
   type ClaudeCodeData,
@@ -53,8 +54,8 @@ export class ClaudeCodeAdapter extends BaseAdapter<
 
     // Store all metadata in blobs as JSON with type classification
     const metadata = {
-      data_type: 'legacy_metric', // Classification field
-      format: 'simple',
+      data_type: DATA_TYPE.LEGACY_METRIC, // Classification field
+      format: FORMAT.SIMPLE,
       session_id: metric.session_id,
       metric_name: metric.metric_name,
       app_version: metric.app_version,
@@ -78,8 +79,8 @@ export class ClaudeCodeAdapter extends BaseAdapter<
 
     // Store all metadata in blobs as JSON with type classification
     const metadata = {
-      data_type: 'legacy_event', // Classification field
-      format: 'simple',
+      data_type: DATA_TYPE.LEGACY_EVENT, // Classification field
+      format: FORMAT.SIMPLE,
       session_id: event.session_id,
       event_name: event.event_name,
       timestamp: event.timestamp,
@@ -150,8 +151,8 @@ export class ClaudeCodeAdapter extends BaseAdapter<
 
     // Store everything in blobs with type classification
     const metadata = {
-      data_type: 'otlp_logs', // Classification field
-      format: 'otlp',
+      data_type: DATA_TYPE.OTLP_LOGS, // Classification field
+      format: FORMAT.OTLP,
       resource: resourceAttrs,
       logs: logs,
       timestamp: new Date().toISOString(),
@@ -226,8 +227,8 @@ export class ClaudeCodeAdapter extends BaseAdapter<
 
     // Store everything in blobs with type classification
     const metadata = {
-      data_type: 'otlp_metrics', // Classification field
-      format: 'otlp',
+      data_type: DATA_TYPE.OTLP_METRICS, // Classification field
+      format: FORMAT.OTLP,
       resource: resourceAttrs,
       metrics: metrics,
       timestamp: new Date().toISOString(),
