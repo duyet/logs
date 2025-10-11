@@ -269,7 +269,7 @@ describe('SelfTrackingService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify Durable Object was called
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         idFromName: ReturnType<typeof vi.fn>;
         get: ReturnType<typeof vi.fn>;
         _stub: ReturnType<typeof createMockStub>;
@@ -293,7 +293,7 @@ describe('SelfTrackingService', () => {
 
       service.incrementStats(env, data);
 
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         idFromName: ReturnType<typeof vi.fn>;
       };
       expect(namespace.idFromName).not.toHaveBeenCalled();
@@ -331,7 +331,7 @@ describe('SelfTrackingService', () => {
       const data = createSampleData();
 
       // Make fetch fail
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         _stub: ReturnType<typeof createMockStub>;
       };
       namespace._stub.fetch.mockRejectedValue(
@@ -365,12 +365,13 @@ describe('SelfTrackingService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify message structure
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         _stub: ReturnType<typeof createMockStub>;
       };
       const fetchCall = namespace._stub.fetch.mock.calls[0];
+      expect(fetchCall).toBeDefined();
       const bodyStr =
-        (fetchCall[1] as { body: string } | undefined)?.body || '{}';
+        (fetchCall?.[1] as { body: string } | undefined)?.body || '{}';
       const body = JSON.parse(bodyStr) as IncrementMessage;
 
       const expectedMessage: IncrementMessage = {
@@ -399,12 +400,13 @@ describe('SelfTrackingService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify error flag is true
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         _stub: ReturnType<typeof createMockStub>;
       };
       const fetchCall = namespace._stub.fetch.mock.calls[0];
+      expect(fetchCall).toBeDefined();
       const bodyStr =
-        (fetchCall[1] as { body: string } | undefined)?.body || '{}';
+        (fetchCall?.[1] as { body: string } | undefined)?.body || '{}';
       const body = JSON.parse(bodyStr) as IncrementMessage;
 
       expect(body.error).toBe(true);
@@ -418,7 +420,7 @@ describe('SelfTrackingService', () => {
       const data = createSampleData();
 
       // Make fetch return non-ok response
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         _stub: ReturnType<typeof createMockStub>;
       };
       namespace._stub.fetch.mockResolvedValue(
@@ -456,7 +458,7 @@ describe('SelfTrackingService', () => {
       expect(
         env.SELF_TRACKING_ANALYTICS!.writeDataPoint
       ).toHaveBeenCalledOnce();
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         _stub: ReturnType<typeof createMockStub>;
       };
       expect(namespace._stub.fetch).toHaveBeenCalledOnce();
@@ -481,7 +483,7 @@ describe('SelfTrackingService', () => {
       expect(
         env.SELF_TRACKING_ANALYTICS!.writeDataPoint
       ).toHaveBeenCalledOnce();
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         _stub: ReturnType<typeof createMockStub>;
       };
       expect(namespace._stub.fetch).toHaveBeenCalledOnce();
@@ -502,7 +504,7 @@ describe('SelfTrackingService', () => {
       expect(
         env.SELF_TRACKING_ANALYTICS!.writeDataPoint
       ).not.toHaveBeenCalled();
-      const namespace = env.SELF_TRACKING_AGGREGATOR as {
+      const namespace = env.SELF_TRACKING_AGGREGATOR as unknown as {
         idFromName: ReturnType<typeof vi.fn>;
       };
       expect(namespace.idFromName).not.toHaveBeenCalled();
