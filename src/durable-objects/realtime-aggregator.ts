@@ -28,6 +28,7 @@ import { detectBot } from '../utils/bot-detection';
 export class RealtimeAggregator implements DurableObject {
   private state: DurableObjectState;
   private windowSize = 5 * 60 * 1000; // 5 minutes in milliseconds
+  private operationLock: Promise<void> = Promise.resolve();
 
   constructor(state: DurableObjectState) {
     this.state = state;
@@ -36,19 +37,22 @@ export class RealtimeAggregator implements DurableObject {
   /**
    * Add event to current window
    * Events are stored in Durable Object storage under window-specific keys
+   * Uses serialization lock to prevent race conditions with cleanup
    */
   async addEvent(event: RealtimeEvent): Promise<void> {
-    const currentWindow = this.getCurrentWindow();
-    const key = `window:${currentWindow}`;
+    return this.withLock(async () => {
+      const currentWindow = this.getCurrentWindow();
+      const key = `window:${currentWindow}`;
 
-    // Get existing events for this window
-    const events = (await this.state.storage.get<RealtimeEvent[]>(key)) || [];
+      // Get existing events for this window
+      const events = (await this.state.storage.get<RealtimeEvent[]>(key)) || [];
 
-    // Add new event
-    events.push(event);
+      // Add new event
+      events.push(event);
 
-    // Save back to storage
-    await this.state.storage.put(key, events);
+      // Save back to storage
+      await this.state.storage.put(key, events);
+    });
   }
 
   /**
@@ -93,24 +97,34 @@ export class RealtimeAggregator implements DurableObject {
    * Cleanup windows older than current window
    * Called periodically to prevent storage bloat
    * Returns number of windows cleaned
+   * Uses serialization lock to prevent race conditions with addEvent
    */
   async cleanupOldWindows(): Promise<number> {
-    const currentWindow = this.getCurrentWindow();
-    const allData = await this.state.storage.list<RealtimeEvent[]>();
-    let cleaned = 0;
+    return this.withLock(async () => {
+      const currentWindow = this.getCurrentWindow();
+      const allData = await this.state.storage.list<RealtimeEvent[]>();
+      const keysToDelete: string[] = [];
 
-    for (const [key] of allData) {
-      if (key.startsWith('window:')) {
-        const windowTime = parseInt(key.split(':')[1] || '0', 10);
-        // Delete windows older than current window
-        if (windowTime < currentWindow - this.windowSize) {
-          await this.state.storage.delete(key);
-          cleaned++;
+      // First, collect all keys to delete
+      for (const [key] of allData) {
+        if (key.startsWith('window:')) {
+          const windowTime = parseInt(key.split(':')[1] || '0', 10);
+          // Delete windows older than current window (not including current window)
+          if (windowTime < currentWindow - this.windowSize) {
+            keysToDelete.push(key);
+          }
         }
       }
-    }
 
-    return cleaned;
+      // Then delete all at once (atomic batch operation)
+      if (keysToDelete.length > 0) {
+        await Promise.all(
+          keysToDelete.map((key) => this.state.storage.delete(key))
+        );
+      }
+
+      return keysToDelete.length;
+    });
   }
 
   /**
@@ -176,6 +190,35 @@ export class RealtimeAggregator implements DurableObject {
   private getCurrentWindow(): number {
     const now = Date.now();
     return Math.floor(now / this.windowSize) * this.windowSize;
+  }
+
+  /**
+   * Serialize async operations to prevent race conditions
+   * Implements a simple promise-based mutex lock pattern
+   *
+   * @param operation - Async function to execute atomically
+   * @returns Promise that resolves with the operation result
+   */
+  private async withLock<T>(operation: () => Promise<T>): Promise<T> {
+    // Chain the new operation after the current lock
+    const previousLock = this.operationLock;
+
+    // Create a new lock that will be released when the operation completes
+    let releaseLock: () => void;
+    this.operationLock = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+
+    try {
+      // Wait for previous operations to complete
+      await previousLock;
+
+      // Execute the operation
+      return await operation();
+    } finally {
+      // Release the lock so next operation can proceed
+      releaseLock!();
+    }
   }
 
   /**
