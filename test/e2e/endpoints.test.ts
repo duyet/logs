@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRouter } from '../../src/routes/router.js';
 import type {
@@ -74,7 +74,7 @@ describe('E2E Endpoints', () => {
         success: true,
         message: 'Data processed',
       });
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(mockEnv.CLAUDE_CODE_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -99,7 +99,7 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(200);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(mockEnv.CLAUDE_CODE_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -166,7 +166,7 @@ describe('E2E Endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(json.success).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(mockEnv.GA_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 
@@ -192,7 +192,7 @@ describe('E2E Endpoints', () => {
       );
 
       expect(res.status).toBe(200);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(mockEnv.GA_ANALYTICS.writeDataPoint).toHaveBeenCalled();
     });
 

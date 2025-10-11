@@ -190,7 +190,10 @@ describe('SelfTrackingAdapter', () => {
 
       // Should have 1 blob with JSON data
       expect(result.blobs).toHaveLength(1);
-      const blobData = JSON.parse(result.blobs?.[0] || '{}');
+      const blobData = JSON.parse(result.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
       expect(blobData).toMatchObject({
         timestamp: 1704067200000,
         endpoint: '/cc',
@@ -230,7 +233,10 @@ describe('SelfTrackingAdapter', () => {
       expect(result.doubles?.[2]).toBe(42);
 
       // Check blob data
-      const blobData = JSON.parse(result.blobs?.[0] || '{}');
+      const blobData = JSON.parse(result.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
       expect(blobData).toMatchObject({
         timestamp: 1704067200000,
         endpoint: '/cc/myproject',
@@ -262,7 +268,10 @@ describe('SelfTrackingAdapter', () => {
       const result = adapter.transform(data);
 
       // Check blob data
-      const blobData = JSON.parse(result.blobs?.[0] || '{}');
+      const blobData = JSON.parse(result.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
       expect(blobData).toMatchObject({
         status: 500,
         is_error: true,
@@ -284,7 +293,10 @@ describe('SelfTrackingAdapter', () => {
       };
 
       const result = adapter.transform(data);
-      const blobData = JSON.parse(result.blobs?.[0] || '{}');
+      const blobData = JSON.parse(result.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
 
       expect(blobData.is_error).toBe(true);
       expect(blobData.is_success).toBe(false);
@@ -300,7 +312,10 @@ describe('SelfTrackingAdapter', () => {
       };
 
       const result200 = adapter.transform(data200);
-      const blobData200 = JSON.parse(result200.blobs?.[0] || '{}');
+      const blobData200 = JSON.parse(result200.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
       expect(blobData200.is_error).toBe(false);
       expect(blobData200.is_success).toBe(true);
 
@@ -313,7 +328,10 @@ describe('SelfTrackingAdapter', () => {
       };
 
       const result301 = adapter.transform(data301);
-      const blobData301 = JSON.parse(result301.blobs?.[0] || '{}');
+      const blobData301 = JSON.parse(result301.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
       expect(blobData301.is_error).toBe(false);
       expect(blobData301.is_success).toBe(true);
     });
@@ -333,7 +351,10 @@ describe('SelfTrackingAdapter', () => {
 
       expect(result.indexes).toEqual(['context-project']);
 
-      const blobData = JSON.parse(result.blobs?.[0] || '{}');
+      const blobData = JSON.parse(result.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
       expect(blobData.project_id).toBe('context-project');
     });
 
@@ -353,7 +374,10 @@ describe('SelfTrackingAdapter', () => {
 
       expect(result.indexes).toEqual(['myproject']);
 
-      const blobData = JSON.parse(result.blobs?.[0] || '{}');
+      const blobData = JSON.parse(result.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
       expect(blobData.project_id).toBe('myproject');
     });
 
@@ -389,10 +413,13 @@ describe('SelfTrackingAdapter', () => {
       };
 
       const result = adapter.transform(data);
-      const blobData = JSON.parse(result.blobs?.[0] || '{}');
+      const blobData = JSON.parse(result.blobs?.[0] || '{}') as Record<
+        string,
+        unknown
+      >;
 
       // Error stack should be truncated to 2000 bytes
-      expect(blobData.error_stack.length).toBeLessThanOrEqual(2000);
+      expect(String(blobData.error_stack).length).toBeLessThanOrEqual(2000);
     });
 
     it('should truncate entire blob to 5120 bytes if needed', () => {

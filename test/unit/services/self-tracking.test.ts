@@ -7,12 +7,16 @@ import type {
 } from '../../../src/types/self-tracking.js';
 
 // Mock Analytics Engine dataset
-const createMockDataset = () => ({
+const createMockDataset = (): {
+  writeDataPoint: ReturnType<typeof vi.fn>;
+} => ({
   writeDataPoint: vi.fn(),
 });
 
 // Mock Durable Object stub
-const createMockStub = () => ({
+const createMockStub = (): {
+  fetch: ReturnType<typeof vi.fn>;
+} => ({
   fetch: vi.fn().mockResolvedValue(
     new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -22,7 +26,11 @@ const createMockStub = () => ({
 });
 
 // Mock Durable Object namespace
-const createMockNamespace = () => {
+const createMockNamespace = (): {
+  idFromName: ReturnType<typeof vi.fn>;
+  get: ReturnType<typeof vi.fn>;
+  _stub: ReturnType<typeof createMockStub>;
+} => {
   const stub = createMockStub();
   return {
     idFromName: vi.fn().mockReturnValue('mock-id'),
@@ -159,8 +167,9 @@ describe('SelfTrackingService', () => {
       // Wait for next tick
       return new Promise((resolve) => {
         setTimeout(() => {
+          expect(env.SELF_TRACKING_ANALYTICS).toBeDefined();
           expect(
-            env.SELF_TRACKING_ANALYTICS?.writeDataPoint
+            env.SELF_TRACKING_ANALYTICS!.writeDataPoint
           ).toHaveBeenCalledOnce();
           resolve(undefined);
         }, 10);
@@ -175,8 +184,9 @@ describe('SelfTrackingService', () => {
       service.trackRequest(env, data);
 
       // Should not write
+      expect(env.SELF_TRACKING_ANALYTICS).toBeDefined();
       expect(
-        env.SELF_TRACKING_ANALYTICS?.writeDataPoint
+        env.SELF_TRACKING_ANALYTICS!.writeDataPoint
       ).not.toHaveBeenCalled();
     });
 
@@ -230,8 +240,9 @@ describe('SelfTrackingService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify writeDataPoint was called
+      expect(env.SELF_TRACKING_ANALYTICS).toBeDefined();
       expect(
-        env.SELF_TRACKING_ANALYTICS?.writeDataPoint
+        env.SELF_TRACKING_ANALYTICS!.writeDataPoint
       ).toHaveBeenCalledOnce();
 
       // Check that the data point has project_id as index
@@ -358,7 +369,9 @@ describe('SelfTrackingService', () => {
         _stub: ReturnType<typeof createMockStub>;
       };
       const fetchCall = namespace._stub.fetch.mock.calls[0];
-      const body = JSON.parse(fetchCall[1]?.body as string);
+      const bodyStr =
+        (fetchCall[1] as { body: string } | undefined)?.body || '{}';
+      const body = JSON.parse(bodyStr) as IncrementMessage;
 
       const expectedMessage: IncrementMessage = {
         timestamp: 1704067200000,
@@ -390,7 +403,9 @@ describe('SelfTrackingService', () => {
         _stub: ReturnType<typeof createMockStub>;
       };
       const fetchCall = namespace._stub.fetch.mock.calls[0];
-      const body = JSON.parse(fetchCall[1]?.body as string);
+      const bodyStr =
+        (fetchCall[1] as { body: string } | undefined)?.body || '{}';
+      const body = JSON.parse(bodyStr) as IncrementMessage;
 
       expect(body.error).toBe(true);
     });
@@ -437,8 +452,9 @@ describe('SelfTrackingService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify both were called
+      expect(env.SELF_TRACKING_ANALYTICS).toBeDefined();
       expect(
-        env.SELF_TRACKING_ANALYTICS?.writeDataPoint
+        env.SELF_TRACKING_ANALYTICS!.writeDataPoint
       ).toHaveBeenCalledOnce();
       const namespace = env.SELF_TRACKING_AGGREGATOR as {
         _stub: ReturnType<typeof createMockStub>;
@@ -461,8 +477,9 @@ describe('SelfTrackingService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Verify both were called
+      expect(env.SELF_TRACKING_ANALYTICS).toBeDefined();
       expect(
-        env.SELF_TRACKING_ANALYTICS?.writeDataPoint
+        env.SELF_TRACKING_ANALYTICS!.writeDataPoint
       ).toHaveBeenCalledOnce();
       const namespace = env.SELF_TRACKING_AGGREGATOR as {
         _stub: ReturnType<typeof createMockStub>;
@@ -481,8 +498,9 @@ describe('SelfTrackingService', () => {
       service.track(env, data);
 
       // Should not call anything
+      expect(env.SELF_TRACKING_ANALYTICS).toBeDefined();
       expect(
-        env.SELF_TRACKING_ANALYTICS?.writeDataPoint
+        env.SELF_TRACKING_ANALYTICS!.writeDataPoint
       ).not.toHaveBeenCalled();
       const namespace = env.SELF_TRACKING_AGGREGATOR as {
         idFromName: ReturnType<typeof vi.fn>;

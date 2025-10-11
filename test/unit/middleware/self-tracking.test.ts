@@ -4,12 +4,16 @@ import type { Context } from 'hono';
 import type { Env } from '../../../src/types/index.js';
 
 // Mock dataset
-const createMockDataset = () => ({
+const createMockDataset = (): {
+  writeDataPoint: ReturnType<typeof vi.fn>;
+} => ({
   writeDataPoint: vi.fn(),
 });
 
 // Mock Durable Object stub
-const createMockStub = () => ({
+const createMockStub = (): {
+  fetch: ReturnType<typeof vi.fn>;
+} => ({
   fetch: vi.fn().mockResolvedValue(
     new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -19,7 +23,11 @@ const createMockStub = () => ({
 });
 
 // Mock Durable Object namespace
-const createMockNamespace = () => {
+const createMockNamespace = (): {
+  idFromName: ReturnType<typeof vi.fn>;
+  get: ReturnType<typeof vi.fn>;
+  _stub: ReturnType<typeof createMockStub>;
+} => {
   const stub = createMockStub();
   return {
     idFromName: vi.fn().mockReturnValue('mock-id'),
@@ -144,7 +152,8 @@ describe('selfTrackingMiddleware', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Should call waitUntil
-      expect(context.executionCtx?.waitUntil).toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).toHaveBeenCalled();
     });
 
     it('should not track when disabled', async () => {
@@ -156,7 +165,8 @@ describe('selfTrackingMiddleware', () => {
       await selfTrackingMiddleware(context, next);
 
       // Should not call waitUntil
-      expect(context.executionCtx?.waitUntil).not.toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).not.toHaveBeenCalled();
     });
 
     it('should calculate response time correctly', async () => {
@@ -193,7 +203,8 @@ describe('selfTrackingMiddleware', () => {
 
       await selfTrackingMiddleware(context, next);
 
-      expect(context.executionCtx?.waitUntil).not.toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).not.toHaveBeenCalled();
     });
 
     it('should exclude /robots.txt', async () => {
@@ -203,7 +214,8 @@ describe('selfTrackingMiddleware', () => {
 
       await selfTrackingMiddleware(context, next);
 
-      expect(context.executionCtx?.waitUntil).not.toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).not.toHaveBeenCalled();
     });
 
     it('should exclude /.well-known/ paths', async () => {
@@ -215,7 +227,8 @@ describe('selfTrackingMiddleware', () => {
 
       await selfTrackingMiddleware(context, next);
 
-      expect(context.executionCtx?.waitUntil).not.toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).not.toHaveBeenCalled();
     });
 
     it('should exclude /api/stats/ paths to avoid self-loops', async () => {
@@ -225,7 +238,8 @@ describe('selfTrackingMiddleware', () => {
 
       await selfTrackingMiddleware(context, next);
 
-      expect(context.executionCtx?.waitUntil).not.toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).not.toHaveBeenCalled();
     });
 
     it('should track normal paths', async () => {
@@ -238,7 +252,8 @@ describe('selfTrackingMiddleware', () => {
 
       await selfTrackingMiddleware(context, next);
 
-      expect(context.executionCtx?.waitUntil).toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).toHaveBeenCalled();
     });
   });
 
@@ -261,7 +276,8 @@ describe('selfTrackingMiddleware', () => {
       expect(next).toHaveBeenCalledOnce();
 
       // Verify waitUntil was called with promises (tracking was initiated)
-      expect(context.executionCtx?.waitUntil).toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).toHaveBeenCalled();
 
       // Note: Detailed assertions about what data was tracked are covered
       // by the service unit tests. Middleware tests focus on the contract:
@@ -291,7 +307,8 @@ describe('selfTrackingMiddleware', () => {
       );
 
       // Should still call waitUntil (tracking was initiated)
-      expect(context.executionCtx?.waitUntil).toHaveBeenCalled();
+      expect(context.executionCtx).toBeDefined();
+      expect(context.executionCtx!.waitUntil).toHaveBeenCalled();
 
       // Note: Error tracking details are tested in service unit tests
     });
