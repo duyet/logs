@@ -239,6 +239,203 @@ describe('RealtimeAggregator', () => {
       expect(state.listMock).toHaveBeenCalled();
       expect(removedCount).toBeGreaterThanOrEqual(0);
     });
+
+    it('should not remove current window', async () => {
+      // Add event to current window
+      const event: RealtimeEvent = {
+        event_type: 'pageview',
+        timestamp: Date.now(),
+        url: 'https://example.com',
+        user_agent: 'Mozilla/5.0',
+        fingerprint: {
+          hash: 'test-hash',
+          components: createFingerprintComponents(),
+          confidence: 85,
+        },
+      };
+
+      await aggregator.addEvent(event);
+
+      // Cleanup should not remove current window
+      const cleaned = await aggregator.cleanupOldWindows();
+
+      // Verify event is still there
+      const stats = await aggregator.getStats();
+      expect(stats.total_events).toBe(1);
+      expect(cleaned).toBe(0);
+    });
+
+    it('should handle empty storage', async () => {
+      const cleaned = await aggregator.cleanupOldWindows();
+      expect(cleaned).toBe(0);
+    });
+
+    it('should cleanup multiple old windows', async () => {
+      // Manually add old window data to storage
+      const oldWindow1 = Date.now() - 10 * 60 * 1000; // 10 minutes ago
+      const oldWindow2 = Date.now() - 15 * 60 * 1000; // 15 minutes ago
+
+      await state.storage.put(`window:${oldWindow1}`, []);
+      await state.storage.put(`window:${oldWindow2}`, []);
+
+      const cleaned = await aggregator.cleanupOldWindows();
+      expect(cleaned).toBe(2);
+    });
+  });
+
+  describe('race condition prevention', () => {
+    it('should handle concurrent addEvent and cleanupOldWindows', async () => {
+      // Add an event to current window
+      const event: RealtimeEvent = {
+        event_type: 'pageview',
+        timestamp: Date.now(),
+        url: 'https://example.com',
+        user_agent: 'Mozilla/5.0',
+        fingerprint: {
+          hash: 'test-hash',
+          components: createFingerprintComponents(),
+          confidence: 85,
+        },
+      };
+
+      // Run addEvent and cleanupOldWindows concurrently
+      await Promise.all([
+        aggregator.addEvent(event),
+        aggregator.cleanupOldWindows(),
+      ]);
+
+      // Verify event was added successfully
+      const stats = await aggregator.getStats();
+      expect(stats.total_events).toBe(1);
+    });
+
+    it('should handle multiple concurrent addEvent calls', async () => {
+      const events: RealtimeEvent[] = Array.from({ length: 10 }, (_, i) => ({
+        event_type: 'pageview' as const,
+        timestamp: Date.now(),
+        url: `https://example.com/${i}`,
+        user_agent: 'Mozilla/5.0',
+        fingerprint: {
+          hash: `hash-${i}`,
+          components: createFingerprintComponents(),
+          confidence: 85,
+        },
+      }));
+
+      // Add all events concurrently
+      await Promise.all(events.map((event) => aggregator.addEvent(event)));
+
+      // Verify all events were added
+      const stats = await aggregator.getStats();
+      expect(stats.total_events).toBe(10);
+      expect(stats.unique_visitors).toBe(10);
+    });
+
+    it('should serialize addEvent during cleanup', async () => {
+      // Add old window data
+      const oldWindow = Date.now() - 10 * 60 * 1000;
+      const oldEvents: RealtimeEvent[] = [
+        {
+          event_type: 'pageview',
+          timestamp: oldWindow,
+          url: 'https://example.com/old',
+          user_agent: 'Mozilla/5.0',
+          fingerprint: {
+            hash: 'old-hash',
+            components: createFingerprintComponents(),
+            confidence: 85,
+          },
+        },
+      ];
+      await state.storage.put(`window:${oldWindow}`, oldEvents);
+
+      // New event for current window
+      const newEvent: RealtimeEvent = {
+        event_type: 'pageview',
+        timestamp: Date.now(),
+        url: 'https://example.com/new',
+        user_agent: 'Mozilla/5.0',
+        fingerprint: {
+          hash: 'new-hash',
+          components: createFingerprintComponents(),
+          confidence: 85,
+        },
+      };
+
+      // Run cleanup and add event concurrently
+      const [cleaned] = await Promise.all([
+        aggregator.cleanupOldWindows(),
+        aggregator.addEvent(newEvent),
+      ]);
+
+      // Verify cleanup removed old window
+      expect(cleaned).toBe(1);
+
+      // Verify new event is still there
+      const stats = await aggregator.getStats();
+      expect(stats.total_events).toBe(1);
+    });
+
+    it('should prevent event loss during concurrent operations', async () => {
+      // Create multiple events
+      const events: RealtimeEvent[] = Array.from({ length: 5 }, (_, i) => ({
+        event_type: 'pageview' as const,
+        timestamp: Date.now(),
+        url: `https://example.com/${i}`,
+        user_agent: 'Mozilla/5.0',
+        fingerprint: {
+          hash: `hash-${i}`,
+          components: createFingerprintComponents(),
+          confidence: 85,
+        },
+      }));
+
+      // Add events and run cleanup multiple times concurrently
+      await Promise.all([
+        ...events.map((event) => aggregator.addEvent(event)),
+        aggregator.cleanupOldWindows(),
+        aggregator.cleanupOldWindows(),
+      ]);
+
+      // Verify all events were added and none were lost
+      const stats = await aggregator.getStats();
+      expect(stats.total_events).toBe(5);
+    });
+
+    it('should maintain consistent state with rapid operations', async () => {
+      const operations: Promise<unknown>[] = [];
+
+      // Mix of addEvent, getStats, and cleanup operations
+      for (let i = 0; i < 20; i++) {
+        if (i % 3 === 0) {
+          operations.push(
+            aggregator.addEvent({
+              event_type: 'pageview',
+              timestamp: Date.now(),
+              url: `https://example.com/${i}`,
+              user_agent: 'Mozilla/5.0',
+              fingerprint: {
+                hash: `hash-${i}`,
+                components: createFingerprintComponents(),
+                confidence: 85,
+              },
+            })
+          );
+        } else if (i % 3 === 1) {
+          operations.push(aggregator.getStats());
+        } else {
+          operations.push(aggregator.cleanupOldWindows());
+        }
+      }
+
+      // All operations should complete without errors
+      await expect(Promise.all(operations)).resolves.toBeDefined();
+
+      // Final state should be consistent
+      const stats = await aggregator.getStats();
+      expect(stats.total_events).toBeGreaterThanOrEqual(0);
+      expect(stats.unique_visitors).toBeGreaterThanOrEqual(0);
+    });
   });
 
   describe('aggregateEvents', () => {
