@@ -16,6 +16,7 @@ import { detectBot } from '../utils/bot-detection';
  * - Browser, OS, device type breakdown
  * - Bot vs human traffic classification
  * - Automatic cleanup of old windows
+ * - Memory-bounded event storage (FIFO queue with max 10,000 events)
  *
  * Storage keys:
  * - `window:{timestamp}` → RealtimeEvent[] (events for that window)
@@ -24,20 +25,45 @@ import { detectBot } from '../utils/bot-detection';
  * - Window size: 5 minutes (300,000ms)
  * - Current window = floor(now / windowSize) * windowSize
  * - This ensures all requests in same 5-min period use same window
+ *
+ * Memory Management:
+ * - MAX_EVENTS_PER_WINDOW prevents unbounded growth
+ * - FIFO queue: oldest events removed when limit reached
+ * - Aggregated stats remain accurate (computed from current events)
+ * - Estimated memory: ~5MB per window (10K events × ~500 bytes)
  */
 export class RealtimeAggregator implements DurableObject {
   private state: DurableObjectState;
   private windowSize = 5 * 60 * 1000; // 5 minutes in milliseconds
   private operationLock: Promise<void> = Promise.resolve();
 
+  /**
+   * Maximum events per window to prevent memory exhaustion
+   * At 10,000 events × ~500 bytes = ~5MB per window
+   * This prevents OOM crashes in high-traffic scenarios (1000+ events/sec)
+   */
+  private static readonly MAX_EVENTS_PER_WINDOW = 10_000;
+
+  /**
+   * Approximate size of a typical RealtimeEvent in bytes
+   * Used for memory usage estimation
+   */
+  private static readonly APPROX_EVENT_SIZE_BYTES = 500;
+
   constructor(state: DurableObjectState) {
     this.state = state;
   }
 
   /**
-   * Add event to current window
+   * Add event to current window with FIFO queue behavior
    * Events are stored in Durable Object storage under window-specific keys
    * Uses serialization lock to prevent race conditions with cleanup
+   *
+   * Memory Management:
+   * - Enforces MAX_EVENTS_PER_WINDOW limit to prevent memory exhaustion
+   * - When limit reached, removes oldest events (FIFO)
+   * - Aggregated stats remain accurate (computed from current events)
+   * - Logs warning when approaching memory limits
    */
   async addEvent(event: RealtimeEvent): Promise<void> {
     return this.withLock(async () => {
@@ -49,6 +75,29 @@ export class RealtimeAggregator implements DurableObject {
 
       // Add new event
       events.push(event);
+
+      // Enforce FIFO queue limit to prevent memory exhaustion
+      if (events.length > RealtimeAggregator.MAX_EVENTS_PER_WINDOW) {
+        const eventsToRemove =
+          events.length - RealtimeAggregator.MAX_EVENTS_PER_WINDOW;
+        const removedEvents = events.splice(0, eventsToRemove);
+
+        // Log warning if removing significant number of events
+        if (eventsToRemove > 100) {
+          console.warn(
+            `[RealtimeAggregator] Memory limit reached for window ${currentWindow}. ` +
+              `Removed ${eventsToRemove} oldest events (kept ${events.length}). ` +
+              `Current memory estimate: ${this.estimateMemoryUsage(events.length)}MB`
+          );
+        }
+
+        // Optional: Log removed event details for debugging (disabled by default)
+        if (process.env.DEBUG_EVENT_REMOVAL === 'true') {
+          console.debug(
+            `[RealtimeAggregator] Removed events: ${JSON.stringify(removedEvents.slice(0, 3))}...`
+          );
+        }
+      }
 
       // Save back to storage
       await this.state.storage.put(key, events);
@@ -133,6 +182,7 @@ export class RealtimeAggregator implements DurableObject {
    * - POST /event - Add new event
    * - GET /stats - Get current stats
    * - GET /data - Get full aggregated data
+   * - GET /memory - Get memory statistics
    * - POST /cleanup - Trigger cleanup
    */
   async fetch(request: Request): Promise<Response> {
@@ -164,6 +214,14 @@ export class RealtimeAggregator implements DurableObject {
         });
       }
 
+      // GET /memory - Get memory statistics
+      if (request.method === 'GET' && url.pathname === '/memory') {
+        const memStats = await this.getMemoryStats();
+        return new Response(JSON.stringify(memStats), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
       // POST /cleanup - Trigger cleanup
       if (request.method === 'POST' && url.pathname === '/cleanup') {
         const cleaned = await this.cleanupOldWindows();
@@ -190,6 +248,48 @@ export class RealtimeAggregator implements DurableObject {
   private getCurrentWindow(): number {
     const now = Date.now();
     return Math.floor(now / this.windowSize) * this.windowSize;
+  }
+
+  /**
+   * Estimate memory usage in MB for given number of events
+   * Uses conservative estimate of 500 bytes per event
+   *
+   * @param eventCount - Number of events in memory
+   * @returns Estimated memory usage in MB
+   */
+  private estimateMemoryUsage(eventCount: number): number {
+    const bytes = eventCount * RealtimeAggregator.APPROX_EVENT_SIZE_BYTES;
+    return Math.round((bytes / (1024 * 1024)) * 100) / 100; // Round to 2 decimal places
+  }
+
+  /**
+   * Get memory statistics for current window
+   * Used for monitoring and debugging
+   *
+   * @returns Memory stats including event count, estimated size, and limit
+   */
+  private async getMemoryStats(): Promise<{
+    eventCount: number;
+    estimatedMemoryMB: number;
+    maxEvents: number;
+    utilizationPercent: number;
+  }> {
+    const currentWindow = this.getCurrentWindow();
+    const key = `window:${currentWindow}`;
+    const events = (await this.state.storage.get<RealtimeEvent[]>(key)) || [];
+
+    const eventCount = events.length;
+    const estimatedMemoryMB = this.estimateMemoryUsage(eventCount);
+    const maxEvents = RealtimeAggregator.MAX_EVENTS_PER_WINDOW;
+    const utilizationPercent =
+      Math.round((eventCount / maxEvents) * 100 * 100) / 100;
+
+    return {
+      eventCount,
+      estimatedMemoryMB,
+      maxEvents,
+      utilizationPercent,
+    };
   }
 
   /**

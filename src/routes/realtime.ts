@@ -45,25 +45,55 @@ realtimeRouter.post('/', async (c) => {
     // Transform to Analytics Engine format
     const dataPoint = adapter.transform(event, serverContext);
 
-    // Write to Analytics Engine (long-term storage)
+    // Write to Analytics Engine (PRIMARY - long-term storage, must succeed)
     if (!c.env.REALTIME_ANALYTICS) {
       return c.json({ error: 'REALTIME_ANALYTICS not configured' }, 503);
     }
-    c.env.REALTIME_ANALYTICS.writeDataPoint(dataPoint);
 
-    // Forward to Durable Object (5-min window aggregation)
-    if (!c.env.REALTIME_AGGREGATOR) {
-      return c.json({ error: 'REALTIME_AGGREGATOR not configured' }, 503);
+    try {
+      c.env.REALTIME_ANALYTICS.writeDataPoint(dataPoint);
+    } catch (error) {
+      console.error('Analytics Engine write failed (critical):', {
+        error: error instanceof Error ? error.message : String(error),
+        project_id: projectId,
+        event_type: event.event_type,
+      });
+      return c.json(
+        { error: 'Failed to store event to Analytics Engine' },
+        500
+      );
     }
-    const doId = c.env.REALTIME_AGGREGATOR.idFromName(projectId || 'default');
-    const stub = c.env.REALTIME_AGGREGATOR.get(doId);
-    await stub.fetch(
-      new Request('http://do/event', {
-        method: 'POST',
-        body: JSON.stringify(event),
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
+
+    // Forward to Durable Object (SECONDARY - real-time aggregation, can fail gracefully)
+    if (!c.env.REALTIME_AGGREGATOR) {
+      console.warn(
+        'REALTIME_AGGREGATOR not configured, skipping real-time aggregation'
+      );
+    } else {
+      try {
+        const doId = c.env.REALTIME_AGGREGATOR.idFromName(
+          projectId || 'default'
+        );
+        const stub = c.env.REALTIME_AGGREGATOR.get(doId);
+        await stub.fetch(
+          new Request('http://do/event', {
+            method: 'POST',
+            body: JSON.stringify(event),
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+      } catch (error) {
+        // Log but don't fail - real-time stats are ephemeral and self-healing
+        console.warn(
+          'Durable Object write failed (non-critical, real-time stats may be delayed):',
+          {
+            error: error instanceof Error ? error.message : String(error),
+            project_id: projectId,
+            event_type: event.event_type,
+          }
+        );
+      }
+    }
 
     return c.json({ success: true });
   } catch (error) {

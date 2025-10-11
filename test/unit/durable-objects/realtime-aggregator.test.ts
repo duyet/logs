@@ -494,4 +494,461 @@ describe('RealtimeAggregator', () => {
       expect(stats.human_traffic).toBeGreaterThan(0);
     });
   });
+
+  describe('memory management (BUG-004 fix)', () => {
+    describe('event limit enforcement', () => {
+      it('should enforce MAX_EVENTS_PER_WINDOW limit (10,000)', async () => {
+        // Add 15,000 events to trigger FIFO queue behavior
+        const eventCount = 15_000;
+        const events: RealtimeEvent[] = Array.from(
+          { length: eventCount },
+          (_, i) => ({
+            event_type: 'pageview' as const,
+            timestamp: Date.now() + i,
+            url: `https://example.com/${i}`,
+            user_agent: 'Mozilla/5.0',
+            fingerprint: {
+              hash: `hash-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          })
+        );
+
+        // Add all events
+        for (const event of events) {
+          await aggregator.addEvent(event);
+        }
+
+        // Verify only 10,000 events are kept
+        const stats = await aggregator.getStats();
+        expect(stats.total_events).toBe(10_000);
+      });
+
+      it('should handle events exactly at limit', async () => {
+        // Add exactly 10,000 events
+        const eventCount = 10_000;
+        const events: RealtimeEvent[] = Array.from(
+          { length: eventCount },
+          (_, i) => ({
+            event_type: 'pageview' as const,
+            timestamp: Date.now() + i,
+            url: `https://example.com/${i}`,
+            user_agent: 'Mozilla/5.0',
+            fingerprint: {
+              hash: `hash-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          })
+        );
+
+        // Add all events
+        for (const event of events) {
+          await aggregator.addEvent(event);
+        }
+
+        // Verify all 10,000 events are kept
+        const stats = await aggregator.getStats();
+        expect(stats.total_events).toBe(10_000);
+
+        // Add one more event
+        await aggregator.addEvent({
+          event_type: 'pageview',
+          timestamp: Date.now(),
+          url: 'https://example.com/extra',
+          user_agent: 'Mozilla/5.0',
+          fingerprint: {
+            hash: 'hash-extra',
+            components: createFingerprintComponents(),
+            confidence: 85,
+          },
+        });
+
+        // Should still be 10,000 (oldest removed)
+        const newStats = await aggregator.getStats();
+        expect(newStats.total_events).toBe(10_000);
+      });
+    });
+
+    describe('FIFO queue behavior', () => {
+      it('should remove oldest events first when limit exceeded', async () => {
+        // Add events with unique identifiable URLs
+        const eventCount = 10_500;
+        const events: RealtimeEvent[] = Array.from(
+          { length: eventCount },
+          (_, i) => ({
+            event_type: 'pageview' as const,
+            timestamp: Date.now() + i,
+            url: `https://example.com/event-${i}`,
+            user_agent: 'Mozilla/5.0',
+            fingerprint: {
+              hash: `hash-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          })
+        );
+
+        // Add all events
+        for (const event of events) {
+          await aggregator.addEvent(event);
+        }
+
+        // Get aggregated data with event list
+        const data = await aggregator.getAggregatedData();
+
+        // Should have 10,000 events (500 oldest removed)
+        expect(data.events.length).toBe(10_000);
+
+        // First event should be event-500 (oldest 500 removed)
+        expect(data.events[0]?.url).toBe('https://example.com/event-500');
+
+        // Last event should be event-10499
+        expect(data.events[data.events.length - 1]?.url).toBe(
+          'https://example.com/event-10499'
+        );
+      });
+
+      it('should maintain FIFO order with multiple batches', async () => {
+        // Add first batch: 10,000 events
+        for (let i = 0; i < 10_000; i++) {
+          await aggregator.addEvent({
+            event_type: 'pageview',
+            timestamp: Date.now() + i,
+            url: `https://example.com/batch1-${i}`,
+            user_agent: 'Mozilla/5.0',
+            fingerprint: {
+              hash: `hash1-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          });
+        }
+
+        // Add second batch: 5,000 events (should remove 5,000 oldest from batch 1)
+        for (let i = 0; i < 5_000; i++) {
+          await aggregator.addEvent({
+            event_type: 'pageview',
+            timestamp: Date.now() + 10_000 + i,
+            url: `https://example.com/batch2-${i}`,
+            user_agent: 'Mozilla/5.0',
+            fingerprint: {
+              hash: `hash2-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          });
+        }
+
+        const data = await aggregator.getAggregatedData();
+
+        // Should have 10,000 events
+        expect(data.events.length).toBe(10_000);
+
+        // First event should be from batch 1, starting at index 5000
+        expect(data.events[0]?.url).toBe('https://example.com/batch1-5000');
+
+        // Should have mix of batch1 (last 5000) and batch2 (all 5000)
+        const batch1Count = data.events.filter((e) =>
+          e.url.includes('batch1')
+        ).length;
+        const batch2Count = data.events.filter((e) =>
+          e.url.includes('batch2')
+        ).length;
+
+        expect(batch1Count).toBe(5_000);
+        expect(batch2Count).toBe(5_000);
+      });
+    });
+
+    describe('stats accuracy after event removal', () => {
+      it('should maintain accurate stats after FIFO removal', async () => {
+        // Add 12,000 events with specific patterns
+        // First 2,000: Chrome Windows
+        for (let i = 0; i < 2_000; i++) {
+          await aggregator.addEvent({
+            event_type: 'pageview',
+            timestamp: Date.now() + i,
+            url: `https://example.com/${i}`,
+            user_agent:
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            fingerprint: {
+              hash: `hash-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          });
+        }
+
+        // Next 10,000: Firefox macOS
+        for (let i = 2_000; i < 12_000; i++) {
+          await aggregator.addEvent({
+            event_type: 'click',
+            timestamp: Date.now() + i,
+            url: `https://example.com/${i}`,
+            user_agent:
+              'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0',
+            fingerprint: {
+              hash: `hash-${i}`,
+              components: createFingerprintComponents({
+                platform: 'MacIntel',
+              }),
+              confidence: 85,
+            },
+          });
+        }
+
+        const stats = await aggregator.getStats();
+
+        // Should have 10,000 events (2,000 oldest Chrome removed)
+        expect(stats.total_events).toBe(10_000);
+
+        // All remaining events should be Firefox clicks
+        expect(stats.clicks).toBe(10_000);
+        expect(stats.pageviews).toBe(0);
+
+        // Browser stats should reflect only remaining events
+        expect(stats.browsers.Chrome).toBeUndefined();
+        expect(stats.browsers.Firefox).toBe(10_000);
+      });
+
+      it('should correctly count unique visitors after removal', async () => {
+        // Add 15,000 events from 1,000 unique visitors (15 events each)
+        const uniqueVisitors = 1_000;
+        const eventsPerVisitor = 15;
+
+        for (let i = 0; i < uniqueVisitors; i++) {
+          for (let j = 0; j < eventsPerVisitor; j++) {
+            await aggregator.addEvent({
+              event_type: 'pageview',
+              timestamp: Date.now() + i * eventsPerVisitor + j,
+              url: `https://example.com/${i}-${j}`,
+              user_agent: 'Mozilla/5.0',
+              fingerprint: {
+                hash: `visitor-${i}`, // Same hash for same visitor
+                components: createFingerprintComponents(),
+                confidence: 85,
+              },
+            });
+          }
+        }
+
+        const stats = await aggregator.getStats();
+
+        // Should have 10,000 events
+        expect(stats.total_events).toBe(10_000);
+
+        // Should still track unique visitors correctly
+        // First 5,000 events removed = first ~333 visitors completely removed
+        // Remaining events from ~667 visitors
+        expect(stats.unique_visitors).toBeGreaterThan(600);
+        expect(stats.unique_visitors).toBeLessThanOrEqual(1_000);
+      });
+    });
+
+    describe('memory usage estimation', () => {
+      it('should estimate memory usage correctly', async () => {
+        // Add known number of events
+        const eventCount = 5_000;
+
+        for (let i = 0; i < eventCount; i++) {
+          await aggregator.addEvent({
+            event_type: 'pageview',
+            timestamp: Date.now() + i,
+            url: `https://example.com/${i}`,
+            user_agent: 'Mozilla/5.0',
+            fingerprint: {
+              hash: `hash-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          });
+        }
+
+        // Get memory stats via HTTP endpoint
+        const request = new Request('http://do/memory', {
+          method: 'GET',
+        });
+
+        const response = await aggregator.fetch(request);
+        const memStats = (await response.json()) as any;
+
+        expect(memStats.eventCount).toBe(5_000);
+        expect(memStats.maxEvents).toBe(10_000);
+        expect(memStats.utilizationPercent).toBe(50);
+        expect(memStats.estimatedMemoryMB).toBeGreaterThan(0);
+        expect(memStats.estimatedMemoryMB).toBeLessThan(10); // Should be around 2.5MB
+      });
+
+      it('should show high utilization near limit', async () => {
+        // Add 9,500 events (95% of limit)
+        const eventCount = 9_500;
+
+        for (let i = 0; i < eventCount; i++) {
+          await aggregator.addEvent({
+            event_type: 'pageview',
+            timestamp: Date.now() + i,
+            url: `https://example.com/${i}`,
+            user_agent: 'Mozilla/5.0',
+            fingerprint: {
+              hash: `hash-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          });
+        }
+
+        const request = new Request('http://do/memory', {
+          method: 'GET',
+        });
+
+        const response = await aggregator.fetch(request);
+        const memStats = (await response.json()) as any;
+
+        expect(memStats.eventCount).toBe(9_500);
+        expect(memStats.utilizationPercent).toBe(95);
+      });
+    });
+
+    describe('high-traffic scenarios', () => {
+      it('should handle rapid event addition (1000+ events)', async () => {
+        const eventCount = 1_500;
+        const events: RealtimeEvent[] = Array.from(
+          { length: eventCount },
+          (_, i) => ({
+            event_type: 'pageview' as const,
+            timestamp: Date.now() + i,
+            url: `https://example.com/${i}`,
+            user_agent: 'Mozilla/5.0',
+            fingerprint: {
+              hash: `hash-${i}`,
+              components: createFingerprintComponents(),
+              confidence: 85,
+            },
+          })
+        );
+
+        // Add all events rapidly
+        await Promise.all(events.map((event) => aggregator.addEvent(event)));
+
+        // Should handle all events without error
+        const stats = await aggregator.getStats();
+        expect(stats.total_events).toBe(1_500);
+        expect(stats.unique_visitors).toBe(1_500);
+      });
+
+      it('should maintain consistency under sustained load', async () => {
+        // Simulate 30 seconds of 100 events/sec = 3,000 events
+        const batchSize = 100;
+        const batches = 30;
+
+        for (let batch = 0; batch < batches; batch++) {
+          const events: RealtimeEvent[] = Array.from(
+            { length: batchSize },
+            (_, i) => ({
+              event_type: 'pageview' as const,
+              timestamp: Date.now() + batch * batchSize + i,
+              url: `https://example.com/batch${batch}-${i}`,
+              user_agent: 'Mozilla/5.0',
+              fingerprint: {
+                hash: `hash-${batch}-${i}`,
+                components: createFingerprintComponents(),
+                confidence: 85,
+              },
+            })
+          );
+
+          // Add batch concurrently
+          await Promise.all(events.map((event) => aggregator.addEvent(event)));
+        }
+
+        const stats = await aggregator.getStats();
+
+        // Should have 3,000 events
+        expect(stats.total_events).toBe(3_000);
+
+        // Should be well under memory limit
+        const request = new Request('http://do/memory', { method: 'GET' });
+        const response = await aggregator.fetch(request);
+        const memStats = (await response.json()) as any;
+
+        expect(memStats.utilizationPercent).toBeLessThan(50);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should handle empty window', async () => {
+        const stats = await aggregator.getStats();
+
+        expect(stats.total_events).toBe(0);
+        expect(stats.unique_visitors).toBe(0);
+
+        const request = new Request('http://do/memory', { method: 'GET' });
+        const response = await aggregator.fetch(request);
+        const memStats = (await response.json()) as any;
+
+        expect(memStats.eventCount).toBe(0);
+        expect(memStats.estimatedMemoryMB).toBe(0);
+        expect(memStats.utilizationPercent).toBe(0);
+      });
+
+      it('should handle single event', async () => {
+        await aggregator.addEvent({
+          event_type: 'pageview',
+          timestamp: Date.now(),
+          url: 'https://example.com',
+          user_agent: 'Mozilla/5.0',
+          fingerprint: {
+            hash: 'single-hash',
+            components: createFingerprintComponents(),
+            confidence: 85,
+          },
+        });
+
+        const stats = await aggregator.getStats();
+        expect(stats.total_events).toBe(1);
+
+        const request = new Request('http://do/memory', { method: 'GET' });
+        const response = await aggregator.fetch(request);
+        const memStats = (await response.json()) as any;
+
+        expect(memStats.eventCount).toBe(1);
+        expect(memStats.utilizationPercent).toBe(0.01);
+      });
+
+      it('should handle events with large custom data', async () => {
+        // Create event with large custom_data payload
+        const largeData: Record<string, unknown> = {};
+        for (let i = 0; i < 100; i++) {
+          largeData[`field${i}`] = `value${i}`.repeat(10);
+        }
+
+        await aggregator.addEvent({
+          event_type: 'custom',
+          timestamp: Date.now(),
+          url: 'https://example.com',
+          user_agent: 'Mozilla/5.0',
+          fingerprint: {
+            hash: 'large-event',
+            components: createFingerprintComponents(),
+            confidence: 85,
+          },
+          custom_data: largeData,
+        });
+
+        const stats = await aggregator.getStats();
+        expect(stats.total_events).toBe(1);
+        expect(stats.custom_events).toBe(1);
+
+        // Memory estimate should still work (1 event = 0.0005 MB, rounds to 0)
+        const request = new Request('http://do/memory', { method: 'GET' });
+        const response = await aggregator.fetch(request);
+        const memStats = (await response.json()) as any;
+
+        expect(memStats.eventCount).toBe(1);
+        expect(memStats.estimatedMemoryMB).toBeGreaterThanOrEqual(0);
+      });
+    });
+  });
 });

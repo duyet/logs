@@ -1,4 +1,10 @@
 import type { Env } from '../types/index.js';
+import {
+  sanitizeProjectId,
+  sanitizeLimit,
+  sanitizeInterval,
+  sanitizeDatasetName,
+} from '../utils/sanitization.js';
 
 /**
  * Time range for analytics queries
@@ -176,23 +182,25 @@ export class AnalyticsQueryService {
   }
 
   /**
-   * Get dataset name from environment variables
+   * Get dataset name from environment variables with validation
    */
   private getDatasetName(env: Env, binding: string): string {
     const envKey = `DATASET_${binding}` as keyof Env;
     const datasetName = env[envKey] as string | undefined;
 
-    if (!datasetName) {
-      const defaultMapping: Record<string, string> = {
-        CLAUDE_CODE_ANALYTICS: 'duyet_logs_claude_code_analytics',
-        CLAUDE_CODE_LOGS: 'duyet_logs_claude_code_logs',
-        CLAUDE_CODE_METRICS: 'duyet_logs_claude_code_metrics',
-        GA_ANALYTICS: 'duyet_logs_ga_analytics',
-      };
-      return defaultMapping[binding] || binding.toLowerCase();
-    }
+    const defaultMapping: Record<string, string> = {
+      CLAUDE_CODE_ANALYTICS: 'duyet_logs_claude_code_analytics',
+      CLAUDE_CODE_LOGS: 'duyet_logs_claude_code_logs',
+      CLAUDE_CODE_METRICS: 'duyet_logs_claude_code_metrics',
+      GA_ANALYTICS: 'duyet_logs_ga_analytics',
+    };
 
-    return datasetName;
+    const resolvedName =
+      datasetName || defaultMapping[binding] || binding.toLowerCase();
+
+    // Validate dataset name against whitelist (all known datasets)
+    const allowedDatasets = Object.values(defaultMapping);
+    return sanitizeDatasetName(resolvedName, allowedDatasets);
   }
 
   /**
@@ -215,11 +223,12 @@ export class AnalyticsQueryService {
     const timeRange = params.timeRange || this.getDefaultTimeRange();
     const datasetName = this.getDatasetName(env, params.dataset);
 
-    // Build SQL query
-    const projectFilter = params.projectId
-      ? `AND index1 = '${params.projectId}'`
-      : '';
-    const limit = params.limit || 10000;
+    // Sanitize inputs to prevent SQL injection
+    const sanitizedProjectId = sanitizeProjectId(params.projectId, {
+      throwOnInvalid: false,
+      logAttempts: true,
+    });
+    const sanitizedLimit = sanitizeLimit(params.limit);
 
     // Calculate time range in hours for INTERVAL
     const startTime = new Date(timeRange.start);
@@ -227,6 +236,13 @@ export class AnalyticsQueryService {
     const hoursDiff = Math.ceil(
       (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
     );
+    const sanitizedInterval = sanitizeInterval(hoursDiff);
+
+    // Build SQL query with sanitized inputs
+    // Note: project_id is validated against whitelist pattern, safe for interpolation
+    const projectFilter = sanitizedProjectId
+      ? `AND index1 = '${sanitizedProjectId}'`
+      : '';
 
     const query = `
       SELECT
@@ -236,10 +252,10 @@ export class AnalyticsQueryService {
         double1,
         _sample_interval
       FROM ${datasetName}
-      WHERE timestamp > NOW() - INTERVAL '${hoursDiff}' HOUR
+      WHERE timestamp > NOW() - INTERVAL '${sanitizedInterval}' HOUR
         ${projectFilter}
       ORDER BY timestamp ASC
-      LIMIT ${limit}
+      LIMIT ${sanitizedLimit}
       FORMAT JSONEachRow
     `;
 

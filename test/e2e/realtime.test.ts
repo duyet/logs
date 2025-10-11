@@ -258,7 +258,7 @@ describe('Realtime Analytics E2E', () => {
       expect(data.error).toBe('REALTIME_ANALYTICS not configured');
     });
 
-    it('should handle missing REALTIME_AGGREGATOR binding', async () => {
+    it('should succeed without REALTIME_AGGREGATOR binding (graceful degradation)', async () => {
       const event: RealtimeEvent = {
         event_type: 'pageview',
         timestamp: Date.now(),
@@ -281,9 +281,134 @@ describe('Realtime Analytics E2E', () => {
 
       const res = await app.fetch(req, envWithoutBinding);
 
-      expect(res.status).toBe(503);
+      // Should succeed even without Durable Object - graceful degradation
+      expect(res.status).toBe(200);
       const data = (await res.json()) as any;
-      expect(data.error).toBe('REALTIME_AGGREGATOR not configured');
+      expect(data.success).toBe(true);
+    });
+
+    it('should fail when Analytics Engine write fails', async () => {
+      const event: RealtimeEvent = {
+        event_type: 'pageview',
+        timestamp: Date.now(),
+        url: 'https://example.com',
+        user_agent: 'Mozilla/5.0',
+        fingerprint: {
+          hash: 'test-hash',
+          components: createFingerprintComponents(),
+          confidence: 85,
+        },
+      };
+
+      const envWithFailingAE = {
+        ...env,
+        REALTIME_ANALYTICS: {
+          writeDataPoint: (): Promise<void> => {
+            throw new Error('Analytics Engine write failed');
+          },
+        },
+      };
+
+      const req = new Request('http://localhost/realtime', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+
+      const res = await app.fetch(req, envWithFailingAE);
+
+      expect(res.status).toBe(500);
+      const data = (await res.json()) as any;
+      expect(data.error).toBe('Failed to store event to Analytics Engine');
+    });
+
+    it('should succeed when Durable Object write fails (graceful degradation)', async () => {
+      const event: RealtimeEvent = {
+        event_type: 'pageview',
+        timestamp: Date.now(),
+        url: 'https://example.com',
+        user_agent: 'Mozilla/5.0',
+        fingerprint: {
+          hash: 'test-hash',
+          components: createFingerprintComponents(),
+          confidence: 85,
+        },
+      };
+
+      const failingDOStub = {
+        fetch: (): Response => {
+          throw new Error('Durable Object unavailable');
+        },
+      } as unknown as DurableObjectStub;
+
+      const envWithFailingDO = {
+        ...env,
+        REALTIME_AGGREGATOR: {
+          idFromName: (): DurableObjectId =>
+            ({ name: 'test' }) as DurableObjectId,
+          get: (): DurableObjectStub => failingDOStub,
+        } as unknown as DurableObjectNamespace,
+      };
+
+      const req = new Request('http://localhost/realtime', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+
+      const res = await app.fetch(req, envWithFailingDO);
+
+      // Should succeed even if Durable Object fails - graceful degradation
+      expect(res.status).toBe(200);
+      const data = (await res.json()) as any;
+      expect(data.success).toBe(true);
+    });
+
+    it('should fail when both Analytics Engine and Durable Object fail', async () => {
+      const event: RealtimeEvent = {
+        event_type: 'pageview',
+        timestamp: Date.now(),
+        url: 'https://example.com',
+        user_agent: 'Mozilla/5.0',
+        fingerprint: {
+          hash: 'test-hash',
+          components: createFingerprintComponents(),
+          confidence: 85,
+        },
+      };
+
+      const failingDOStub = {
+        fetch: (): Response => {
+          throw new Error('Durable Object unavailable');
+        },
+      } as unknown as DurableObjectStub;
+
+      const envWithBothFailing = {
+        ...env,
+        REALTIME_ANALYTICS: {
+          writeDataPoint: (): Promise<void> => {
+            throw new Error('Analytics Engine write failed');
+          },
+        },
+        REALTIME_AGGREGATOR: {
+          idFromName: (): DurableObjectId =>
+            ({ name: 'test' }) as DurableObjectId,
+          get: (): DurableObjectStub => failingDOStub,
+        } as unknown as DurableObjectNamespace,
+      };
+
+      const req = new Request('http://localhost/realtime', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+
+      const res = await app.fetch(req, envWithBothFailing);
+
+      // Should fail because Analytics Engine is primary
+      expect(res.status).toBe(500);
+      const data = (await res.json()) as any;
+      expect(data.error).toBe('Failed to store event to Analytics Engine');
     });
   });
 
