@@ -28,8 +28,10 @@ export interface Env {
   REALTIME_ANALYTICS?: AnalyticsEngineDataset; // Real-time analytics (optional for backwards compat)
   LOGTAIL_ANALYTICS: AnalyticsEngineDataset; // Logtail / Better Stack
   SENTRY_ANALYTICS: AnalyticsEngineDataset; // Sentry error tracking
+  SELF_TRACKING_ANALYTICS?: AnalyticsEngineDataset; // Self-tracking analytics (optional)
   DB: D1Database;
   REALTIME_AGGREGATOR?: DurableObjectNamespace; // Durable Object for 5-min aggregation (optional for backwards compat)
+  SELF_TRACKING_AGGREGATOR?: DurableObjectNamespace; // Durable Object for self-tracking (optional)
   ASSETS?: Fetcher; // Optional ASSETS binding for static files
   // GraphQL Analytics API credentials (Secrets Store bindings preferred, fallback to env vars)
   CLOUDFLARE_ACCOUNT_ID?: SecretsStoreSecret | string;
@@ -42,10 +44,14 @@ export interface Env {
   DATASET_REALTIME_ANALYTICS?: string;
   DATASET_LOGTAIL_ANALYTICS?: string;
   DATASET_SENTRY_ANALYTICS?: string;
+  DATASET_SELF_TRACKING_ANALYTICS?: string;
   // Sentry integration
   CF_VERSION_METADATA?: { id: string; timestamp?: string }; // Cloudflare version metadata
   ENVIRONMENT?: string; // Environment name (production, staging, etc.)
   SENTRY_DSN?: string; // Sentry DSN (defaults to self-tracking)
+  // Self-tracking configuration
+  ENABLE_SELF_TRACKING?: string; // Enable self-tracking (default: false)
+  TRACKING_SAMPLE_RATE?: string; // Sample rate for self-tracking (default: 1.0)
 }
 
 /**
