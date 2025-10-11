@@ -215,7 +215,8 @@ describe('AnalyticsQueryService', () => {
         ...mockEnv,
         CLOUDFLARE_ACCOUNT_ID: 'test-account',
         CLOUDFLARE_API_TOKEN: 'test-token',
-        DATASET_CLAUDE_CODE_METRICS: 'custom_dataset_name',
+        // Use a whitelisted dataset name for the test
+        DATASET_CLAUDE_CODE_METRICS: 'duyet_logs_claude_code_metrics',
       };
 
       const params: AnalyticsQueryParams = {
@@ -231,7 +232,7 @@ describe('AnalyticsQueryService', () => {
       await service.getInsights(mockEnvWithDataset as any, params);
 
       const query = mockFetch.mock.calls[0]![1].body;
-      expect(query).toContain('FROM custom_dataset_name');
+      expect(query).toContain('FROM duyet_logs_claude_code_metrics');
     });
 
     it('should use default dataset mapping when env var not set', async () => {
@@ -536,6 +537,229 @@ describe('AnalyticsQueryService', () => {
       const result = await service.getInsights(mockEnvWithCreds as any, params);
 
       expect(result.summary.topProjects).toHaveLength(5);
+    });
+  });
+
+  describe('SQL injection prevention', () => {
+    let mockEnvWithCreds: Env;
+
+    beforeEach(() => {
+      mockEnvWithCreds = {
+        ...mockEnv,
+        CLOUDFLARE_ACCOUNT_ID: 'test-account',
+        CLOUDFLARE_API_TOKEN: 'test-token',
+      } as any;
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: vi.fn().mockResolvedValue(''),
+      });
+    });
+
+    it('should sanitize SQL OR injection in project_id', async () => {
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+        projectId: "' OR '1'='1",
+      };
+
+      await service.getInsights(mockEnvWithCreds as any, params);
+
+      const mockFetch = global.fetch as any;
+      const query = mockFetch.mock.calls[0]![1].body;
+
+      // Should not include the malicious project_id (sanitized to null)
+      expect(query).not.toContain("' OR '1'='1");
+      // Should not have project filter at all (invalid project_id)
+      expect(query).not.toContain("AND index1 = '");
+    });
+
+    it('should sanitize SQL UNION injection in project_id', async () => {
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+        projectId: "' UNION SELECT * FROM users--",
+      };
+
+      await service.getInsights(mockEnvWithCreds as any, params);
+
+      const mockFetch = global.fetch as any;
+      const query = mockFetch.mock.calls[0]![1].body;
+
+      expect(query).not.toContain('UNION');
+      expect(query).not.toContain('SELECT * FROM users');
+    });
+
+    it('should sanitize DROP TABLE injection in project_id', async () => {
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+        projectId: '"; DROP TABLE projects--',
+      };
+
+      await service.getInsights(mockEnvWithCreds as any, params);
+
+      const mockFetch = global.fetch as any;
+      const query = mockFetch.mock.calls[0]![1].body;
+
+      expect(query).not.toContain('DROP TABLE');
+      expect(query).not.toContain('projects--');
+    });
+
+    it('should allow legitimate project IDs through', async () => {
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+        projectId: 'my-valid-project',
+      };
+
+      await service.getInsights(mockEnvWithCreds as any, params);
+
+      const mockFetch = global.fetch as any;
+      const query = mockFetch.mock.calls[0]![1].body;
+
+      expect(query).toContain("AND index1 = 'my-valid-project'");
+    });
+
+    it('should validate limit parameter', async () => {
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+        limit: 500,
+      };
+
+      await service.getInsights(mockEnvWithCreds as any, params);
+
+      const mockFetch = global.fetch as any;
+      const query = mockFetch.mock.calls[0]![1].body;
+
+      expect(query).toContain('LIMIT 500');
+    });
+
+    it('should reject excessive limit values', async () => {
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+        limit: 999999,
+      };
+
+      await expect(
+        service.getInsights(mockEnvWithCreds as any, params)
+      ).rejects.toThrow('Limit cannot exceed');
+    });
+
+    it('should reject negative limit values', async () => {
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+        limit: -1,
+      };
+
+      await expect(
+        service.getInsights(mockEnvWithCreds as any, params)
+      ).rejects.toThrow('Limit must be greater than 0');
+    });
+
+    it('should validate interval calculation', async () => {
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+        timeRange: {
+          start: '2024-01-01T00:00:00Z',
+          end: '2024-01-02T00:00:00Z',
+        },
+      };
+
+      await service.getInsights(mockEnvWithCreds as any, params);
+
+      const mockFetch = global.fetch as any;
+      const query = mockFetch.mock.calls[0]![1].body;
+
+      // Should use sanitized interval (24 hours)
+      expect(query).toContain("INTERVAL '24' HOUR");
+    });
+
+    it('should validate dataset name against whitelist', async () => {
+      const mockEnvWithInvalidDataset = {
+        ...mockEnvWithCreds,
+        DATASET_CLAUDE_CODE_METRICS: 'malicious_dataset; DROP TABLE--',
+      };
+
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+      };
+
+      await expect(
+        service.getInsights(mockEnvWithInvalidDataset as any, params)
+      ).rejects.toThrow('Dataset name');
+    });
+
+    it('should prevent special characters in project_id', async () => {
+      const maliciousIds = [
+        "project'",
+        'project"',
+        'project;',
+        'project\\',
+        'project--',
+        'project/*',
+      ];
+
+      for (const projectId of maliciousIds) {
+        const params: AnalyticsQueryParams = {
+          dataset: 'CLAUDE_CODE_METRICS',
+          projectId,
+        };
+
+        await service.getInsights(mockEnvWithCreds as any, params);
+
+        const mockFetch = global.fetch as any;
+        const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1]!;
+        const query = lastCall[1].body;
+
+        // Invalid project IDs should not be included in the query
+        // The query will still have single quotes for the INTERVAL, so check specifically for AND index1
+        expect(query).not.toContain(`AND index1 = '${projectId}'`);
+        expect(query).not.toContain(projectId);
+      }
+    });
+
+    it('should handle edge case project IDs safely', async () => {
+      const edgeCases = ['', '   ', 'a', 'ab', 'A'.repeat(100)];
+
+      for (const projectId of edgeCases) {
+        const params: AnalyticsQueryParams = {
+          dataset: 'CLAUDE_CODE_METRICS',
+          projectId,
+        };
+
+        // These should not throw, but project filter should be omitted
+        await service.getInsights(mockEnvWithCreds as any, params);
+
+        const mockFetch = global.fetch as any;
+        const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1]!;
+        const query = lastCall[1].body;
+
+        // Invalid project IDs should result in no project filter
+        if (projectId.trim().length < 3 || projectId.trim().length > 32) {
+          expect(query).not.toContain('AND index1 =');
+        }
+      }
+    });
+
+    it('should use whitelisted dataset names only', async () => {
+      const validDatasets: AnalyticsQueryParams['dataset'][] = [
+        'CLAUDE_CODE_ANALYTICS',
+        'CLAUDE_CODE_LOGS',
+        'CLAUDE_CODE_METRICS',
+        'GA_ANALYTICS',
+      ];
+
+      for (const dataset of validDatasets) {
+        const params: AnalyticsQueryParams = {
+          dataset,
+        };
+
+        await service.getInsights(mockEnvWithCreds as any, params);
+
+        const mockFetch = global.fetch as any;
+        const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1]!;
+        const query = lastCall[1].body;
+
+        // Should contain one of the whitelisted dataset names
+        expect(query).toMatch(/FROM duyet_logs_/);
+      }
     });
   });
 });
