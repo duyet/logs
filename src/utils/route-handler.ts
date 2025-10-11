@@ -33,7 +33,40 @@ export function createAnalyticsHandler<T>(
       const dataWithProject = projectId
         ? { ...rawData, project_id: projectId }
         : rawData;
-      analyticsService.writeDataPoint(c.env, dataset, adapter, dataWithProject);
+      const result = analyticsService.writeDataPoint(
+        c.env,
+        dataset,
+        adapter,
+        dataWithProject
+      );
+
+      if (!result.success) {
+        // Determine error type and status code
+        const isValidationError = result.error === 'Invalid data format';
+        const isConfigError = result.error?.includes(
+          'Dataset binding not found'
+        );
+
+        let statusCode: 400 | 500 = 500;
+        let errorType = 'Internal Server Error';
+
+        if (isValidationError) {
+          statusCode = 400;
+          errorType = 'Bad Request';
+        } else if (isConfigError) {
+          statusCode = 500;
+          errorType = 'Configuration Error';
+        }
+
+        return c.json(
+          {
+            error: errorType,
+            message: result.error || 'Failed to write data',
+            status: statusCode,
+          },
+          statusCode
+        );
+      }
 
       const response: SuccessResponse = {
         success: true,
@@ -62,7 +95,40 @@ export function createAnalyticsHandler<T>(
         projectId && !Array.isArray(rawData)
           ? { ...rawData, project_id: projectId }
           : rawData;
-      analyticsService.writeDataPoint(c.env, dataset, adapter, dataWithProject);
+      const result = analyticsService.writeDataPoint(
+        c.env,
+        dataset,
+        adapter,
+        dataWithProject
+      );
+
+      if (!result.success) {
+        // Determine error type and status code
+        const isValidationError = result.error === 'Invalid data format';
+        const isConfigError = result.error?.includes(
+          'Dataset binding not found'
+        );
+
+        let statusCode: 400 | 500 = 500;
+        let errorType = 'Internal Server Error';
+
+        if (isValidationError) {
+          statusCode = 400;
+          errorType = 'Bad Request';
+        } else if (isConfigError) {
+          statusCode = 500;
+          errorType = 'Configuration Error';
+        }
+
+        return c.json(
+          {
+            error: errorType,
+            message: result.error || 'Failed to write data',
+            status: statusCode,
+          },
+          statusCode
+        );
+      }
 
       const response: SuccessResponse = {
         success: true,
