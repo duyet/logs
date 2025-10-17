@@ -1,5 +1,5 @@
-import { ClickHouseService } from "./clickhouse.ts";
-import { ClickHouseConfig } from "./types.ts";
+import { ClickHouseService } from './clickhouse.ts';
+import { ClickHouseConfig } from './types.ts';
 
 /**
  * AuthMigrationService handles database schema migrations for user authentication
@@ -18,18 +18,17 @@ export class AuthMigrationService {
    * Run all authentication-related migrations
    */
   async runAuthMigrations(): Promise<void> {
-    console.log("Starting authentication database migrations...");
+    console.log('Starting authentication database migrations...');
 
     try {
       await this.createUsersTable();
       await this.createApiKeysTable();
       await this.updateEventsTableWithUserId();
 
-      console.log("Authentication migrations completed successfully");
+      console.log('Authentication migrations completed successfully');
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Authentication migration failed: ${errorMessage}`);
     }
   }
@@ -38,8 +37,8 @@ export class AuthMigrationService {
    * Create the users table for storing user accounts
    */
   async createUsersTable(): Promise<void> {
-    const systemDatabase = this.config.systemDatabase || this.config.database ||
-      "default";
+    const systemDatabase =
+      this.config.systemDatabase || this.config.database || 'default';
 
     const createUsersTableQuery = `
       CREATE TABLE IF NOT EXISTS ${systemDatabase}.users (
@@ -57,10 +56,10 @@ export class AuthMigrationService {
     try {
       await this.clickhouse.queryDatabase(
         systemDatabase,
-        createUsersTableQuery,
+        createUsersTableQuery
       );
       console.log(
-        `Users table created successfully in database '${systemDatabase}'`,
+        `Users table created successfully in database '${systemDatabase}'`
       );
 
       // Create unique index on email for fast lookups and uniqueness enforcement
@@ -71,20 +70,19 @@ export class AuthMigrationService {
       try {
         await this.clickhouse.queryDatabase(
           systemDatabase,
-          createEmailIndexQuery,
+          createEmailIndexQuery
         );
-        console.log("Email index created for users table");
+        console.log('Email index created for users table');
       } catch (indexError) {
         // Index creation might fail in some ClickHouse versions, but table creation succeeded
         console.warn(
-          "Could not create email index (this is not critical):",
-          indexError,
+          'Could not create email index (this is not critical):',
+          indexError
         );
       }
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to create users table: ${errorMessage}`);
     }
   }
@@ -93,8 +91,8 @@ export class AuthMigrationService {
    * Create the api_keys table for storing user API keys
    */
   async createApiKeysTable(): Promise<void> {
-    const systemDatabase = this.config.systemDatabase || this.config.database ||
-      "default";
+    const systemDatabase =
+      this.config.systemDatabase || this.config.database || 'default';
 
     const createApiKeysTableQuery = `
       CREATE TABLE IF NOT EXISTS ${systemDatabase}.api_keys (
@@ -113,10 +111,10 @@ export class AuthMigrationService {
     try {
       await this.clickhouse.queryDatabase(
         systemDatabase,
-        createApiKeysTableQuery,
+        createApiKeysTableQuery
       );
       console.log(
-        `API keys table created successfully in database '${systemDatabase}'`,
+        `API keys table created successfully in database '${systemDatabase}'`
       );
 
       // Create index on key_hash for fast API key validation
@@ -127,20 +125,19 @@ export class AuthMigrationService {
       try {
         await this.clickhouse.queryDatabase(
           systemDatabase,
-          createKeyHashIndexQuery,
+          createKeyHashIndexQuery
         );
-        console.log("Key hash index created for api_keys table");
+        console.log('Key hash index created for api_keys table');
       } catch (indexError) {
         // Index creation might fail in some ClickHouse versions, but table creation succeeded
         console.warn(
-          "Could not create key hash index (this is not critical):",
-          indexError,
+          'Could not create key hash index (this is not critical):',
+          indexError
         );
       }
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to create api_keys table: ${errorMessage}`);
     }
   }
@@ -149,9 +146,10 @@ export class AuthMigrationService {
    * Update existing events table to include user_id column
    */
   async updateEventsTableWithUserId(): Promise<void> {
-    const systemDatabase = this.config.systemDatabase || this.config.database ||
-      "default";
-    const tableName = (this.config as any).tableName || "events";
+    const systemDatabase =
+      this.config.systemDatabase || this.config.database || 'default';
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+    const tableName = (this.config as any).tableName || 'events';
 
     try {
       // Check if user_id column already exists
@@ -164,8 +162,8 @@ export class AuthMigrationService {
       `;
 
       const existingColumns = await this.clickhouse.queryDatabaseJSON(
-        "system",
-        checkColumnQuery,
+        'system',
+        checkColumnQuery
       );
 
       if (existingColumns.length > 0) {
@@ -190,22 +188,21 @@ export class AuthMigrationService {
       try {
         await this.clickhouse.queryDatabase(
           systemDatabase,
-          createUserIdIndexQuery,
+          createUserIdIndexQuery
         );
-        console.log("User ID index created for events table");
+        console.log('User ID index created for events table');
       } catch (indexError) {
         // Index creation might fail in some ClickHouse versions, but column addition succeeded
         console.warn(
-          "Could not create user_id index (this is not critical):",
-          indexError,
+          'Could not create user_id index (this is not critical):',
+          indexError
         );
       }
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(
-        `Failed to update events table with user_id column: ${errorMessage}`,
+        `Failed to update events table with user_id column: ${errorMessage}`
       );
     }
   }
@@ -219,9 +216,10 @@ export class AuthMigrationService {
     eventsHasUserId: boolean;
     errors: string[];
   }> {
-    const systemDatabase = this.config.systemDatabase || this.config.database ||
-      "default";
-    const tableName = (this.config as any).tableName || "events";
+    const systemDatabase =
+      this.config.systemDatabase || this.config.database || 'default';
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+    const tableName = (this.config as any).tableName || 'events';
     const errors: string[] = [];
 
     let usersTableExists = false;
@@ -236,13 +234,13 @@ export class AuthMigrationService {
         LIMIT 1
       `;
       const usersResult = await this.clickhouse.queryDatabaseJSON(
-        "system",
-        usersTableQuery,
+        'system',
+        usersTableQuery
       );
       usersTableExists = usersResult.length > 0;
 
       if (!usersTableExists) {
-        errors.push("Users table does not exist");
+        errors.push('Users table does not exist');
       }
 
       // Check api_keys table
@@ -252,13 +250,13 @@ export class AuthMigrationService {
         LIMIT 1
       `;
       const apiKeysResult = await this.clickhouse.queryDatabaseJSON(
-        "system",
-        apiKeysTableQuery,
+        'system',
+        apiKeysTableQuery
       );
       apiKeysTableExists = apiKeysResult.length > 0;
 
       if (!apiKeysTableExists) {
-        errors.push("API keys table does not exist");
+        errors.push('API keys table does not exist');
       }
 
       // Check events table has user_id column
@@ -270,8 +268,8 @@ export class AuthMigrationService {
         AND name = 'user_id'
       `;
       const eventsColumnResult = await this.clickhouse.queryDatabaseJSON(
-        "system",
-        eventsColumnQuery,
+        'system',
+        eventsColumnQuery
       );
       eventsHasUserId = eventsColumnResult.length > 0;
 
@@ -279,9 +277,8 @@ export class AuthMigrationService {
         errors.push(`Events table '${tableName}' does not have user_id column`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       errors.push(`Schema verification failed: ${errorMessage}`);
     }
 
@@ -297,37 +294,36 @@ export class AuthMigrationService {
    * Drop all authentication tables (use with caution - for testing/rollback only)
    */
   async dropAuthTables(): Promise<void> {
-    const systemDatabase = this.config.systemDatabase || this.config.database ||
-      "default";
+    const systemDatabase =
+      this.config.systemDatabase || this.config.database || 'default';
 
     console.warn(
-      "Dropping authentication tables - this will delete all user data!",
+      'Dropping authentication tables - this will delete all user data!'
     );
 
     try {
       // Drop api_keys table first (has foreign key reference to users)
       await this.clickhouse.queryDatabase(
         systemDatabase,
-        `DROP TABLE IF EXISTS ${systemDatabase}.api_keys`,
+        `DROP TABLE IF EXISTS ${systemDatabase}.api_keys`
       );
-      console.log("Dropped api_keys table");
+      console.log('Dropped api_keys table');
 
       // Drop users table
       await this.clickhouse.queryDatabase(
         systemDatabase,
-        `DROP TABLE IF EXISTS ${systemDatabase}.users`,
+        `DROP TABLE IF EXISTS ${systemDatabase}.users`
       );
-      console.log("Dropped users table");
+      console.log('Dropped users table');
 
       // Note: We don't drop the user_id column from events table as it might contain data
-      console.log("Authentication tables dropped successfully");
+      console.log('Authentication tables dropped successfully');
       console.warn(
-        "Note: user_id column in events table was not removed to preserve data",
+        'Note: user_id column in events table was not removed to preserve data'
       );
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to drop authentication tables: ${errorMessage}`);
     }
   }
