@@ -6,6 +6,7 @@ import {
   createProject,
   getProject,
   listProjects,
+  countProjects,
   updateLastUsed,
 } from '../../../src/services/project.js';
 import type { ProjectCreateRequest } from '../../../src/types/index.js';
@@ -300,6 +301,43 @@ describe('listProjects', () => {
 
     expect(mockPrepare).toHaveBeenCalledWith(
       expect.stringContaining('ORDER BY created_at DESC')
+    );
+  });
+});
+
+describe('countProjects', () => {
+  it('should return total project count', async () => {
+    const { db, mockFirst } = createMockD1Database();
+    mockFirst.mockResolvedValue({ count: 42 });
+
+    const count = await countProjects(db);
+    expect(count).toBe(42);
+  });
+
+  it('should return 0 when no projects exist', async () => {
+    const { db, mockFirst } = createMockD1Database();
+    mockFirst.mockResolvedValue({ count: 0 });
+
+    const count = await countProjects(db);
+    expect(count).toBe(0);
+  });
+
+  it('should return 0 when result is null', async () => {
+    const { db, mockFirst } = createMockD1Database();
+    mockFirst.mockResolvedValue(null);
+
+    const count = await countProjects(db);
+    expect(count).toBe(0);
+  });
+
+  it('should use correct SQL COUNT query', async () => {
+    const { db, mockPrepare, mockFirst } = createMockD1Database();
+    mockFirst.mockResolvedValue({ count: 5 });
+
+    await countProjects(db);
+
+    expect(mockPrepare).toHaveBeenCalledWith(
+      'SELECT COUNT(*) as count FROM projects'
     );
   });
 });

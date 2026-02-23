@@ -11,14 +11,14 @@ export function createAnalyticsHandler<T>(
   adapter: DataAdapter<T>,
   analyticsService: AnalyticsEngineService
 ): {
-  handleGet: (c: Context<{ Bindings: Env }>) => Response;
+  handleGet: (c: Context<{ Bindings: Env }>) => Promise<Response>;
   handlePost: (c: Context<{ Bindings: Env }>) => Promise<Response>;
 } {
   return {
     /**
      * Handle GET requests with query parameters
      */
-    handleGet: (c: Context<{ Bindings: Env }>): Response => {
+    handleGet: async (c: Context<{ Bindings: Env }>): Promise<Response> => {
       const rawData = c.req.query() as Record<string, string | string[]>;
       const projectId = c.get('project_id');
 
@@ -33,7 +33,7 @@ export function createAnalyticsHandler<T>(
       const dataWithProject = projectId
         ? { ...rawData, project_id: projectId }
         : rawData;
-      const result = analyticsService.writeDataPoint(
+      const result = await analyticsService.writeDataPoint(
         c.env,
         dataset,
         adapter,
@@ -95,7 +95,7 @@ export function createAnalyticsHandler<T>(
         projectId && !Array.isArray(rawData)
           ? { ...rawData, project_id: projectId }
           : rawData;
-      const result = analyticsService.writeDataPoint(
+      const result = await analyticsService.writeDataPoint(
         c.env,
         dataset,
         adapter,

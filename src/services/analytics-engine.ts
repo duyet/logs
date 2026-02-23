@@ -16,12 +16,12 @@ export class AnalyticsEngineService {
    * Write data point to Analytics Engine dataset with retry logic
    * @returns Success status
    */
-  writeDataPoint<T>(
+  async writeDataPoint<T>(
     env: Env,
     datasetName: keyof Env,
     adapter: DataAdapter<T>,
     rawData: unknown
-  ): { success: boolean; error?: string } {
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       // Validate input data
       if (!adapter.validate(rawData)) {
@@ -42,7 +42,11 @@ export class AnalyticsEngineService {
       }
 
       // Write data point with retry logic
-      const writeResult = this.writeWithRetry(dataset, dataPoint, datasetName);
+      const writeResult = await this.writeWithRetry(
+        dataset,
+        dataPoint,
+        datasetName
+      );
       if (!writeResult.success) {
         return writeResult;
       }
@@ -75,11 +79,11 @@ export class AnalyticsEngineService {
   /**
    * Write data point with exponential backoff retry logic
    */
-  private writeWithRetry(
+  private async writeWithRetry(
     dataset: AnalyticsEngineDataset,
     dataPoint: AnalyticsEngineDataPoint,
     datasetName: keyof Env
-  ): { success: boolean; error?: string } {
+  ): Promise<{ success: boolean; error?: string }> {
     let lastError: Error | undefined;
 
     for (
@@ -115,12 +119,8 @@ export class AnalyticsEngineService {
             }
           );
 
-          // Exponential backoff delay (synchronous for simplicity in edge runtime)
-          // Note: In real-world edge runtime, this would be async, but for testing we keep it sync
-          const start = Date.now();
-          while (Date.now() - start < delay) {
-            // Busy wait for delay
-          }
+          // Async exponential backoff — avoids blocking the V8 event loop
+          await new Promise<void>((r) => setTimeout(r, delay));
         }
       }
     }

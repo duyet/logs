@@ -2,9 +2,9 @@ import type {
   RealtimeEvent,
   RealtimeStats,
   AggregatedData,
-} from '../types/realtime';
-import { parseUserAgent } from '../utils/user-agent-parser';
-import { detectBot } from '../utils/bot-detection';
+} from '../types/realtime.js';
+import { parseUserAgent } from '../utils/user-agent-parser.js';
+import { detectBot } from '../utils/bot-detection.js';
 
 /**
  * Durable Object for real-time analytics aggregation

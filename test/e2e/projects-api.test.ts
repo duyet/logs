@@ -240,6 +240,7 @@ describe('Projects API E2E', () => {
       ];
 
       statement.all.mockResolvedValueOnce({ results: mockProjects });
+      statement.first.mockResolvedValueOnce({ count: 3 });
 
       const app = createRouter();
       const request = new Request('http://localhost/api/project');
@@ -260,6 +261,7 @@ describe('Projects API E2E', () => {
 
     it('should handle empty project list', async () => {
       statement.all.mockResolvedValueOnce({ results: [] });
+      statement.first.mockResolvedValueOnce({ count: 0 });
 
       const app = createRouter();
       const request = new Request('http://localhost/api/project');
@@ -277,6 +279,37 @@ describe('Projects API E2E', () => {
       }
     });
 
+    it('should return DB total, not page size (pagination test)', async () => {
+      // Page returns 1 project but DB has 10 total
+      statement.all.mockResolvedValueOnce({
+        results: [
+          {
+            id: 'proj2',
+            description: 'Project 2',
+            created_at: 2,
+            last_used: null,
+          },
+        ],
+      });
+      statement.first.mockResolvedValueOnce({ count: 10 });
+
+      const app = createRouter();
+      const request = new Request(
+        'http://localhost/api/project?limit=1&offset=1'
+      );
+
+      const response = await app.fetch(request, env);
+      const data = (await response.json()) as
+        | ProjectListResponse
+        | ErrorResponse;
+
+      expect(response.status).toBe(200);
+      if ('success' in data && data.success) {
+        expect(data.projects).toHaveLength(1);
+        expect(data.total).toBe(10); // DB total, not page size
+      }
+    });
+
     it('should support pagination with limit and offset', async () => {
       statement.all.mockResolvedValueOnce({
         results: [
@@ -288,6 +321,7 @@ describe('Projects API E2E', () => {
           },
         ],
       });
+      statement.first.mockResolvedValueOnce({ count: 1 });
 
       const app = createRouter();
       const request = new Request(
@@ -304,6 +338,52 @@ describe('Projects API E2E', () => {
         expect(data.projects).toHaveLength(1);
       }
       expect(statement.bind).toHaveBeenCalledWith(1, 1);
+    });
+
+    it('should use default limit=100 and offset=0 for NaN params', async () => {
+      statement.all.mockResolvedValueOnce({ results: [] });
+      statement.first.mockResolvedValueOnce({ count: 0 });
+
+      const app = createRouter();
+      const request = new Request(
+        'http://localhost/api/project?limit=abc&offset=xyz'
+      );
+
+      const response = await app.fetch(request, env);
+
+      expect(response.status).toBe(200);
+      // NaN should fall back to defaults: limit=100, offset=0
+      expect(statement.bind).toHaveBeenCalledWith(100, 0);
+    });
+
+    it('should clamp negative limit to default and negative offset to 0', async () => {
+      statement.all.mockResolvedValueOnce({ results: [] });
+      statement.first.mockResolvedValueOnce({ count: 0 });
+
+      const app = createRouter();
+      const request = new Request(
+        'http://localhost/api/project?limit=-10&offset=-5'
+      );
+
+      const response = await app.fetch(request, env);
+
+      expect(response.status).toBe(200);
+      // Negative limit should default to 100, negative offset should be 0
+      expect(statement.bind).toHaveBeenCalledWith(100, 0);
+    });
+
+    it('should enforce MAX_LIMIT of 1000', async () => {
+      statement.all.mockResolvedValueOnce({ results: [] });
+      statement.first.mockResolvedValueOnce({ count: 0 });
+
+      const app = createRouter();
+      const request = new Request('http://localhost/api/project?limit=9999');
+
+      const response = await app.fetch(request, env);
+
+      expect(response.status).toBe(200);
+      // Limit above MAX_LIMIT should be clamped to 1000
+      expect(statement.bind).toHaveBeenCalledWith(1000, 0);
     });
 
     it('should return 500 on database error', async () => {
