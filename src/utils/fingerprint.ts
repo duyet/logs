@@ -1,4 +1,4 @@
-import type { FingerprintComponents, Fingerprint } from '../types/realtime';
+import type { FingerprintComponents, Fingerprint } from '../types/realtime.js';
 
 /**
  * Generate a privacy-respecting fingerprint from browser components

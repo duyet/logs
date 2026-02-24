@@ -1,12 +1,12 @@
-import { BaseAdapter } from './base';
-import type { AnalyticsEngineDataPoint } from '../types/realtime';
+import { BaseAdapter } from './base.js';
+import type { AnalyticsEngineDataPoint } from '../types/index.js';
 import {
   realtimeEventSchema,
   type RealtimeEvent,
   type ServerContext,
 } from '../schemas/index.js';
-import { parseUserAgent } from '../utils/user-agent-parser';
-import { detectBot } from '../utils/bot-detection';
+import { parseUserAgent } from '../utils/user-agent-parser.js';
+import { detectBot } from '../utils/bot-detection.js';
 
 /**
  * Adapter for real-time analytics events

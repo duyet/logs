@@ -10,7 +10,10 @@ import {
   createProject,
   listProjects,
   getProject,
+  countProjects,
 } from '../services/project.js';
+
+const MAX_LIMIT = 1000;
 
 /**
  * Create and configure projects API router
@@ -68,15 +71,23 @@ export function createProjectsRouter(): Hono<{ Bindings: Env }> {
    */
   app.get('/', async (c) => {
     try {
-      const limit = parseInt(c.req.query('limit') || '100');
-      const offset = parseInt(c.req.query('offset') || '0');
+      const rawLimit = parseInt(c.req.query('limit') ?? '', 10);
+      const limit =
+        Number.isNaN(rawLimit) || rawLimit < 0
+          ? 100
+          : Math.min(rawLimit, MAX_LIMIT);
+      const rawOffset = parseInt(c.req.query('offset') ?? '', 10);
+      const offset = Number.isNaN(rawOffset) || rawOffset < 0 ? 0 : rawOffset;
 
-      const projects = await listProjects(c.env.DB, limit, offset);
+      const [projects, total] = await Promise.all([
+        listProjects(c.env.DB, limit, offset),
+        countProjects(c.env.DB),
+      ]);
 
       const response: ProjectListResponse = {
         success: true,
         projects,
-        total: projects.length,
+        total,
       };
 
       return c.json(response);

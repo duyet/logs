@@ -122,6 +122,18 @@ export async function listProjects(
 }
 
 /**
+ * Count total number of projects
+ * @param db D1 database binding
+ * @returns Total project count
+ */
+export async function countProjects(db: D1Database): Promise<number> {
+  const result = await db
+    .prepare('SELECT COUNT(*) as count FROM projects')
+    .first<{ count: number }>();
+  return result?.count ?? 0;
+}
+
+/**
  * Update last_used timestamp for a project
  * @param db D1 database binding
  * @param id Project ID

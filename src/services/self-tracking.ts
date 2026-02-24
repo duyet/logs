@@ -74,8 +74,8 @@ export class SelfTrackingService {
     }
 
     // Create async write operation
-    const writePromise = Promise.resolve().then(() => {
-      const result = this.analyticsService.writeDataPoint(
+    const writePromise = Promise.resolve().then(async () => {
+      const result = await this.analyticsService.writeDataPoint(
         env,
         'SELF_TRACKING_ANALYTICS',
         this.adapter,

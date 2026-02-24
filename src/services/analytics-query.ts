@@ -377,17 +377,19 @@ export class AnalyticsQueryService {
         allValues.length
     );
 
-    timeseries.forEach((point) => {
-      const zScore = Math.abs((point.value - mean) / stdDev);
-      if (zScore > 2.5 && allValues.length > 10) {
-        anomalies.push({
-          timestamp: point.timestamp,
-          description: `Unusual activity detected: ${Math.round(point.value)} events`,
-          severity: zScore > 3 ? 'high' : 'medium',
-          value: point.value,
-        });
-      }
-    });
+    if (stdDev > 0) {
+      timeseries.forEach((point) => {
+        const zScore = Math.abs((point.value - mean) / stdDev);
+        if (zScore > 2.5 && allValues.length > 10) {
+          anomalies.push({
+            timestamp: point.timestamp,
+            description: `Unusual activity detected: ${Math.round(point.value)} events`,
+            severity: zScore > 3 ? 'high' : 'medium',
+            value: point.value,
+          });
+        }
+      });
+    }
 
     // Generate recommendations
     if (trends.length > 0 && trends[0]?.direction === 'up') {

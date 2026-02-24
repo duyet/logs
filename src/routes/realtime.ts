@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Env } from '../types/index';
-import { RealtimeAdapter } from '../adapters/realtime';
-import type { ServerContext, RealtimeEvent } from '../types/realtime';
+import type { Env } from '../types/index.js';
+import { RealtimeAdapter } from '../adapters/realtime.js';
+import type { ServerContext, RealtimeEvent } from '../types/realtime.js';
 
 const realtimeRouter = new Hono<{ Bindings: Env }>();
 const adapter = new RealtimeAdapter();

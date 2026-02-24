@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AnalyticsEngineService } from '../../../src/services/analytics-engine.js';
 import type {
   Env,
@@ -48,13 +48,17 @@ describe('AnalyticsEngineService', () => {
     mockDataset.writeDataPoint.mockClear();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('writeDataPoint', () => {
-    it('should write valid data to Analytics Engine', () => {
+    it('should write valid data to Analytics Engine', async () => {
       const rawData = { test: 'value' };
       const validateSpy = vi.spyOn(mockAdapter, 'validate');
       const transformSpy = vi.spyOn(mockAdapter, 'transform');
 
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'CLAUDE_CODE_ANALYTICS',
         mockAdapter,
@@ -76,7 +80,7 @@ describe('AnalyticsEngineService', () => {
       transformSpy.mockRestore();
     });
 
-    it('should return error for invalid data', () => {
+    it('should return error for invalid data', async () => {
       const invalidAdapter: DataAdapter = {
         validate(_data: unknown): _data is unknown {
           return false;
@@ -89,7 +93,7 @@ describe('AnalyticsEngineService', () => {
       const validateSpy = vi.spyOn(invalidAdapter, 'validate');
       const transformSpy = vi.spyOn(invalidAdapter, 'transform');
 
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'CLAUDE_CODE_ANALYTICS',
         invalidAdapter,
@@ -106,10 +110,10 @@ describe('AnalyticsEngineService', () => {
       transformSpy.mockRestore();
     });
 
-    it('should return error for missing dataset binding', () => {
+    it('should return error for missing dataset binding', async () => {
       const emptyEnv = {} as Env;
 
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         emptyEnv,
         'CLAUDE_CODE_ANALYTICS',
         mockAdapter,
@@ -122,10 +126,10 @@ describe('AnalyticsEngineService', () => {
       );
     });
 
-    it('should handle GA_ANALYTICS dataset', () => {
+    it('should handle GA_ANALYTICS dataset', async () => {
       const rawData = { test: 'value' };
 
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'GA_ANALYTICS',
         mockAdapter,
@@ -136,7 +140,7 @@ describe('AnalyticsEngineService', () => {
       expect(mockDataset.writeDataPoint).toHaveBeenCalled();
     });
 
-    it('should validate before transforming', () => {
+    it('should validate before transforming', async () => {
       const callOrder: string[] = [];
 
       const orderedAdapter: DataAdapter = {
@@ -150,7 +154,7 @@ describe('AnalyticsEngineService', () => {
         },
       };
 
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'CLAUDE_CODE_ANALYTICS',
         orderedAdapter,
@@ -161,7 +165,9 @@ describe('AnalyticsEngineService', () => {
       expect(callOrder).toEqual(['validate', 'transform']);
     });
 
-    it('should retry on write failure with exponential backoff', () => {
+    it('should retry on write failure with exponential backoff', async () => {
+      vi.useFakeTimers();
+
       // Mock writeDataPoint to fail twice then succeed
       mockDataset.writeDataPoint
         .mockImplementationOnce(() => {
@@ -182,13 +188,19 @@ describe('AnalyticsEngineService', () => {
         rawData
       );
 
-      expect(result.success).toBe(true);
-      expect(result.error).toBeUndefined();
+      // Fast-forward through all retry delays
+      await vi.runAllTimersAsync();
+      const awaitedResult = await result;
+
+      expect(awaitedResult.success).toBe(true);
+      expect(awaitedResult.error).toBeUndefined();
       // Should be called 3 times (2 failures + 1 success)
       expect(mockDataset.writeDataPoint).toHaveBeenCalledTimes(3);
     });
 
-    it('should return error after max retries exhausted', () => {
+    it('should return error after max retries exhausted', async () => {
+      vi.useFakeTimers();
+
       // Mock writeDataPoint to always fail
       mockDataset.writeDataPoint.mockImplementation(() => {
         throw new Error('Persistent failure');
@@ -202,13 +214,17 @@ describe('AnalyticsEngineService', () => {
         rawData
       );
 
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Persistent failure');
+      // Fast-forward through all retry delays
+      await vi.runAllTimersAsync();
+      const awaitedResult = await result;
+
+      expect(awaitedResult.success).toBe(false);
+      expect(awaitedResult.error).toBe('Persistent failure');
       // Should be called 3 times (max 2 retries + initial attempt)
       expect(mockDataset.writeDataPoint).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle non-Error exceptions', () => {
+    it('should handle non-Error exceptions', async () => {
       // Mock writeDataPoint to throw non-Error object
       mockDataset.writeDataPoint.mockImplementation(() => {
         // eslint-disable-next-line @typescript-eslint/only-throw-error
@@ -216,7 +232,7 @@ describe('AnalyticsEngineService', () => {
       });
 
       const rawData = { test: 'value' };
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'CLAUDE_CODE_ANALYTICS',
         mockAdapter,
@@ -227,7 +243,7 @@ describe('AnalyticsEngineService', () => {
       expect(result.error).toBe('String error');
     });
 
-    it('should catch unexpected errors during validation', () => {
+    it('should catch unexpected errors during validation', async () => {
       const faultyAdapter: DataAdapter = {
         validate(_data: unknown): _data is unknown {
           throw new Error('Validation crashed');
@@ -237,7 +253,7 @@ describe('AnalyticsEngineService', () => {
         },
       };
 
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'CLAUDE_CODE_ANALYTICS',
         faultyAdapter,
@@ -249,7 +265,7 @@ describe('AnalyticsEngineService', () => {
       expect(mockDataset.writeDataPoint).not.toHaveBeenCalled();
     });
 
-    it('should catch unexpected errors during transformation', () => {
+    it('should catch unexpected errors during transformation', async () => {
       const faultyAdapter: DataAdapter = {
         validate(_data: unknown): _data is unknown {
           return true;
@@ -259,7 +275,7 @@ describe('AnalyticsEngineService', () => {
         },
       };
 
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'CLAUDE_CODE_ANALYTICS',
         faultyAdapter,
@@ -271,9 +287,9 @@ describe('AnalyticsEngineService', () => {
       expect(mockDataset.writeDataPoint).not.toHaveBeenCalled();
     });
 
-    it('should succeed on first attempt without retries', () => {
+    it('should succeed on first attempt without retries', async () => {
       const rawData = { test: 'value' };
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'CLAUDE_CODE_ANALYTICS',
         mockAdapter,
@@ -285,7 +301,7 @@ describe('AnalyticsEngineService', () => {
       expect(mockDataset.writeDataPoint).toHaveBeenCalledTimes(1);
     });
 
-    it('should retry exactly once before succeeding', () => {
+    it('should retry exactly once before succeeding', async () => {
       // Mock writeDataPoint to fail once then succeed
       mockDataset.writeDataPoint
         .mockImplementationOnce(() => {
@@ -296,7 +312,7 @@ describe('AnalyticsEngineService', () => {
         });
 
       const rawData = { test: 'value' };
-      const result = service.writeDataPoint(
+      const result = await service.writeDataPoint(
         mockEnv,
         'CLAUDE_CODE_ANALYTICS',
         mockAdapter,
@@ -308,7 +324,7 @@ describe('AnalyticsEngineService', () => {
       expect(mockDataset.writeDataPoint).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle all dataset types', () => {
+    it('should handle all dataset types', async () => {
       const datasets: Array<keyof Env> = [
         'CLAUDE_CODE_ANALYTICS',
         'CLAUDE_CODE_LOGS',
@@ -319,16 +335,21 @@ describe('AnalyticsEngineService', () => {
         'SENTRY_ANALYTICS',
       ];
 
-      datasets.forEach((dataset) => {
+      for (const dataset of datasets) {
         mockDataset.writeDataPoint.mockClear();
 
-        const result = service.writeDataPoint(mockEnv, dataset, mockAdapter, {
-          test: 'value',
-        });
+        const result = await service.writeDataPoint(
+          mockEnv,
+          dataset,
+          mockAdapter,
+          {
+            test: 'value',
+          }
+        );
 
         expect(result.success).toBe(true);
         expect(mockDataset.writeDataPoint).toHaveBeenCalledTimes(1);
-      });
+      }
     });
   });
 });

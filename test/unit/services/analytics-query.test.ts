@@ -363,6 +363,39 @@ describe('AnalyticsQueryService', () => {
       expect(result.insights.trends[0]?.metric).toBe('event_volume');
     });
 
+    it('should not detect anomalies when all values are identical (stdDev = 0)', async () => {
+      const mockEnvWithCreds = {
+        ...mockEnv,
+        CLOUDFLARE_ACCOUNT_ID: 'test-account',
+        CLOUDFLARE_API_TOKEN: 'test-token',
+      };
+
+      const params: AnalyticsQueryParams = {
+        dataset: 'CLAUDE_CODE_METRICS',
+      };
+
+      // All values identical → stdDev = 0 → division-by-zero risk
+      const mockData = Array.from({ length: 15 }, (_, i) => ({
+        timestamp: new Date(Date.now() + i * 60000).toISOString(),
+        index1: 'project1',
+        blob1: '{}',
+        double1: 100, // constant value
+        _sample_interval: 1,
+      }));
+
+      const mockResponse = mockData.map((d) => JSON.stringify(d)).join('\n');
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: vi.fn().mockResolvedValue(mockResponse),
+      });
+
+      const result = await service.getInsights(mockEnvWithCreds as any, params);
+
+      // No anomalies should be reported when stdDev is 0
+      expect(result.insights.anomalies).toHaveLength(0);
+    });
+
     it('should detect anomalies correctly', async () => {
       const mockEnvWithCreds = {
         ...mockEnv,

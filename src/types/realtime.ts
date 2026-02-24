@@ -248,13 +248,3 @@ export interface AggregatedData {
     visitor_id?: string;
   }>;
 }
-
-/**
- * Analytics Engine data point format
- * Reference: https://developers.cloudflare.com/analytics/analytics-engine/
- */
-export interface AnalyticsEngineDataPoint {
-  indexes?: string[]; // Max 1 index, max 96 bytes each
-  doubles?: number[]; // Numeric values
-  blobs?: string[]; // String values, max 5120 bytes each
-}
